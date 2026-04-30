@@ -14,7 +14,7 @@ import { cn } from '../lib/utils';
   standalone: true,
   imports: [CommonModule, RouterOutlet, AppSidebarComponent, AppTopbarComponent, GsapRouteTransitionDirective],
   template: `
-    <div class="min-h-screen bg-slate-50">
+    <div class="min-h-screen bg-background transition-colors duration-200">
       <app-sidebar />
       <app-topbar [pageTitle]="title()" [breadcrumbs]="breadcrumbs()" />
       <main [class]="mainClass()">

@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LucideAngularModule, Bell, Menu, User, Lock, LogOut } from 'lucide-angular';
+import { LucideAngularModule, Bell, Menu, User, Lock, LogOut, Sun, Moon } from 'lucide-angular';
 import { UIService } from '../services/ui.service';
 import { AuthService } from '../services/auth.service';
 import { NotificacoesService } from '../services/notificacoes.service';
@@ -13,10 +13,10 @@ import { UiDropdown, UiDropdownItem, UiDropdownSeparator, UiDropdownLabel } from
 import { cn } from '../lib/utils';
 
 @Component({
-    selector: 'app-topbar',
-    standalone: true,
-    imports: [CommonModule, LucideAngularModule, UiAvatar, UiBadge, UiButton, UiBreadcrumb, UiDropdown, UiDropdownItem, UiDropdownSeparator, UiDropdownLabel],
-    template: `
+  selector: 'app-topbar',
+  standalone: true,
+  imports: [CommonModule, LucideAngularModule, UiAvatar, UiBadge, UiButton, UiBreadcrumb, UiDropdown, UiDropdownItem, UiDropdownSeparator, UiDropdownLabel],
+  template: `
     <header [class]="headerClass()">
       <div class="flex h-full items-center justify-between px-4 gap-4">
         <div class="flex items-center gap-4 flex-1 min-w-0">
@@ -25,7 +25,7 @@ import { cn } from '../lib/utils';
           </ui-button>
 
           <div class="flex-1 min-w-0">
-            <h1 class="text-lg font-bold text-slate-900 truncate">{{ pageTitle() }}</h1>
+            <h1 class="text-lg font-bold text-foreground truncate">{{ pageTitle() }}</h1>
             @if (breadcrumbs() && breadcrumbs().length) {
               <ui-breadcrumb [items]="breadcrumbs()" />
             }
@@ -38,6 +38,10 @@ import { cn } from '../lib/utils';
               {{ user.setor }}
             </ui-badge>
           }
+
+          <ui-button variant="ghost" size="icon" (click)="ui.toggleTheme()" [title]="ui.theme() === 'dark' ? 'Mudar para claro' : 'Mudar para escuro'">
+            <lucide-angular [img]="ui.theme() === 'dark' ? Sun : Moon" size="19" />
+          </ui-button>
 
           <ui-button variant="ghost" size="icon" class="relative">
             <lucide-angular [img]="Bell" size="20" />
@@ -52,7 +56,7 @@ import { cn } from '../lib/utils';
             <ui-dropdown align="end" contentClass="w-56">
               <ui-button trigger variant="ghost" class="flex items-center gap-2 h-10 px-2">
                 <ui-avatar [name]="user.nome" [src]="user.avatar" class="h-8 w-8 border-2 border-amber-500/20" fallbackClass="bg-slate-700 text-slate-200 text-xs font-medium" />
-                <span class="hidden md:block text-sm font-medium text-slate-900 max-w-[120px] truncate">{{ user.nome }}</span>
+                <span class="hidden md:block text-sm font-medium text-foreground max-w-30 truncate">{{ user.nome }}</span>
               </ui-button>
               <div menu>
                 <ui-dropdown-label>
@@ -78,20 +82,21 @@ import { cn } from '../lib/utils';
   `,
 })
 export class AppTopbarComponent {
-    pageTitle = input('');
-    breadcrumbs = input<BreadcrumbItem[]>([]);
+  pageTitle = input('');
+  breadcrumbs = input<BreadcrumbItem[]>([]);
 
-    readonly ui = inject(UIService);
-    readonly auth = inject(AuthService);
-    readonly notificacoes = inject(NotificacoesService);
-    private readonly router = inject(Router);
+  readonly ui = inject(UIService);
+  readonly auth = inject(AuthService);
+  readonly notificacoes = inject(NotificacoesService);
+  private readonly router = inject(Router);
 
-    readonly Menu = Menu; readonly Bell = Bell; readonly User = User; readonly Lock = Lock; readonly LogOut = LogOut;
+  readonly Menu = Menu; readonly Bell = Bell; readonly User = User; readonly Lock = Lock; readonly LogOut = LogOut;
+  readonly Sun = Sun; readonly Moon = Moon;
 
-    headerClass = computed(() =>
-        cn('fixed top-0 right-0 h-14 bg-white border-b border-slate-200 z-30 transition-all duration-200 max-md:left-0',
-            this.ui.sidebarCollapsed() ? 'left-16' : 'left-60')
-    );
+  headerClass = computed(() =>
+    cn('fixed top-0 right-0 h-14 bg-background border-b border-border z-30 transition-all duration-200 max-md:left-0',
+      this.ui.sidebarCollapsed() ? 'left-16' : 'left-60')
+  );
 
-    logout() { this.auth.logout(); this.router.navigate(['/login']); }
+  logout() { this.auth.logout(); this.router.navigate(['/login']); }
 }
