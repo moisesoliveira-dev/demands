@@ -4,6 +4,7 @@ import { cn } from '../../lib/utils';
 @Component({
     selector: 'ui-card',
     template: `<div [class]="classes()"><ng-content /></div>`,
+    host: { class: 'block' },
 })
 export class UiCard {
     class = input('');

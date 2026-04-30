@@ -6,16 +6,17 @@ import { AuthService } from '../services/auth.service';
 import { DemandStatus, Prioridade } from '../types';
 import { UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription } from '../components/ui/card.component';
 import { UiBadge } from '../components/ui/badge.component';
+import { MotionInViewDirective } from '../lib/motion.directives';
 
 @Component({
-    selector: 'app-dashboard-page',
-    standalone: true,
-    imports: [CommonModule, LucideAngularModule, UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription, UiBadge],
-    template: `
+  selector: 'app-dashboard-page',
+  standalone: true,
+  imports: [CommonModule, LucideAngularModule, UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription, UiBadge, MotionInViewDirective],
+  template: `
     <div class="space-y-6">
       <!-- KPIs -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <ui-card class="border-l-4 border-l-slate-500">
+        <ui-card motionInView class="border-l-4 border-l-slate-500">
           <ui-card-content class="p-4 flex items-center justify-between">
             <div>
               <p class="text-xs text-slate-500 uppercase font-medium">Total</p>
@@ -24,7 +25,7 @@ import { UiBadge } from '../components/ui/badge.component';
             <lucide-angular [img]="ClipboardList" size="32" class="text-slate-400" />
           </ui-card-content>
         </ui-card>
-        <ui-card class="border-l-4 border-l-blue-500">
+        <ui-card motionInView class="border-l-4 border-l-blue-500">
           <ui-card-content class="p-4 flex items-center justify-between">
             <div>
               <p class="text-xs text-slate-500 uppercase font-medium">Em Andamento</p>
@@ -33,7 +34,7 @@ import { UiBadge } from '../components/ui/badge.component';
             <lucide-angular [img]="TrendingUp" size="32" class="text-blue-400" />
           </ui-card-content>
         </ui-card>
-        <ui-card class="border-l-4 border-l-green-500">
+        <ui-card motionInView class="border-l-4 border-l-green-500">
           <ui-card-content class="p-4 flex items-center justify-between">
             <div>
               <p class="text-xs text-slate-500 uppercase font-medium">Concluídas</p>
@@ -42,7 +43,7 @@ import { UiBadge } from '../components/ui/badge.component';
             <lucide-angular [img]="CheckCircle2" size="32" class="text-green-400" />
           </ui-card-content>
         </ui-card>
-        <ui-card class="border-l-4 border-l-red-500">
+        <ui-card motionInView class="border-l-4 border-l-red-500">
           <ui-card-content class="p-4 flex items-center justify-between">
             <div>
               <p class="text-xs text-slate-500 uppercase font-medium">Críticas</p>
@@ -55,7 +56,7 @@ import { UiBadge } from '../components/ui/badge.component';
 
       <!-- Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ui-card>
+        <ui-card motionInView>
           <ui-card-header>
             <ui-card-title>Distribuição por Status</ui-card-title>
           </ui-card-header>
@@ -74,7 +75,7 @@ import { UiBadge } from '../components/ui/badge.component';
           </ui-card-content>
         </ui-card>
 
-        <ui-card>
+        <ui-card motionInView>
           <ui-card-header>
             <ui-card-title>Demandas por Setor</ui-card-title>
           </ui-card-header>
@@ -95,7 +96,7 @@ import { UiBadge } from '../components/ui/badge.component';
       </div>
 
       <!-- Lista crítica -->
-      <ui-card>
+      <ui-card motionInView>
         <ui-card-header>
           <ui-card-title>Demandas Críticas</ui-card-title>
           <ui-card-description>Prioridade urgente ou crítica</ui-card-description>
@@ -121,46 +122,46 @@ import { UiBadge } from '../components/ui/badge.component';
   `,
 })
 export class DashboardPageComponent {
-    private demandasService = inject(DemandasService);
-    private auth = inject(AuthService);
+  private demandasService = inject(DemandasService);
+  private auth = inject(AuthService);
 
-    readonly ClipboardList = ClipboardList; readonly TrendingUp = TrendingUp;
-    readonly CheckCircle2 = CheckCircle2; readonly AlertTriangle = AlertTriangle; readonly Flame = Flame;
+  readonly ClipboardList = ClipboardList; readonly TrendingUp = TrendingUp;
+  readonly CheckCircle2 = CheckCircle2; readonly AlertTriangle = AlertTriangle; readonly Flame = Flame;
 
-    total = computed(() => this.demandasService.demandas().length);
-    andamento = computed(() => this.demandasService.demandas().filter((d) => d.status === DemandStatus.EM_ANDAMENTO).length);
-    concluidas = computed(() => this.demandasService.demandas().filter((d) => d.status === DemandStatus.CONCLUIDO).length);
-    criticas = computed(() => this.demandasService.demandas().filter((d) => d.prioridade >= 4).length);
+  total = computed(() => this.demandasService.demandas().length);
+  andamento = computed(() => this.demandasService.demandas().filter((d) => d.status === DemandStatus.EM_ANDAMENTO).length);
+  concluidas = computed(() => this.demandasService.demandas().filter((d) => d.status === DemandStatus.CONCLUIDO).length);
+  criticas = computed(() => this.demandasService.demandas().filter((d) => d.prioridade >= 4).length);
 
-    statusBars = computed(() => {
-        const all = this.demandasService.demandas();
-        const t = all.length || 1;
-        const data = [
-            { status: DemandStatus.PENDENTE, label: 'Pendente', color: 'bg-amber-500' },
-            { status: DemandStatus.EM_ANDAMENTO, label: 'Em Andamento', color: 'bg-blue-500' },
-            { status: DemandStatus.BLOQUEADO, label: 'Bloqueado', color: 'bg-red-500' },
-            { status: DemandStatus.CONCLUIDO, label: 'Concluído', color: 'bg-green-500' },
-        ];
-        return data.map((d) => {
-            const count = all.filter((x) => x.status === d.status).length;
-            return { label: d.label, color: d.color, count, pct: (count / t) * 100 };
-        });
+  statusBars = computed(() => {
+    const all = this.demandasService.demandas();
+    const t = all.length || 1;
+    const data = [
+      { status: DemandStatus.PENDENTE, label: 'Pendente', color: 'bg-amber-500' },
+      { status: DemandStatus.EM_ANDAMENTO, label: 'Em Andamento', color: 'bg-blue-500' },
+      { status: DemandStatus.BLOQUEADO, label: 'Bloqueado', color: 'bg-red-500' },
+      { status: DemandStatus.CONCLUIDO, label: 'Concluído', color: 'bg-green-500' },
+    ];
+    return data.map((d) => {
+      const count = all.filter((x) => x.status === d.status).length;
+      return { label: d.label, color: d.color, count, pct: (count / t) * 100 };
     });
+  });
 
-    setorBars = computed(() => {
-        const all = this.demandasService.demandas();
-        const map = new Map<string, number>();
-        all.forEach((d) => map.set(d.setor, (map.get(d.setor) || 0) + 1));
-        const max = Math.max(...Array.from(map.values()), 1);
-        return Array.from(map.entries())
-            .sort((a, b) => b[1] - a[1])
-            .map(([label, count]) => ({ label, count, pct: (count / max) * 100 }));
-    });
+  setorBars = computed(() => {
+    const all = this.demandasService.demandas();
+    const map = new Map<string, number>();
+    all.forEach((d) => map.set(d.setor, (map.get(d.setor) || 0) + 1));
+    const max = Math.max(...Array.from(map.values()), 1);
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, count]) => ({ label, count, pct: (count / max) * 100 }));
+  });
 
-    criticasList = computed(() =>
-        this.demandasService.demandas()
-            .filter((d) => d.prioridade >= 4 && d.status !== DemandStatus.CONCLUIDO)
-            .sort((a, b) => b.prioridade - a.prioridade)
-            .slice(0, 8)
-    );
+  criticasList = computed(() =>
+    this.demandasService.demandas()
+      .filter((d) => d.prioridade >= 4 && d.status !== DemandStatus.CONCLUIDO)
+      .sort((a, b) => b.prioridade - a.prioridade)
+      .slice(0, 8)
+  );
 }

@@ -5,6 +5,7 @@ import { LucideAngularModule, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-
 import { Demanda, DemandStatus } from '../../types';
 import { DemandasService } from '../../services/demandas.service';
 import { UiPagination } from '../ui/pagination.component';
+import { GsapStaggerDirective } from '../../lib/gsap.directives';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -19,7 +20,7 @@ const STATUS_LABEL: Record<DemandStatus, { label: string; class: string }> = {
 @Component({
   selector: 'demandas-table',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, UiPagination],
+  imports: [CommonModule, LucideAngularModule, UiPagination, GsapStaggerDirective],
   template: `
     <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
@@ -43,7 +44,7 @@ const STATUS_LABEL: Record<DemandStatus, { label: string; class: string }> = {
               <th class="w-12 px-3 py-3"></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody [gsapStagger]="0.03">
             @for (d of pageItems(); track d.id) {
               <tr class="border-b last:border-0 hover:bg-slate-50 transition-colors cursor-pointer">
                 <td class="px-3 py-3" (click)="$event.stopPropagation()">

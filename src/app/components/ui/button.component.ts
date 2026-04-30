@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { MotionPressDirective } from '../../lib/motion.directives';
 import { cn } from '../../lib/utils';
 
 export type ButtonVariant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link';
@@ -22,8 +23,10 @@ const sizes: Record<ButtonSize, string> = {
 
 @Component({
     selector: 'ui-button',
+    imports: [MotionPressDirective],
     template: `
     <button
+      motionPress
       [type]="type()"
       [disabled]="disabled()"
       [class]="classes()"

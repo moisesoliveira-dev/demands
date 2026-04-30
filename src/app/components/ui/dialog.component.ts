@@ -1,15 +1,16 @@
 import { Component, EventEmitter, Output, input, signal, computed, ElementRef, ViewChild, TemplateRef, ViewContainerRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
 import { CommonModule } from '@angular/common';
+import { GsapScaleInDirective } from '../../lib/gsap.directives';
 import { cn } from '../../lib/utils';
 
 @Component({
     selector: 'ui-dialog',
-    imports: [CommonModule],
+    imports: [CommonModule, GsapScaleInDirective],
     template: `
     @if (open()) {
       <div class="fixed inset-0 z-50 bg-black/60 animate-fade-in" (click)="onBackdrop()"></div>
-      <div class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-slate-200 bg-background p-6 shadow-lg duration-200 sm:rounded-lg animate-scale-in"
+      <div gsapScaleIn class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-slate-200 bg-background p-6 shadow-lg sm:rounded-lg"
            [class]="contentClass()"
            (click)="$event.stopPropagation()">
         <ng-content />
