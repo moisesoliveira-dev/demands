@@ -1,38 +1,37 @@
-import { AfterViewChecked, Component, ElementRef, EventEmitter, Output, ViewChild, effect, inject, input, signal, untracked } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, EventEmitter, OnInit, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil } from 'lucide-angular';
 import { UiButton } from '../ui/button.component';
 import { Demanda, DemandStatus, Prioridade } from '../../types';
 import { DemandasService } from '../../services/demandas.service';
+import { SetoresService } from '../../services/setores.service';
+import { UsersService } from '../../services/users.service';
 import { toast } from '../../lib/toast';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
 import { TriagemSessionService, Step, DraftDemanda } from '../../services/triagem-session.service';
 
-const SETORES = ['Usinagem', 'Montagem', 'Pintura', 'Manutenção', 'Qualidade', 'Expedição'];
-const RESPONSAVEIS = ['João Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Costa', 'Carlos Souza', 'Beatriz Lima', 'Rafael Mendes', 'Camila Rocha', 'Lucas Pereira', 'Juliana Alves'];
-
 interface ChatMessage {
-    id: string;
-    role: 'agent' | 'user';
-    content: string;
-    timestamp: Date;
-    suggestions?: string[];
-    summary?: Partial<Demanda>;
+  id: string;
+  role: 'agent' | 'user';
+  content: string;
+  timestamp: Date;
+  suggestions?: string[];
+  summary?: Partial<Demanda>;
 }
 
 const STARTER_SUGGESTIONS = [
-    { label: 'Manutenção corretiva urgente', prompt: 'A linha 3 parou. O torno CNC apresentou falha elétrica e precisa de manutenção corretiva urgente.' },
-    { label: 'Problema de qualidade', prompt: 'Identificamos peças fora do gabarito na usinagem. Preciso abrir chamado de controle de qualidade.' },
-    { label: 'Manutenção preventiva', prompt: 'Agendar manutenção preventiva nos equipamentos da cabine de pintura antes do próximo ciclo de produção.' },
-    { label: 'Inspeção de expedição', prompt: 'Preciso de inspeção no setor de expedição antes do embarque previsto para essa semana.' },
+  { label: 'Manutenção corretiva urgente', prompt: 'A linha 3 parou. O torno CNC apresentou falha elétrica e precisa de manutenção corretiva urgente.' },
+  { label: 'Problema de qualidade', prompt: 'Identificamos peças fora do gabarito na usinagem. Preciso abrir chamado de controle de qualidade.' },
+  { label: 'Manutenção preventiva', prompt: 'Agendar manutenção preventiva nos equipamentos da cabine de pintura antes do próximo ciclo de produção.' },
+  { label: 'Inspeção de expedição', prompt: 'Preciso de inspeção no setor de expedição antes do embarque previsto para essa semana.' },
 ];
 
 @Component({
-    selector: 'triagem-chat',
-    standalone: true,
-    imports: [CommonModule, FormsModule, LucideAngularModule, UiButton],
-    template: `
+  selector: 'triagem-chat',
+  standalone: true,
+  imports: [CommonModule, FormsModule, LucideAngularModule, UiButton],
+  template: `
     <div class="flex flex-col h-full bg-white">
 
       <!-- ── Messages / Empty state ── -->
@@ -212,382 +211,398 @@ const STARTER_SUGGESTIONS = [
     </div>
   `,
 })
-export class TriagemChatComponent implements AfterViewChecked {
-    @Output() created = new EventEmitter<Demanda>();
-    @Output() cancel = new EventEmitter<void>();
+export class TriagemChatComponent implements AfterViewChecked, OnInit {
+  @Output() created = new EventEmitter<Demanda>();
+  @Output() cancel = new EventEmitter<void>();
 
-    @ViewChild('scrollArea') scrollArea?: ElementRef<HTMLElement>;
-    @ViewChild('inputEl') inputEl?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('scrollArea') scrollArea?: ElementRef<HTMLElement>;
+  @ViewChild('inputEl') inputEl?: ElementRef<HTMLTextAreaElement>;
 
-    readonly Bot = Bot; readonly UserIcon = UserIcon; readonly ArrowUp = ArrowUp;
-    readonly Loader2 = Loader2; readonly CheckCircle2 = CheckCircle2;
-    readonly Copy = Copy; readonly Check = Check; readonly Pencil = Pencil;
+  readonly Bot = Bot; readonly UserIcon = UserIcon; readonly ArrowUp = ArrowUp;
+  readonly Loader2 = Loader2; readonly CheckCircle2 = CheckCircle2;
+  readonly Copy = Copy; readonly Check = Check; readonly Pencil = Pencil;
 
-    sessionId = input<string | null>(null);
-    readonly starterSuggestions = STARTER_SUGGESTIONS;
+  sessionId = input<string | null>(null);
+  readonly starterSuggestions = STARTER_SUGGESTIONS;
 
-    private demandasService = inject(DemandasService);
-    private sessionService = inject(TriagemSessionService);
+  private demandasService = inject(DemandasService);
+  private sessionService = inject(TriagemSessionService);
+  private setoresService = inject(SetoresService);
+  private usersService = inject(UsersService);
 
-    messages = signal<ChatMessage[]>([]);
-    step = signal<Step>('descricao');
-    typing = signal(false);
-    saving = signal(false);
-    draft = signal<DraftDemanda>({});
-    copiedId = signal<string | null>(null);
-    draftInput = '';
+  private setores = computed(() =>
+    this.setoresService.setores().filter(s => s.ativo).map(s => s.nome)
+  );
+  private responsaveis = computed(() =>
+    this.usersService.users().filter(u => u.ativo).map(u => u.nome)
+  );
 
-    private shouldScroll = false;
-    private currentSessionId: string | null = null;
+  messages = signal<ChatMessage[]>([]);
+  step = signal<Step>('descricao');
+  typing = signal(false);
+  saving = signal(false);
+  draft = signal<DraftDemanda>({});
+  copiedId = signal<string | null>(null);
+  draftInput = '';
 
-    constructor() {
-        effect(() => {
-            const id = this.sessionId();
-            untracked(() => this._loadSession(id));
-        });
+  private shouldScroll = false;
+  private currentSessionId: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const id = this.sessionId();
+      untracked(() => this._loadSession(id));
+    });
+  }
+
+  ngOnInit(): void {
+    if (this.setoresService.setores().length === 0) this.setoresService.listar();
+    if (this.usersService.users().length === 0) this.usersService.listar();
+  }
+
+  ngAfterViewChecked() {
+    if (this.shouldScroll && this.scrollArea) {
+      this.scrollArea.nativeElement.scrollTop = this.scrollArea.nativeElement.scrollHeight;
+      this.shouldScroll = false;
     }
+  }
 
-    ngAfterViewChecked() {
-        if (this.shouldScroll && this.scrollArea) {
-            this.scrollArea.nativeElement.scrollTop = this.scrollArea.nativeElement.scrollHeight;
-            this.shouldScroll = false;
-        }
+  private _loadSession(id: string | null): void {
+    this.currentSessionId = id;
+    this.typing.set(false);
+    this.saving.set(false);
+    this.draftInput = '';
+    if (!id) {
+      this.messages.set([]);
+      this.step.set('descricao');
+      this.draft.set({});
+      return;
     }
-
-    private _loadSession(id: string | null): void {
-        this.currentSessionId = id;
-        this.typing.set(false);
-        this.saving.set(false);
-        this.draftInput = '';
-        if (!id) {
-            this.messages.set([]);
-            this.step.set('descricao');
-            this.draft.set({});
-            return;
-        }
-        const stored = this.sessionService.get(id);
-        if (stored && stored.messages.length > 0) {
-            this.messages.set(stored.messages.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })));
-            this.step.set(stored.step);
-            this.draft.set(stored.draft);
-        } else {
-            this.messages.set([]);
-            this.step.set('descricao');
-            this.draft.set({});
-        }
+    const stored = this.sessionService.get(id);
+    if (stored && stored.messages.length > 0) {
+      this.messages.set(stored.messages.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })));
+      this.step.set(stored.step);
+      this.draft.set(stored.draft);
+    } else {
+      this.messages.set([]);
+      this.step.set('descricao');
+      this.draft.set({});
     }
+  }
 
-    private persist(): void {
-        const id = this.currentSessionId;
-        if (!id) return;
-        const current = this.sessionService.get(id);
-        if (!current) return;
-        const d = this.draft();
+  private persist(): void {
+    const id = this.currentSessionId;
+    if (!id) return;
+    const current = this.sessionService.get(id);
+    if (!current) return;
+    const d = this.draft();
+    this.sessionService.upsert({
+      ...current,
+      titulo: d.titulo ?? current.titulo,
+      messages: this.messages().map((m) => ({ ...m, timestamp: m.timestamp.toISOString() })),
+      step: this.step(),
+      draft: d,
+      atualizadaEm: new Date().toISOString(),
+      status: this.step() === 'criada' ? 'criada' : 'andamento',
+    });
+  }
+
+  statusLabel() {
+    switch (this.step()) {
+      case 'descricao': return 'Aguardando descrição';
+      case 'setor': return 'Identificando setor';
+      case 'responsavel': return 'Definindo responsável';
+      case 'prioridade': return 'Avaliando prioridade';
+      case 'confirmacao': return 'Aguardando confirmação';
+      case 'criada': return 'Demanda criada';
+    }
+  }
+
+  placeholder() {
+    if (this.step() === 'criada') return 'Triagem concluída. Inicie uma nova ou selecione outra sessão.';
+    if (this.typing()) return '';
+    return 'Descreva sua demanda ou responda ao agente...';
+  }
+
+  prioridadeLabel(p?: Prioridade) {
+    return p ? PRIORIDADE_CONFIG[p].label : '—';
+  }
+
+  prioridadeStyle(p?: Prioridade) {
+    if (!p) return 'bg-slate-100 text-slate-700 border-slate-300';
+    const c = PRIORIDADE_CONFIG[p];
+    return `${c.bg} ${c.color}`;
+  }
+
+  isLastAgent(msg: ChatMessage) {
+    const list = this.messages();
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (list[i].role === 'agent') return list[i].id === msg.id;
+    }
+    return false;
+  }
+
+  async copyMsg(id: string, content: string) {
+    try {
+      await navigator.clipboard.writeText(content);
+      this.copiedId.set(id);
+      setTimeout(() => this.copiedId.set(null), 1500);
+    } catch { /* clipboard not available */ }
+  }
+
+  editMsg(content: string) {
+    this.draftInput = content;
+    setTimeout(() => {
+      const el = this.inputEl?.nativeElement;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 192) + 'px';
+      el.focus();
+    }, 0);
+  }
+
+  autoGrow(ev: Event) {
+    const ta = ev.target as HTMLTextAreaElement;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 192) + 'px';
+  }
+
+  onKeydown(ev: KeyboardEvent) {
+    if (ev.key === 'Enter' && !ev.shiftKey) {
+      ev.preventDefault();
+      this.onSubmit();
+    }
+  }
+
+  useSuggestion(s: string) {
+    this.draftInput = s;
+    this.onSubmit();
+  }
+
+  onSubmit() {
+    const text = this.draftInput.trim();
+    if (!text || this.typing() || this.step() === 'criada') return;
+    this.sendUser(text);
+    this.draftInput = '';
+    if (this.inputEl) this.inputEl.nativeElement.style.height = 'auto';
+  }
+
+  sendUser(text: string) {
+    this.pushMessage({ role: 'user', content: text });
+    this.processUser(text);
+  }
+
+  private pushMessage(partial: Omit<ChatMessage, 'id' | 'timestamp'>) {
+    this.messages.update((m) => [...m, { ...partial, id: crypto.randomUUID(), timestamp: new Date() }]);
+    this.shouldScroll = true;
+    this.persist();
+  }
+
+  private async agentSay(content: string, opts?: { suggestions?: string[]; summary?: Partial<Demanda>; delay?: number }) {
+    const atSession = this.currentSessionId;
+    this.typing.set(true);
+    this.shouldScroll = true;
+    await this.sleep(opts?.delay ?? 700);
+    if (this.currentSessionId !== atSession) return;
+    this.typing.set(false);
+    this.pushMessage({ role: 'agent', content, suggestions: opts?.suggestions, summary: opts?.summary });
+  }
+
+  private sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+
+  reset() {
+    const id = this.currentSessionId;
+    if (id) {
+      const current = this.sessionService.get(id);
+      if (current) {
         this.sessionService.upsert({
-            ...current,
-            titulo: d.titulo ?? current.titulo,
-            messages: this.messages().map((m) => ({ ...m, timestamp: m.timestamp.toISOString() })),
-            step: this.step(),
-            draft: d,
-            atualizadaEm: new Date().toISOString(),
-            status: this.step() === 'criada' ? 'criada' : 'andamento',
+          ...current,
+          messages: [], step: 'descricao', draft: {},
+          titulo: 'Nova triagem', atualizadaEm: new Date().toISOString(), status: 'andamento',
         });
+      }
     }
+    this.messages.set([]);
+    this.step.set('descricao');
+    this.draft.set({});
+    this.draftInput = '';
+    this.saving.set(false);
+  }
 
-    statusLabel() {
-        switch (this.step()) {
-            case 'descricao': return 'Aguardando descrição';
-            case 'setor': return 'Identificando setor';
-            case 'responsavel': return 'Definindo responsável';
-            case 'prioridade': return 'Avaliando prioridade';
-            case 'confirmacao': return 'Aguardando confirmação';
-            case 'criada': return 'Demanda criada';
-        }
+  private async processUser(text: string) {
+    switch (this.step()) {
+      case 'descricao': return this.handleDescricao(text);
+      case 'setor': return this.handleSetor(text);
+      case 'responsavel': return this.handleResponsavel(text);
+      case 'prioridade': return this.handlePrioridade(text);
+      case 'confirmacao': return this.handleConfirmacao(text);
     }
+  }
 
-    placeholder() {
-        if (this.step() === 'criada') return 'Triagem concluída. Inicie uma nova ou selecione outra sessão.';
-        if (this.typing()) return '';
-        return 'Descreva sua demanda ou responda ao agente...';
+  private async handleDescricao(text: string) {
+    if (text.length < 10) {
+      await this.agentSay('Preciso de mais contexto. Pode descrever com mais detalhes o problema ou a tarefa?');
+      return;
     }
+    const titulo = this.gerarTitulo(text);
+    const setorDetectado = this.detectSetor(text);
+    const prioridadeDetectada = this.detectPrioridade(text);
+    this.draft.update((d) => ({ ...d, descricao: text, titulo, setor: setorDetectado, prioridade: prioridadeDetectada }));
+    let resumo = `Entendi. Identifiquei o seguinte:\n\n• Título sugerido: "${titulo}"`;
+    if (setorDetectado) resumo += `\n• Setor: ${setorDetectado}`;
+    if (prioridadeDetectada) resumo += `\n• Prioridade aparente: ${PRIORIDADE_CONFIG[prioridadeDetectada].label}`;
+    await this.agentSay(resumo);
+    await this.askNext();
+  }
 
-    prioridadeLabel(p?: Prioridade) {
-        return p ? PRIORIDADE_CONFIG[p].label : '—';
+  private async handleSetor(text: string) {
+    const setores = this.setores();
+    const match = setores.find((s) => s.toLowerCase() === text.toLowerCase().trim())
+      ?? setores.find((s) => text.toLowerCase().includes(s.toLowerCase()));
+    if (!match) {
+      await this.agentSay('Não reconheci esse setor. Escolha um dos disponíveis:', { suggestions: setores });
+      return;
     }
+    this.draft.update((d) => ({ ...d, setor: match }));
+    await this.agentSay(`Setor "${match}" registrado.`);
+    await this.askNext();
+  }
 
-    prioridadeStyle(p?: Prioridade) {
-        if (!p) return 'bg-slate-100 text-slate-700 border-slate-300';
-        const c = PRIORIDADE_CONFIG[p];
-        return `${c.bg} ${c.color}`;
+  private async handleResponsavel(text: string) {
+    const responsaveis = this.responsaveis();
+    const match = responsaveis.find((r) => r.toLowerCase() === text.toLowerCase().trim())
+      ?? responsaveis.find((r) => text.toLowerCase().includes(r.toLowerCase().split(' ')[0]));
+    if (!match) {
+      await this.agentSay('Não localizei esse responsável. Selecione um da lista:', { suggestions: responsaveis.slice(0, 6) });
+      return;
     }
+    this.draft.update((d) => ({ ...d, responsavel: match }));
+    await this.agentSay(`${match} ficará responsável.`);
+    await this.askNext();
+  }
 
-    isLastAgent(msg: ChatMessage) {
-        const list = this.messages();
-        for (let i = list.length - 1; i >= 0; i--) {
-            if (list[i].role === 'agent') return list[i].id === msg.id;
-        }
-        return false;
+  private async handlePrioridade(text: string) {
+    const p = this.detectPrioridade(text) ?? this.parsePrioridadeNumero(text);
+    if (!p) {
+      await this.agentSay('Não entendi a prioridade. Escolha uma:', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
+      return;
     }
+    this.draft.update((d) => ({ ...d, prioridade: p }));
+    await this.agentSay(`Prioridade ${PRIORIDADE_CONFIG[p].label} definida.`);
+    await this.askNext();
+  }
 
-    async copyMsg(id: string, content: string) {
-        try {
-            await navigator.clipboard.writeText(content);
-            this.copiedId.set(id);
-            setTimeout(() => this.copiedId.set(null), 1500);
-        } catch { /* clipboard not available */ }
+  private async handleConfirmacao(text: string) {
+    const t = text.toLowerCase().trim();
+    if (['confirmar', 'confirmo', 'sim', 'ok', 'criar', 'pode criar'].some((w) => t.includes(w))) {
+      await this.confirmar();
+      return;
     }
-
-    editMsg(content: string) {
-        this.draftInput = content;
-        setTimeout(() => {
-            const el = this.inputEl?.nativeElement;
-            if (!el) return;
-            el.style.height = 'auto';
-            el.style.height = Math.min(el.scrollHeight, 192) + 'px';
-            el.focus();
-        }, 0);
+    if (t.includes('setor')) { this.step.set('setor'); await this.agentSay('Qual setor correto?', { suggestions: this.setores() }); return; }
+    if (t.includes('respons')) { this.step.set('responsavel'); await this.agentSay('Quem deve ficar responsável?', { suggestions: this.responsaveis().slice(0, 6) }); return; }
+    if (t.includes('priorid')) { this.step.set('prioridade'); await this.agentSay('Qual a nova prioridade?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] }); return; }
+    if (t.includes('descri') || t.includes('título') || t.includes('titulo')) {
+      this.step.set('descricao');
+      this.draft.update((d) => ({ ...d, descricao: undefined, titulo: undefined }));
+      await this.agentSay('Reescreva a descrição da demanda.');
+      return;
     }
-
-    autoGrow(ev: Event) {
-        const ta = ev.target as HTMLTextAreaElement;
-        ta.style.height = 'auto';
-        ta.style.height = Math.min(ta.scrollHeight, 192) + 'px';
+    if (['editar', 'mudar', 'alterar', 'não', 'nao'].some((w) => t.includes(w))) {
+      await this.agentSay('O que deseja ajustar? Pode dizer "setor", "responsável", "prioridade" ou "descrição".');
+      return;
     }
+    await this.agentSay('Para confirmar, responda "sim". Para ajustar, diga qual campo (setor, responsável, prioridade ou descrição).');
+  }
 
-    onKeydown(ev: KeyboardEvent) {
-        if (ev.key === 'Enter' && !ev.shiftKey) {
-            ev.preventDefault();
-            this.onSubmit();
-        }
+  private async askNext() {
+    const d = this.draft();
+    if (!d.setor) {
+      this.step.set('setor');
+      await this.agentSay('Em qual setor essa demanda deve ser executada?', { suggestions: this.setores() });
+      return;
     }
-
-    useSuggestion(s: string) {
-        this.draftInput = s;
-        this.onSubmit();
+    if (!d.responsavel) {
+      this.step.set('responsavel');
+      await this.agentSay(`Quem do setor de ${d.setor} ficará responsável?`, { suggestions: this.responsaveis().slice(0, 6) });
+      return;
     }
-
-    onSubmit() {
-        const text = this.draftInput.trim();
-        if (!text || this.typing() || this.step() === 'criada') return;
-        this.sendUser(text);
-        this.draftInput = '';
-        if (this.inputEl) this.inputEl.nativeElement.style.height = 'auto';
+    if (!d.prioridade) {
+      this.step.set('prioridade');
+      await this.agentSay('Qual a prioridade desta demanda?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
+      return;
     }
+    this.step.set('confirmacao');
+    await this.agentSay('Triagem concluída. Confira o resumo e confirme para criar a demanda:', {
+      summary: { titulo: d.titulo, setor: d.setor, responsavel: d.responsavel, prioridade: d.prioridade },
+    });
+  }
 
-    sendUser(text: string) {
-        this.pushMessage({ role: 'user', content: text });
-        this.processUser(text);
+  async confirmar() {
+    if (this.saving()) return;
+    const d = this.draft();
+    if (!d.titulo || !d.descricao || !d.setor || !d.responsavel || !d.prioridade) {
+      await this.agentSay('Ainda faltam informações para criar a demanda.');
+      return;
     }
-
-    private pushMessage(partial: Omit<ChatMessage, 'id' | 'timestamp'>) {
-        this.messages.update((m) => [...m, { ...partial, id: crypto.randomUUID(), timestamp: new Date() }]);
-        this.shouldScroll = true;
-        this.persist();
+    this.saving.set(true);
+    try {
+      const nova = await this.demandasService.criar({
+        titulo: d.titulo,
+        descricao: d.descricao,
+        setor: d.setor,
+        responsavel: d.responsavel,
+        prioridade: d.prioridade,
+        status: DemandStatus.PENDENTE,
+      });
+      this.step.set('criada');
+      await this.agentSay(`Demanda criada com sucesso!\n\nVocê será redirecionado em instantes.`);
+      toast.success('Demanda criada!');
+      this.created.emit(nova);
+    } catch (e: any) {
+      await this.agentSay(`Não consegui criar a demanda: ${e?.message ?? 'erro desconhecido'}.`);
+      toast.error('Erro ao criar demanda', e?.message);
+    } finally {
+      this.saving.set(false);
     }
+  }
 
-    private async agentSay(content: string, opts?: { suggestions?: string[]; summary?: Partial<Demanda>; delay?: number }) {
-        const atSession = this.currentSessionId;
-        this.typing.set(true);
-        this.shouldScroll = true;
-        await this.sleep(opts?.delay ?? 700);
-        if (this.currentSessionId !== atSession) return;
-        this.typing.set(false);
-        this.pushMessage({ role: 'agent', content, suggestions: opts?.suggestions, summary: opts?.summary });
+  // ---- Heurísticas de extração ----
+  private gerarTitulo(text: string): string {
+    const limpo = text.replace(/\s+/g, ' ').trim();
+    const primeira = limpo.split(/[.!?\n]/)[0] ?? limpo;
+    const titulo = primeira.length > 70 ? primeira.slice(0, 67) + '...' : primeira;
+    return titulo.charAt(0).toUpperCase() + titulo.slice(1);
+  }
+
+  private detectSetor(text: string): string | undefined {
+    const t = text.toLowerCase();
+    const map: Record<string, string[]> = {
+      Usinagem: ['usinagem', 'torno', 'fresa', 'cnc', 'usinar'],
+      Montagem: ['montagem', 'montar', 'linha de montagem', 'assembly'],
+      Pintura: ['pintura', 'pintar', 'cabine de pintura', 'tinta'],
+      'Manutenção': ['manutenção', 'manutencao', 'preventiva', 'corretiva', 'reparo', 'consertar', 'quebrou', 'parou'],
+      Qualidade: ['qualidade', 'inspeção', 'inspecao', 'controle de qualidade', 'cq', 'defeito', 'gabarito'],
+      'Expedição': ['expedição', 'expedicao', 'envio', 'embarque', 'entrega', 'logística'],
+    };
+    for (const [setor, kws] of Object.entries(map)) {
+      if (kws.some((kw) => t.includes(kw))) return setor;
     }
+    return undefined;
+  }
 
-    private sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+  private detectPrioridade(text: string): Prioridade | undefined {
+    const t = text.toLowerCase();
+    if (/\b(crítico|critico|emergência|emergencia|parada total|linha parada|parou)\b/.test(t)) return 5;
+    if (/\b(urgente|urgência|urgencia|imediato|asap)\b/.test(t)) return 4;
+    if (/\b(alta|importante|prioritário|prioritario)\b/.test(t)) return 3;
+    if (/\b(normal|média|media|padrão|padrao)\b/.test(t)) return 2;
+    if (/\b(baixa|quando possível|quando possivel|sem pressa)\b/.test(t)) return 1;
+    return undefined;
+  }
 
-    reset() {
-        const id = this.currentSessionId;
-        if (id) {
-            const current = this.sessionService.get(id);
-            if (current) {
-                this.sessionService.upsert({
-                    ...current,
-                    messages: [], step: 'descricao', draft: {},
-                    titulo: 'Nova triagem', atualizadaEm: new Date().toISOString(), status: 'andamento',
-                });
-            }
-        }
-        this.messages.set([]);
-        this.step.set('descricao');
-        this.draft.set({});
-        this.draftInput = '';
-        this.saving.set(false);
-    }
-
-    private async processUser(text: string) {
-        switch (this.step()) {
-            case 'descricao': return this.handleDescricao(text);
-            case 'setor': return this.handleSetor(text);
-            case 'responsavel': return this.handleResponsavel(text);
-            case 'prioridade': return this.handlePrioridade(text);
-            case 'confirmacao': return this.handleConfirmacao(text);
-        }
-    }
-
-    private async handleDescricao(text: string) {
-        if (text.length < 10) {
-            await this.agentSay('Preciso de mais contexto. Pode descrever com mais detalhes o problema ou a tarefa?');
-            return;
-        }
-        const titulo = this.gerarTitulo(text);
-        const setorDetectado = this.detectSetor(text);
-        const prioridadeDetectada = this.detectPrioridade(text);
-        this.draft.update((d) => ({ ...d, descricao: text, titulo, setor: setorDetectado, prioridade: prioridadeDetectada }));
-        let resumo = `Entendi. Identifiquei o seguinte:\n\n• Título sugerido: "${titulo}"`;
-        if (setorDetectado) resumo += `\n• Setor: ${setorDetectado}`;
-        if (prioridadeDetectada) resumo += `\n• Prioridade aparente: ${PRIORIDADE_CONFIG[prioridadeDetectada].label}`;
-        await this.agentSay(resumo);
-        await this.askNext();
-    }
-
-    private async handleSetor(text: string) {
-        const match = SETORES.find((s) => s.toLowerCase() === text.toLowerCase().trim())
-            ?? SETORES.find((s) => text.toLowerCase().includes(s.toLowerCase()));
-        if (!match) {
-            await this.agentSay('Não reconheci esse setor. Escolha um dos disponíveis:', { suggestions: SETORES });
-            return;
-        }
-        this.draft.update((d) => ({ ...d, setor: match }));
-        await this.agentSay(`Setor "${match}" registrado.`);
-        await this.askNext();
-    }
-
-    private async handleResponsavel(text: string) {
-        const match = RESPONSAVEIS.find((r) => r.toLowerCase() === text.toLowerCase().trim())
-            ?? RESPONSAVEIS.find((r) => text.toLowerCase().includes(r.toLowerCase().split(' ')[0]));
-        if (!match) {
-            await this.agentSay('Não localizei esse responsável. Selecione um da lista:', { suggestions: RESPONSAVEIS.slice(0, 6) });
-            return;
-        }
-        this.draft.update((d) => ({ ...d, responsavel: match }));
-        await this.agentSay(`${match} ficará responsável.`);
-        await this.askNext();
-    }
-
-    private async handlePrioridade(text: string) {
-        const p = this.detectPrioridade(text) ?? this.parsePrioridadeNumero(text);
-        if (!p) {
-            await this.agentSay('Não entendi a prioridade. Escolha uma:', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
-            return;
-        }
-        this.draft.update((d) => ({ ...d, prioridade: p }));
-        await this.agentSay(`Prioridade ${PRIORIDADE_CONFIG[p].label} definida.`);
-        await this.askNext();
-    }
-
-    private async handleConfirmacao(text: string) {
-        const t = text.toLowerCase().trim();
-        if (['confirmar', 'confirmo', 'sim', 'ok', 'criar', 'pode criar'].some((w) => t.includes(w))) {
-            await this.confirmar();
-            return;
-        }
-        if (t.includes('setor')) { this.step.set('setor'); await this.agentSay('Qual setor correto?', { suggestions: SETORES }); return; }
-        if (t.includes('respons')) { this.step.set('responsavel'); await this.agentSay('Quem deve ficar responsável?', { suggestions: RESPONSAVEIS.slice(0, 6) }); return; }
-        if (t.includes('priorid')) { this.step.set('prioridade'); await this.agentSay('Qual a nova prioridade?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] }); return; }
-        if (t.includes('descri') || t.includes('título') || t.includes('titulo')) {
-            this.step.set('descricao');
-            this.draft.update((d) => ({ ...d, descricao: undefined, titulo: undefined }));
-            await this.agentSay('Reescreva a descrição da demanda.');
-            return;
-        }
-        if (['editar', 'mudar', 'alterar', 'não', 'nao'].some((w) => t.includes(w))) {
-            await this.agentSay('O que deseja ajustar? Pode dizer "setor", "responsável", "prioridade" ou "descrição".');
-            return;
-        }
-        await this.agentSay('Para confirmar, responda "sim". Para ajustar, diga qual campo (setor, responsável, prioridade ou descrição).');
-    }
-
-    private async askNext() {
-        const d = this.draft();
-        if (!d.setor) {
-            this.step.set('setor');
-            await this.agentSay('Em qual setor essa demanda deve ser executada?', { suggestions: SETORES });
-            return;
-        }
-        if (!d.responsavel) {
-            this.step.set('responsavel');
-            await this.agentSay(`Quem do setor de ${d.setor} ficará responsável?`, { suggestions: RESPONSAVEIS.slice(0, 6) });
-            return;
-        }
-        if (!d.prioridade) {
-            this.step.set('prioridade');
-            await this.agentSay('Qual a prioridade desta demanda?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
-            return;
-        }
-        this.step.set('confirmacao');
-        await this.agentSay('Triagem concluída. Confira o resumo e confirme para criar a demanda:', {
-            summary: { titulo: d.titulo, setor: d.setor, responsavel: d.responsavel, prioridade: d.prioridade },
-        });
-    }
-
-    async confirmar() {
-        if (this.saving()) return;
-        const d = this.draft();
-        if (!d.titulo || !d.descricao || !d.setor || !d.responsavel || !d.prioridade) {
-            await this.agentSay('Ainda faltam informações para criar a demanda.');
-            return;
-        }
-        this.saving.set(true);
-        try {
-            const nova = await this.demandasService.criar({
-                titulo: d.titulo,
-                descricao: d.descricao,
-                setor: d.setor,
-                responsavel: d.responsavel,
-                prioridade: d.prioridade,
-                status: DemandStatus.PENDENTE,
-            });
-            this.step.set('criada');
-            await this.agentSay(`Demanda criada com sucesso!\n\nVocê será redirecionado em instantes.`);
-            toast.success('Demanda criada!');
-            this.created.emit(nova);
-        } catch (e: any) {
-            await this.agentSay(`Não consegui criar a demanda: ${e?.message ?? 'erro desconhecido'}.`);
-            toast.error('Erro ao criar demanda', e?.message);
-        } finally {
-            this.saving.set(false);
-        }
-    }
-
-    // ---- Heurísticas de extração ----
-    private gerarTitulo(text: string): string {
-        const limpo = text.replace(/\s+/g, ' ').trim();
-        const primeira = limpo.split(/[.!?\n]/)[0] ?? limpo;
-        const titulo = primeira.length > 70 ? primeira.slice(0, 67) + '...' : primeira;
-        return titulo.charAt(0).toUpperCase() + titulo.slice(1);
-    }
-
-    private detectSetor(text: string): string | undefined {
-        const t = text.toLowerCase();
-        const map: Record<string, string[]> = {
-            Usinagem: ['usinagem', 'torno', 'fresa', 'cnc', 'usinar'],
-            Montagem: ['montagem', 'montar', 'linha de montagem', 'assembly'],
-            Pintura: ['pintura', 'pintar', 'cabine de pintura', 'tinta'],
-            'Manutenção': ['manutenção', 'manutencao', 'preventiva', 'corretiva', 'reparo', 'consertar', 'quebrou', 'parou'],
-            Qualidade: ['qualidade', 'inspeção', 'inspecao', 'controle de qualidade', 'cq', 'defeito', 'gabarito'],
-            'Expedição': ['expedição', 'expedicao', 'envio', 'embarque', 'entrega', 'logística'],
-        };
-        for (const [setor, kws] of Object.entries(map)) {
-            if (kws.some((kw) => t.includes(kw))) return setor;
-        }
-        return undefined;
-    }
-
-    private detectPrioridade(text: string): Prioridade | undefined {
-        const t = text.toLowerCase();
-        if (/\b(crítico|critico|emergência|emergencia|parada total|linha parada|parou)\b/.test(t)) return 5;
-        if (/\b(urgente|urgência|urgencia|imediato|asap)\b/.test(t)) return 4;
-        if (/\b(alta|importante|prioritário|prioritario)\b/.test(t)) return 3;
-        if (/\b(normal|média|media|padrão|padrao)\b/.test(t)) return 2;
-        if (/\b(baixa|quando possível|quando possivel|sem pressa)\b/.test(t)) return 1;
-        return undefined;
-    }
-
-    private parsePrioridadeNumero(text: string): Prioridade | undefined {
-        const m = text.match(/\b([1-5])\b/);
-        if (m) return Number(m[1]) as Prioridade;
-        return undefined;
-    }
+  private parsePrioridadeNumero(text: string): Prioridade | undefined {
+    const m = text.match(/\b([1-5])\b/);
+    if (m) return Number(m[1]) as Prioridade;
+    return undefined;
+  }
 }

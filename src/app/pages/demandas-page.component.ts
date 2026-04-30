@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LucideAngularModule, KanbanSquare, Table, Filter, FileText, Printer, PlusCircle } from 'lucide-angular';
@@ -10,10 +10,10 @@ import { UiBadge } from '../components/ui/badge.component';
 import { exportarDemandasCSV } from '../lib/export';
 
 @Component({
-    selector: 'app-demandas-page',
-    standalone: true,
-    imports: [CommonModule, LucideAngularModule, KanbanBoardComponent, DemandasTableComponent, UiButton, UiBadge],
-    template: `
+  selector: 'app-demandas-page',
+  standalone: true,
+  imports: [CommonModule, LucideAngularModule, KanbanBoardComponent, DemandasTableComponent, UiButton, UiBadge],
+  template: `
     <div class="space-y-4">
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-3">
@@ -54,23 +54,27 @@ import { exportarDemandasCSV } from '../lib/export';
     </div>
   `,
 })
-export class DemandasPageComponent {
-    readonly KanbanSquare = KanbanSquare; readonly Table = Table; readonly Filter = Filter;
-    readonly FileText = FileText; readonly Printer = Printer; readonly PlusCircle = PlusCircle;
+export class DemandasPageComponent implements OnInit {
+  readonly KanbanSquare = KanbanSquare; readonly Table = Table; readonly Filter = Filter;
+  readonly FileText = FileText; readonly Printer = Printer; readonly PlusCircle = PlusCircle;
 
-    view = signal<'kanban' | 'table'>('kanban');
-    router = inject(Router);
-    demandasService = inject(DemandasService);
+  view = signal<'kanban' | 'table'>('kanban');
+  router = inject(Router);
+  demandasService = inject(DemandasService);
 
-    filterCount = computed(() => {
-        const f = this.demandasService.filtros();
-        return Object.values(f).reduce((acc, v) => acc + (Array.isArray(v) ? v.length : v ? 1 : 0), 0);
-    });
+  ngOnInit(): void {
+    this.demandasService.carregar();
+  }
 
-    tabClass(v: string) {
-        return `flex items-center gap-1.5 px-3 py-1.5 text-sm rounded transition-colors ${this.view() === v ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`;
-    }
+  filterCount = computed(() => {
+    const f = this.demandasService.filtros();
+    return Object.values(f).reduce((acc, v) => acc + (Array.isArray(v) ? v.length : v ? 1 : 0), 0);
+  });
 
-    exportar() { exportarDemandasCSV(this.demandasService.demandasFiltradas()); }
-    print() { window.print(); }
+  tabClass(v: string) {
+    return `flex items-center gap-1.5 px-3 py-1.5 text-sm rounded transition-colors ${this.view() === v ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`;
+  }
+
+  exportar() { exportarDemandasCSV(this.demandasService.demandasFiltradas()); }
+  print() { window.print(); }
 }

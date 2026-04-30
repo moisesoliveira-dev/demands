@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -14,35 +14,14 @@ import {
 import { UiLabel } from '../components/ui/form-elements.component';
 import { toast } from '../lib/toast';
 import { MotionInViewDirective } from '../lib/motion.directives';
+import { SetoresService, Setor } from '../services/setores.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Setor {
-  id: string;
-  nome: string;
-  descricao: string;
-  responsavel: string;
-  ativo: boolean;
-  criadoEm: string;
-}
 
 interface SetorForm { nome: string; descricao: string; responsavel: string; ativo: boolean; }
 type SetorErrors = Partial<Record<'nome' | 'responsavel', string>>;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const KEY = 'setores';
-
-const DEFAULTS: Setor[] = [
-  { id: 's1', nome: 'Produção', descricao: 'Linha de produção principal', responsavel: 'Carlos Silva', ativo: true, criadoEm: '2024-01-10T08:00:00.000Z' },
-  { id: 's2', nome: 'Usinagem', descricao: 'Setor de usinagem CNC', responsavel: 'João Operador', ativo: true, criadoEm: '2024-01-10T08:00:00.000Z' },
-  { id: 's3', nome: 'Montagem', descricao: 'Montagem de conjuntos', responsavel: 'Pedro Alves', ativo: true, criadoEm: '2024-01-15T08:00:00.000Z' },
-  { id: 's4', nome: 'Qualidade', descricao: 'Controle de qualidade', responsavel: 'Ana Costa', ativo: true, criadoEm: '2024-01-15T08:00:00.000Z' },
-  { id: 's5', nome: 'Manutenção', descricao: 'Manutenção industrial', responsavel: 'Rafael Mendes', ativo: true, criadoEm: '2024-01-20T08:00:00.000Z' },
-  { id: 's6', nome: 'TI', descricao: 'Tecnologia da informação', responsavel: 'Administrador', ativo: true, criadoEm: '2024-01-20T08:00:00.000Z' },
-  { id: 's7', nome: 'Pintura', descricao: 'Pintura e acabamento', responsavel: 'Lucas Pereira', ativo: false, criadoEm: '2024-02-01T08:00:00.000Z' },
-  { id: 's8', nome: 'Expedição', descricao: 'Expedição e logística', responsavel: 'Camila Rocha', ativo: true, criadoEm: '2024-02-01T08:00:00.000Z' },
-];
 
 const PAGE_SIZE = 9;
 const INPUT_CLS = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50';
@@ -108,7 +87,11 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
   </div>
 
   <!-- ── Empty state ── -->
-  @if (filteredTotal() === 0) {
+  @if (loading()) {
+    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+      <p class="text-sm font-medium">Carregando setores…</p>
+    </div>
+  } @else if (filteredTotal() === 0) {
     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
       <lucide-angular [img]="Building2" size="48" class="mb-3 opacity-30" />
       <p class="text-sm font-medium">Nenhum setor encontrado</p>
@@ -292,7 +275,7 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
 </div>
   `,
 })
-export class SetoresPageComponent {
+export class SetoresPageComponent implements OnInit {
 
   // Icons
   readonly Building2 = Building2; readonly PlusCircle = PlusCircle;
@@ -304,9 +287,10 @@ export class SetoresPageComponent {
   // Constants exposed to template
   readonly INPUT_CLS = INPUT_CLS;
 
-  // ── State ─────────────────────────────────────────────────────────────────
-  private _setores = signal<Setor[]>(this.load());
+  private readonly svc = inject(SetoresService);
 
+  // ── State ─────────────────────────────────────────────────────────────────
+  loading = signal(false);
   searchQ = '';
   filterStatus = '';
   page = signal(1);
@@ -315,7 +299,7 @@ export class SetoresPageComponent {
   filteredSetores = computed(() => {
     const q = this.searchQ.toLowerCase().trim();
     const status = this.filterStatus;
-    return this._setores().filter(s => {
+    return this.svc.setores().filter(s => {
       if (q && !s.nome.toLowerCase().includes(q)
         && !s.descricao.toLowerCase().includes(q)
         && !s.responsavel.toLowerCase().includes(q)) return false;
@@ -336,14 +320,13 @@ export class SetoresPageComponent {
     return this.filteredSetores().slice(start, start + PAGE_SIZE);
   });
 
-  // ── Persistence ───────────────────────────────────────────────────────────
-  private load(): Setor[] {
-    try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch { }
-    return structuredClone(DEFAULTS);
-  }
-
-  private save() {
-    try { localStorage.setItem(KEY, JSON.stringify(this._setores())); } catch { }
+  async ngOnInit(): Promise<void> {
+    this.loading.set(true);
+    try {
+      await this.svc.listar();
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   // ── Form dialog ───────────────────────────────────────────────────────────
@@ -373,7 +356,7 @@ export class SetoresPageComponent {
     if (!f.nome.trim() || f.nome.trim().length < 2)
       errs.nome = 'Nome deve ter pelo menos 2 caracteres.';
     else {
-      const dup = this._setores().find(s => s.nome.trim().toLowerCase() === f.nome.trim().toLowerCase() && s.id !== this.editTarget()?.id);
+      const dup = this.svc.setores().find(s => s.nome.trim().toLowerCase() === f.nome.trim().toLowerCase() && s.id !== this.editTarget()?.id);
       if (dup) errs.nome = 'Já existe um setor com este nome.';
     }
     if (!f.responsavel.trim() || f.responsavel.trim().length < 2)
@@ -385,30 +368,33 @@ export class SetoresPageComponent {
   async submitForm() {
     if (!this.validate()) return;
     this.saving.set(true);
-    await new Promise(r => setTimeout(r, 300));
     try {
       const target = this.editTarget();
       if (target) {
-        this._setores.update(arr => arr.map(s =>
-          s.id === target.id
-            ? { ...s, nome: this.form.nome.trim(), descricao: this.form.descricao.trim(), responsavel: this.form.responsavel.trim(), ativo: this.form.ativo }
-            : s
-        ));
+        await this.svc.atualizar(target.id, {
+          nome: this.form.nome.trim(),
+          descricao: this.form.descricao.trim(),
+          responsavel: this.form.responsavel.trim(),
+          ativo: this.form.ativo,
+        });
         toast.success('Setor atualizado com sucesso!');
       } else {
-        const novo: Setor = {
-          id: Date.now().toString(),
+        await this.svc.criar({
           nome: this.form.nome.trim(),
           descricao: this.form.descricao.trim(),
           responsavel: this.form.responsavel.trim(),
           ativo: true,
-          criadoEm: new Date().toISOString(),
-        };
-        this._setores.update(arr => [...arr, novo]);
+        });
         toast.success('Setor criado com sucesso!');
       }
-      this.save();
       this.formDialogOpen.set(false);
+    } catch (err: any) {
+      const msg: string = err?.error?.message ?? 'Erro ao salvar setor.';
+      if (msg.toLowerCase().includes('nome') || msg.toLowerCase().includes('setor')) {
+        this.formErrors = { nome: msg };
+      } else {
+        toast.error(msg);
+      }
     } finally {
       this.saving.set(false);
     }
@@ -419,15 +405,14 @@ export class SetoresPageComponent {
   confirmTitle = signal('');
   confirmMessage = signal('');
   confirmDanger = signal(false);
-  private pendingAction: (() => void) | null = null;
+  private pendingAction: (() => Promise<void>) | null = null;
 
   askDelete(s: Setor) {
     this.confirmTitle.set('Excluir setor');
     this.confirmMessage.set(`Tem certeza que deseja excluir o setor "${s.nome}"? Esta ação não pode ser desfeita.`);
     this.confirmDanger.set(true);
-    this.pendingAction = () => {
-      this._setores.update(arr => arr.filter(x => x.id !== s.id));
-      this.save();
+    this.pendingAction = async () => {
+      await this.svc.excluir(s.id);
       toast.success(`Setor "${s.nome}" excluído.`);
     };
     this.confirmOpen.set(true);
@@ -442,9 +427,8 @@ export class SetoresPageComponent {
         : `Deseja desativar o setor "${s.nome}"? Ele não ficará mais disponível para novas demandas.`
     );
     this.confirmDanger.set(!ativando);
-    this.pendingAction = () => {
-      this._setores.update(arr => arr.map(x => x.id === s.id ? { ...x, ativo: ativando } : x));
-      this.save();
+    this.pendingAction = async () => {
+      await this.svc.atualizar(s.id, { ativo: ativando });
       toast.success(`Setor "${s.nome}" ${ativando ? 'reativado' : 'desativado'} com sucesso.`);
     };
     this.confirmOpen.set(true);
@@ -453,11 +437,15 @@ export class SetoresPageComponent {
   async confirmAction() {
     if (!this.pendingAction) return;
     this.saving.set(true);
-    await new Promise(r => setTimeout(r, 250));
-    this.pendingAction();
-    this.saving.set(false);
-    this.confirmOpen.set(false);
-    this.pendingAction = null;
+    try {
+      await this.pendingAction();
+    } catch (err: any) {
+      toast.error(err?.error?.message ?? 'Erro ao executar ação.');
+    } finally {
+      this.saving.set(false);
+      this.confirmOpen.set(false);
+      this.pendingAction = null;
+    }
   }
 
   cancelConfirm() {

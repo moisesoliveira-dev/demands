@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -7,6 +7,7 @@ import {
   UserCheck, UserX, ShieldAlert, Users,
 } from 'lucide-angular';
 import { UsersService } from '../services/users.service';
+import { SetoresService } from '../services/setores.service';
 import { User } from '../types';
 import { Role } from '../types/permissions';
 import { UiCard, UiCardContent, UiCardHeader } from '../components/ui/card.component';
@@ -22,11 +23,6 @@ import { toast } from '../lib/toast';
 import { MotionInViewDirective } from '../lib/motion.directives';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const SETORES = [
-  'Administrativo', 'Comercial', 'Expedição', 'Financeiro', 'Manutenção',
-  'Montagem', 'Pintura', 'Produção', 'Qualidade', 'RH', 'TI', 'Usinagem',
-];
 
 const PAGE_SIZE = 9;
 
@@ -288,7 +284,7 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
           <ui-label for="f-setor">Setor *</ui-label>
           <select id="f-setor" name="setor" [(ngModel)]="form.setor" [class]="SELECT_CLS">
             <option value="">Selecione…</option>
-            @for (s of SETORES; track s) {
+            @for (s of setorNomes(); track s) {
               <option [value]="s">{{ s }}</option>
             }
           </select>
@@ -362,7 +358,7 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
 </div>
   `,
 })
-export class UsuariosPageComponent {
+export class UsuariosPageComponent implements OnInit {
 
   // Icons
   readonly PlusCircle = PlusCircle; readonly Pencil = Pencil; readonly Trash2 = Trash2;
@@ -371,7 +367,6 @@ export class UsuariosPageComponent {
   readonly ShieldAlert = ShieldAlert; readonly Users = Users;
 
   // Constants exposed to template
-  readonly SETORES = SETORES;
   readonly ROLE_LABELS = ROLE_LABELS;
   readonly ROLE_BADGE = ROLE_BADGE;
   readonly INPUT_CLS = INPUT_CLS;
@@ -387,12 +382,22 @@ export class UsuariosPageComponent {
 
   // ── Services ──────────────────────────────────────────────────────────────
   private usersService = inject(UsersService);
+  private setoresService = inject(SetoresService);
+
+  readonly setorNomes = computed(() =>
+    this.setoresService.setores().filter(s => s.ativo).map(s => s.nome)
+  );
 
   // ── Filter state ──────────────────────────────────────────────────────────
   searchQ = '';
   filterRole = signal('');
   filterStatus = signal('');
   page = signal(1);
+
+  ngOnInit(): void {
+    this.usersService.listar();
+    if (this.setoresService.setores().length === 0) this.setoresService.listar();
+  }
 
   // ── Derived data ──────────────────────────────────────────────────────────
   private allUsers = computed(() => this.usersService.users());

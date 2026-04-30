@@ -1,5 +1,5 @@
 import {
-  Component, computed, inject, effect, ViewChild, ElementRef,
+  Component, OnInit, computed, inject, effect, ViewChild, ElementRef,
   AfterViewInit, OnDestroy, signal, ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -246,7 +246,7 @@ Chart.register(
     </div>
   `,
 })
-export class DashboardPageComponent implements AfterViewInit, OnDestroy {
+export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private demandasService = inject(DemandasService);
   private auth = inject(AuthService);
 
@@ -319,6 +319,10 @@ export class DashboardPageComponent implements AfterViewInit, OnDestroy {
   );
 
   // ─── chart lifecycle ─────────────────────────────────────────────────────
+  ngOnInit(): void {
+    this.demandasService.carregar();
+  }
+
   ngAfterViewInit() {
     this.buildDonut();
     this.buildBar();

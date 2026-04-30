@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, computed, inject, input, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -9,17 +9,16 @@ import { UiRadioGroup, UiRadioItem } from '../ui/radio-group.component';
 import { Demanda, DemandStatus, Prioridade } from '../../types';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
 import { DemandasService } from '../../services/demandas.service';
+import { SetoresService } from '../../services/setores.service';
+import { UsersService } from '../../services/users.service';
 import { AuthService } from '../../services/auth.service';
 import { toast } from '../../lib/toast';
 
-const SETORES = ['Usinagem', 'Montagem', 'Pintura', 'Manutenção', 'Qualidade', 'Expedição'];
-const RESPONSAVEIS = ['João Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Costa', 'Carlos Souza', 'Beatriz Lima', 'Rafael Mendes', 'Camila Rocha', 'Lucas Pereira', 'Juliana Alves'];
-
 @Component({
-    selector: 'formulario-demanda',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UiButton, UiLabel, UiSelect, UiRadioGroup, UiRadioItem],
-    template: `
+  selector: 'formulario-demanda',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UiButton, UiLabel, UiSelect, UiRadioGroup, UiRadioItem],
+  template: `
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
       <div class="space-y-2">
         <ui-label for="titulo">Título *</ui-label>
@@ -42,11 +41,11 @@ const RESPONSAVEIS = ['João Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Cost
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="space-y-2">
           <ui-label>Setor *</ui-label>
-          <ui-select [value]="form.value.setor || ''" [options]="setorOpts" (valueChange)="form.controls.setor.setValue($event)" placeholder="Selecione" />
+          <ui-select [value]="form.value.setor || ''" [options]="setorOpts()" (valueChange)="form.controls.setor.setValue($event)" placeholder="Selecione" />
         </div>
         <div class="space-y-2">
           <ui-label>Responsável *</ui-label>
-          <ui-select [value]="form.value.responsavel || ''" [options]="respOpts" (valueChange)="form.controls.responsavel.setValue($event)" placeholder="Selecione" />
+          <ui-select [value]="form.value.responsavel || ''" [options]="respOpts()" (valueChange)="form.controls.responsavel.setValue($event)" placeholder="Selecione" />
         </div>
       </div>
 
@@ -69,55 +68,67 @@ const RESPONSAVEIS = ['João Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Cost
     </form>
   `,
 })
-export class FormularioDemandaComponent {
-    @Output() created = new EventEmitter<Demanda>();
-    @Output() cancel = new EventEmitter<void>();
+export class FormularioDemandaComponent implements OnInit {
+  @Output() created = new EventEmitter<Demanda>();
+  @Output() cancel = new EventEmitter<void>();
 
-    String = String;
-    saving = signal(false);
+  String = String;
+  saving = signal(false);
 
-    setorOpts = SETORES.map((s) => ({ value: s, label: s }));
-    respOpts = RESPONSAVEIS.map((s) => ({ value: s, label: s }));
-    prioridades = ([1, 2, 3, 4, 5] as Prioridade[]).map((p) => ({ value: p, ...PRIORIDADE_CONFIG[p] }));
+  private setoresService = inject(SetoresService);
+  private usersService = inject(UsersService);
 
-    private fb = inject(FormBuilder);
-    private demandasService = inject(DemandasService);
-    private auth = inject(AuthService);
+  setorOpts = computed(() =>
+    this.setoresService.setores().filter(s => s.ativo).map(s => ({ value: s.nome, label: s.nome }))
+  );
+  respOpts = computed(() =>
+    this.usersService.users().filter(u => u.ativo).map(u => ({ value: u.nome, label: u.nome }))
+  );
+  prioridades = ([1, 2, 3, 4, 5] as Prioridade[]).map((p) => ({ value: p, ...PRIORIDADE_CONFIG[p] }));
 
-    form = this.fb.group({
-        titulo: ['', [Validators.required, Validators.minLength(5)]],
-        descricao: ['', [Validators.required, Validators.minLength(10)]],
-        setor: ['', Validators.required],
-        responsavel: ['', Validators.required],
-        prioridade: [3 as Prioridade, Validators.required],
-    });
+  private fb = inject(FormBuilder);
+  private demandasService = inject(DemandasService);
+  private auth = inject(AuthService);
 
-    cardClass(p: Prioridade) {
-        const cfg = PRIORIDADE_CONFIG[p];
-        const selected = this.form.value.prioridade === p;
-        return `flex items-center gap-2 rounded-md border-2 p-3 cursor-pointer transition-all ${cfg.bg} ${cfg.color} ${selected ? 'ring-2 ring-primary' : ''}`;
+  ngOnInit(): void {
+    if (this.setoresService.setores().length === 0) this.setoresService.listar();
+    if (this.usersService.users().length === 0) this.usersService.listar();
+  }
+
+  form = this.fb.group({
+    titulo: ['', [Validators.required, Validators.minLength(5)]],
+    descricao: ['', [Validators.required, Validators.minLength(10)]],
+    setor: ['', Validators.required],
+    responsavel: ['', Validators.required],
+    prioridade: [3 as Prioridade, Validators.required],
+  });
+
+  cardClass(p: Prioridade) {
+    const cfg = PRIORIDADE_CONFIG[p];
+    const selected = this.form.value.prioridade === p;
+    return `flex items-center gap-2 rounded-md border-2 p-3 cursor-pointer transition-all ${cfg.bg} ${cfg.color} ${selected ? 'ring-2 ring-primary' : ''}`;
+  }
+
+  async submit() {
+    if (this.form.invalid) return;
+    this.saving.set(true);
+    try {
+      const v = this.form.getRawValue();
+      const nova = await this.demandasService.criar({
+        titulo: v.titulo!,
+        descricao: v.descricao!,
+        setor: v.setor!,
+        responsavel: v.responsavel!,
+        prioridade: v.prioridade!,
+        status: DemandStatus.PENDENTE,
+      });
+      toast.success('Demanda criada!');
+      this.created.emit(nova);
+      this.form.reset({ prioridade: 3 });
+    } catch (e: any) {
+      toast.error('Erro', e?.message);
+    } finally {
+      this.saving.set(false);
     }
-
-    async submit() {
-        if (this.form.invalid) return;
-        this.saving.set(true);
-        try {
-            const v = this.form.getRawValue();
-            const nova = await this.demandasService.criar({
-                titulo: v.titulo!,
-                descricao: v.descricao!,
-                setor: v.setor!,
-                responsavel: v.responsavel!,
-                prioridade: v.prioridade!,
-                status: DemandStatus.PENDENTE,
-            });
-            toast.success('Demanda criada!');
-            this.created.emit(nova);
-            this.form.reset({ prioridade: 3 });
-        } catch (e: any) {
-            toast.error('Erro', e?.message);
-        } finally {
-            this.saving.set(false);
-        }
-    }
+  }
 }
