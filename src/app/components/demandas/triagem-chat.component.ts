@@ -1,4 +1,4 @@
-﻿import { AfterViewChecked, Component, ElementRef, EventEmitter, Output, ViewChild, effect, inject, input, signal, untracked } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, EventEmitter, Output, ViewChild, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil } from 'lucide-angular';
@@ -9,8 +9,8 @@ import { toast } from '../../lib/toast';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
 import { TriagemSessionService, Step, DraftDemanda } from '../../services/triagem-session.service';
 
-const SETORES = ['Usinagem', 'Montagem', 'Pintura', 'ManutenÃ§Ã£o', 'Qualidade', 'ExpediÃ§Ã£o'];
-const RESPONSAVEIS = ['JoÃ£o Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Costa', 'Carlos Souza', 'Beatriz Lima', 'Rafael Mendes', 'Camila Rocha', 'Lucas Pereira', 'Juliana Alves'];
+const SETORES = ['Usinagem', 'Montagem', 'Pintura', 'Manutenção', 'Qualidade', 'Expedição'];
+const RESPONSAVEIS = ['João Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Costa', 'Carlos Souza', 'Beatriz Lima', 'Rafael Mendes', 'Camila Rocha', 'Lucas Pereira', 'Juliana Alves'];
 
 interface ChatMessage {
     id: string;
@@ -22,10 +22,10 @@ interface ChatMessage {
 }
 
 const STARTER_SUGGESTIONS = [
-    { label: 'ManutenÃ§Ã£o corretiva urgente', prompt: 'A linha 3 parou. O torno CNC apresentou falha elÃ©trica e precisa de manutenÃ§Ã£o corretiva urgente.' },
-    { label: 'Problema de qualidade', prompt: 'Identificamos peÃ§as fora do gabarito na usinagem. Preciso abrir chamado de controle de qualidade.' },
-    { label: 'ManutenÃ§Ã£o preventiva', prompt: 'Agendar manutenÃ§Ã£o preventiva nos equipamentos da cabine de pintura antes do prÃ³ximo ciclo de produÃ§Ã£o.' },
-    { label: 'InspeÃ§Ã£o de expediÃ§Ã£o', prompt: 'Preciso de inspeÃ§Ã£o no setor de expediÃ§Ã£o antes do embarque previsto para essa semana.' },
+    { label: 'Manutenção corretiva urgente', prompt: 'A linha 3 parou. O torno CNC apresentou falha elétrica e precisa de manutenção corretiva urgente.' },
+    { label: 'Problema de qualidade', prompt: 'Identificamos peças fora do gabarito na usinagem. Preciso abrir chamado de controle de qualidade.' },
+    { label: 'Manutenção preventiva', prompt: 'Agendar manutenção preventiva nos equipamentos da cabine de pintura antes do próximo ciclo de produção.' },
+    { label: 'Inspeção de expedição', prompt: 'Preciso de inspeção no setor de expedição antes do embarque previsto para essa semana.' },
 ];
 
 @Component({
@@ -35,7 +35,7 @@ const STARTER_SUGGESTIONS = [
     template: `
     <div class="flex flex-col h-full bg-white">
 
-      <!-- â”€â”€ Messages / Empty state â”€â”€ -->
+      <!-- ── Messages / Empty state ── -->
       <div #scrollArea class="flex-1 overflow-y-auto">
 
         @if (messages().length === 0 && !typing()) {
@@ -79,11 +79,11 @@ const STARTER_SUGGESTIONS = [
                     @if (msg.summary) {
                       <div class="border border-slate-200 rounded-xl px-4 py-3 bg-slate-50">
                         <div class="grid grid-cols-[96px_1fr] gap-y-2 text-xs">
-                          <span class="text-slate-500 font-medium">TÃ­tulo</span>
+                          <span class="text-slate-500 font-medium">Título</span>
                           <span class="text-slate-900 font-semibold">{{ msg.summary.titulo }}</span>
                           <span class="text-slate-500 font-medium">Setor</span>
                           <span class="text-slate-900">{{ msg.summary.setor }}</span>
-                          <span class="text-slate-500 font-medium">ResponsÃ¡vel</span>
+                          <span class="text-slate-500 font-medium">Responsável</span>
                           <span class="text-slate-900">{{ msg.summary.responsavel }}</span>
                           <span class="text-slate-500 font-medium">Prioridade</span>
                           <span [class]="'inline-flex items-center w-fit px-2 py-0.5 rounded-full text-xs font-semibold border ' + prioridadeStyle(msg.summary.prioridade)">
@@ -180,7 +180,7 @@ const STARTER_SUGGESTIONS = [
         }
       </div>
 
-      <!-- â”€â”€ Input area â”€â”€ -->
+      <!-- ── Input area ── -->
       <div class="shrink-0 px-6 pb-5 pt-3 bg-white">
         <div class="max-w-3xl mx-auto">
           <div class="relative bg-slate-100 rounded-2xl border border-transparent focus-within:border-slate-300 focus-within:bg-white focus-within:shadow-md transition-all">
@@ -204,7 +204,7 @@ const STARTER_SUGGESTIONS = [
             </div>
           </div>
           <p class="text-center text-[11px] text-slate-400 mt-2">
-            <kbd class="px-1 py-0.5 text-[10px] bg-white border border-slate-200 rounded shadow-sm">Enter</kbd> para enviar &nbsp;Â·&nbsp;
+            <kbd class="px-1 py-0.5 text-[10px] bg-white border border-slate-200 rounded shadow-sm">Enter</kbd> para enviar &nbsp;·&nbsp;
             <kbd class="px-1 py-0.5 text-[10px] bg-white border border-slate-200 rounded shadow-sm">Shift+Enter</kbd> para nova linha
           </p>
         </div>
@@ -296,23 +296,23 @@ export class TriagemChatComponent implements AfterViewChecked {
 
     statusLabel() {
         switch (this.step()) {
-            case 'descricao': return 'Aguardando descriÃ§Ã£o';
+            case 'descricao': return 'Aguardando descrição';
             case 'setor': return 'Identificando setor';
-            case 'responsavel': return 'Definindo responsÃ¡vel';
+            case 'responsavel': return 'Definindo responsável';
             case 'prioridade': return 'Avaliando prioridade';
-            case 'confirmacao': return 'Aguardando confirmaÃ§Ã£o';
+            case 'confirmacao': return 'Aguardando confirmação';
             case 'criada': return 'Demanda criada';
         }
     }
 
     placeholder() {
-        if (this.step() === 'criada') return 'Triagem concluÃ­da. Inicie uma nova ou selecione outra sessÃ£o.';
+        if (this.step() === 'criada') return 'Triagem concluída. Inicie uma nova ou selecione outra sessão.';
         if (this.typing()) return '';
         return 'Descreva sua demanda ou responda ao agente...';
     }
 
     prioridadeLabel(p?: Prioridade) {
-        return p ? PRIORIDADE_CONFIG[p].label : 'â€”';
+        return p ? PRIORIDADE_CONFIG[p].label : '—';
     }
 
     prioridadeStyle(p?: Prioridade) {
@@ -435,9 +435,9 @@ export class TriagemChatComponent implements AfterViewChecked {
         const setorDetectado = this.detectSetor(text);
         const prioridadeDetectada = this.detectPrioridade(text);
         this.draft.update((d) => ({ ...d, descricao: text, titulo, setor: setorDetectado, prioridade: prioridadeDetectada }));
-        let resumo = `Entendi. Identifiquei o seguinte:\n\nâ€¢ TÃ­tulo sugerido: "${titulo}"`;
-        if (setorDetectado) resumo += `\nâ€¢ Setor: ${setorDetectado}`;
-        if (prioridadeDetectada) resumo += `\nâ€¢ Prioridade aparente: ${PRIORIDADE_CONFIG[prioridadeDetectada].label}`;
+        let resumo = `Entendi. Identifiquei o seguinte:\n\n• Título sugerido: "${titulo}"`;
+        if (setorDetectado) resumo += `\n• Setor: ${setorDetectado}`;
+        if (prioridadeDetectada) resumo += `\n• Prioridade aparente: ${PRIORIDADE_CONFIG[prioridadeDetectada].label}`;
         await this.agentSay(resumo);
         await this.askNext();
     }
@@ -446,7 +446,7 @@ export class TriagemChatComponent implements AfterViewChecked {
         const match = SETORES.find((s) => s.toLowerCase() === text.toLowerCase().trim())
             ?? SETORES.find((s) => text.toLowerCase().includes(s.toLowerCase()));
         if (!match) {
-            await this.agentSay('NÃ£o reconheci esse setor. Escolha um dos disponÃ­veis:', { suggestions: SETORES });
+            await this.agentSay('Não reconheci esse setor. Escolha um dos disponíveis:', { suggestions: SETORES });
             return;
         }
         this.draft.update((d) => ({ ...d, setor: match }));
@@ -458,18 +458,18 @@ export class TriagemChatComponent implements AfterViewChecked {
         const match = RESPONSAVEIS.find((r) => r.toLowerCase() === text.toLowerCase().trim())
             ?? RESPONSAVEIS.find((r) => text.toLowerCase().includes(r.toLowerCase().split(' ')[0]));
         if (!match) {
-            await this.agentSay('NÃ£o localizei esse responsÃ¡vel. Selecione um da lista:', { suggestions: RESPONSAVEIS.slice(0, 6) });
+            await this.agentSay('Não localizei esse responsável. Selecione um da lista:', { suggestions: RESPONSAVEIS.slice(0, 6) });
             return;
         }
         this.draft.update((d) => ({ ...d, responsavel: match }));
-        await this.agentSay(`${match} ficarÃ¡ responsÃ¡vel.`);
+        await this.agentSay(`${match} ficará responsável.`);
         await this.askNext();
     }
 
     private async handlePrioridade(text: string) {
         const p = this.detectPrioridade(text) ?? this.parsePrioridadeNumero(text);
         if (!p) {
-            await this.agentSay('NÃ£o entendi a prioridade. Escolha uma:', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'CrÃ­tico'] });
+            await this.agentSay('Não entendi a prioridade. Escolha uma:', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
             return;
         }
         this.draft.update((d) => ({ ...d, prioridade: p }));
@@ -484,19 +484,19 @@ export class TriagemChatComponent implements AfterViewChecked {
             return;
         }
         if (t.includes('setor')) { this.step.set('setor'); await this.agentSay('Qual setor correto?', { suggestions: SETORES }); return; }
-        if (t.includes('respons')) { this.step.set('responsavel'); await this.agentSay('Quem deve ficar responsÃ¡vel?', { suggestions: RESPONSAVEIS.slice(0, 6) }); return; }
-        if (t.includes('priorid')) { this.step.set('prioridade'); await this.agentSay('Qual a nova prioridade?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'CrÃ­tico'] }); return; }
-        if (t.includes('descri') || t.includes('tÃ­tulo') || t.includes('titulo')) {
+        if (t.includes('respons')) { this.step.set('responsavel'); await this.agentSay('Quem deve ficar responsável?', { suggestions: RESPONSAVEIS.slice(0, 6) }); return; }
+        if (t.includes('priorid')) { this.step.set('prioridade'); await this.agentSay('Qual a nova prioridade?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] }); return; }
+        if (t.includes('descri') || t.includes('título') || t.includes('titulo')) {
             this.step.set('descricao');
             this.draft.update((d) => ({ ...d, descricao: undefined, titulo: undefined }));
-            await this.agentSay('Reescreva a descriÃ§Ã£o da demanda.');
+            await this.agentSay('Reescreva a descrição da demanda.');
             return;
         }
-        if (['editar', 'mudar', 'alterar', 'nÃ£o', 'nao'].some((w) => t.includes(w))) {
-            await this.agentSay('O que deseja ajustar? Pode dizer "setor", "responsÃ¡vel", "prioridade" ou "descriÃ§Ã£o".');
+        if (['editar', 'mudar', 'alterar', 'não', 'nao'].some((w) => t.includes(w))) {
+            await this.agentSay('O que deseja ajustar? Pode dizer "setor", "responsável", "prioridade" ou "descrição".');
             return;
         }
-        await this.agentSay('Para confirmar, responda "sim". Para ajustar, diga qual campo (setor, responsÃ¡vel, prioridade ou descriÃ§Ã£o).');
+        await this.agentSay('Para confirmar, responda "sim". Para ajustar, diga qual campo (setor, responsável, prioridade ou descrição).');
     }
 
     private async askNext() {
@@ -508,16 +508,16 @@ export class TriagemChatComponent implements AfterViewChecked {
         }
         if (!d.responsavel) {
             this.step.set('responsavel');
-            await this.agentSay(`Quem do setor de ${d.setor} ficarÃ¡ responsÃ¡vel?`, { suggestions: RESPONSAVEIS.slice(0, 6) });
+            await this.agentSay(`Quem do setor de ${d.setor} ficará responsável?`, { suggestions: RESPONSAVEIS.slice(0, 6) });
             return;
         }
         if (!d.prioridade) {
             this.step.set('prioridade');
-            await this.agentSay('Qual a prioridade desta demanda?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'CrÃ­tico'] });
+            await this.agentSay('Qual a prioridade desta demanda?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
             return;
         }
         this.step.set('confirmacao');
-        await this.agentSay('Triagem concluÃ­da. Confira o resumo e confirme para criar a demanda:', {
+        await this.agentSay('Triagem concluída. Confira o resumo e confirme para criar a demanda:', {
             summary: { titulo: d.titulo, setor: d.setor, responsavel: d.responsavel, prioridade: d.prioridade },
         });
     }
@@ -526,7 +526,7 @@ export class TriagemChatComponent implements AfterViewChecked {
         if (this.saving()) return;
         const d = this.draft();
         if (!d.titulo || !d.descricao || !d.setor || !d.responsavel || !d.prioridade) {
-            await this.agentSay('Ainda faltam informaÃ§Ãµes para criar a demanda.');
+            await this.agentSay('Ainda faltam informações para criar a demanda.');
             return;
         }
         this.saving.set(true);
@@ -540,18 +540,18 @@ export class TriagemChatComponent implements AfterViewChecked {
                 status: DemandStatus.PENDENTE,
             });
             this.step.set('criada');
-            await this.agentSay(`Demanda criada com sucesso!\n\nVocÃª serÃ¡ redirecionado em instantes.`);
+            await this.agentSay(`Demanda criada com sucesso!\n\nVocê será redirecionado em instantes.`);
             toast.success('Demanda criada!');
             this.created.emit(nova);
         } catch (e: any) {
-            await this.agentSay(`NÃ£o consegui criar a demanda: ${e?.message ?? 'erro desconhecido'}.`);
+            await this.agentSay(`Não consegui criar a demanda: ${e?.message ?? 'erro desconhecido'}.`);
             toast.error('Erro ao criar demanda', e?.message);
         } finally {
             this.saving.set(false);
         }
     }
 
-    // ---- HeurÃ­sticas de extraÃ§Ã£o ----
+    // ---- Heurísticas de extração ----
     private gerarTitulo(text: string): string {
         const limpo = text.replace(/\s+/g, ' ').trim();
         const primeira = limpo.split(/[.!?\n]/)[0] ?? limpo;
@@ -565,9 +565,9 @@ export class TriagemChatComponent implements AfterViewChecked {
             Usinagem: ['usinagem', 'torno', 'fresa', 'cnc', 'usinar'],
             Montagem: ['montagem', 'montar', 'linha de montagem', 'assembly'],
             Pintura: ['pintura', 'pintar', 'cabine de pintura', 'tinta'],
-            'ManutenÃ§Ã£o': ['manutenÃ§Ã£o', 'manutencao', 'preventiva', 'corretiva', 'reparo', 'consertar', 'quebrou', 'parou'],
-            Qualidade: ['qualidade', 'inspeÃ§Ã£o', 'inspecao', 'controle de qualidade', 'cq', 'defeito', 'gabarito'],
-            'ExpediÃ§Ã£o': ['expediÃ§Ã£o', 'expedicao', 'envio', 'embarque', 'entrega', 'logÃ­stica'],
+            'Manutenção': ['manutenção', 'manutencao', 'preventiva', 'corretiva', 'reparo', 'consertar', 'quebrou', 'parou'],
+            Qualidade: ['qualidade', 'inspeção', 'inspecao', 'controle de qualidade', 'cq', 'defeito', 'gabarito'],
+            'Expedição': ['expedição', 'expedicao', 'envio', 'embarque', 'entrega', 'logística'],
         };
         for (const [setor, kws] of Object.entries(map)) {
             if (kws.some((kw) => t.includes(kw))) return setor;
@@ -577,11 +577,11 @@ export class TriagemChatComponent implements AfterViewChecked {
 
     private detectPrioridade(text: string): Prioridade | undefined {
         const t = text.toLowerCase();
-        if (/\b(crÃ­tico|critico|emergÃªncia|emergencia|parada total|linha parada|parou)\b/.test(t)) return 5;
-        if (/\b(urgente|urgÃªncia|urgencia|imediato|asap)\b/.test(t)) return 4;
-        if (/\b(alta|importante|prioritÃ¡rio|prioritario)\b/.test(t)) return 3;
-        if (/\b(normal|mÃ©dia|media|padrÃ£o|padrao)\b/.test(t)) return 2;
-        if (/\b(baixa|quando possÃ­vel|quando possivel|sem pressa)\b/.test(t)) return 1;
+        if (/\b(crítico|critico|emergência|emergencia|parada total|linha parada|parou)\b/.test(t)) return 5;
+        if (/\b(urgente|urgência|urgencia|imediato|asap)\b/.test(t)) return 4;
+        if (/\b(alta|importante|prioritário|prioritario)\b/.test(t)) return 3;
+        if (/\b(normal|média|media|padrão|padrao)\b/.test(t)) return 2;
+        if (/\b(baixa|quando possível|quando possivel|sem pressa)\b/.test(t)) return 1;
         return undefined;
     }
 
