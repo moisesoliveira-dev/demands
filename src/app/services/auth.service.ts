@@ -1,33 +1,39 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { User } from '../types';
 
 const STORAGE_KEY = 'auth-storage';
 
-const MOCK_USERS: (User & { senha: string })[] = [
-    { id: '1', nome: 'Administrador', email: 'admin@fabrica.com', senha: '123456', cargo: 'Gerente', setor: 'TI', role: 'admin', ativo: true, criadoEm: new Date().toISOString() },
-    { id: '2', nome: 'Carlos Silva', email: 'supervisor@fabrica.com', senha: '123456', cargo: 'Supervisor', setor: 'Produção', role: 'supervisor', ativo: true, criadoEm: new Date().toISOString() },
-    { id: '3', nome: 'João Operador', email: 'operador@fabrica.com', senha: '123456', cargo: 'Operador', setor: 'Usinagem', role: 'operador', ativo: true, criadoEm: new Date().toISOString() },
-    { id: '4', nome: 'Maria Visualizadora', email: 'visualizador@fabrica.com', senha: '123456', cargo: 'Analista', setor: 'Qualidade', role: 'visualizador', ativo: true, criadoEm: new Date().toISOString() },
-];
-
 interface AuthState {
     user: User | null;
     token: string | null;
+    permissions: string[];
+}
+
+interface LoginResponse {
+    token: string;
+    user: User;
+    permissions: string[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+    private readonly http = inject(HttpClient);
+    private readonly base = `${environment.apiUrl}/auth`;
+
     private readonly _state = signal<AuthState>(this.load());
 
     readonly user = computed(() => this._state().user);
     readonly token = computed(() => this._state().token);
+    readonly permissions = computed(() => this._state().permissions);
     readonly isAuthenticated = computed(() => !!this._state().token);
 
     constructor() {
         effect(() => {
-            const s = this._state();
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this._state()));
             } catch { }
         });
     }
@@ -35,22 +41,46 @@ export class AuthService {
     private load(): AuthState {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) return JSON.parse(raw);
+            if (raw) {
+                const parsed = JSON.parse(raw) as Partial<AuthState>;
+                return {
+                    user: parsed.user ?? null,
+                    token: parsed.token ?? null,
+                    permissions: parsed.permissions ?? [],
+                };
+            }
         } catch { }
-        return { user: null, token: null };
+        return { user: null, token: null, permissions: [] };
     }
 
+    /** Login real contra a API. Mantém o nome `loginMock` por compatibilidade. */
     async loginMock(email: string, senha: string): Promise<{ user: User; token: string }> {
-        await new Promise((r) => setTimeout(r, 800));
-        const u = MOCK_USERS.find((x) => x.email === email && x.senha === senha);
-        if (!u) throw new Error('Credenciais inválidas');
-        const { senha: _, ...user } = u;
-        const token = `mock-token-${user.id}-${Date.now()}`;
-        this._state.set({ user, token });
-        return { user, token };
+        return this.login(email, senha);
+    }
+
+    async login(email: string, senha: string): Promise<{ user: User; token: string }> {
+        const res = await firstValueFrom(
+            this.http.post<LoginResponse>(`${this.base}/login`, { email, senha }),
+        );
+        this._state.set({ user: res.user, token: res.token, permissions: res.permissions });
+        return { user: res.user, token: res.token };
+    }
+
+    async refreshMe(): Promise<void> {
+        if (!this._state().token) return;
+        try {
+            const res = await firstValueFrom(
+                this.http.get<{ user: User; permissions: string[] }>(`${this.base}/me`),
+            );
+            this._state.update((s) => ({ ...s, user: res.user, permissions: res.permissions }));
+        } catch {
+            // 401 already handled by interceptor
+        }
     }
 
     logout() {
-        this._state.set({ user: null, token: null });
+        this._state.set({ user: null, token: null, permissions: [] });
+        // best-effort fire-and-forget
+        firstValueFrom(this.http.post(`${this.base}/logout`, {})).catch(() => undefined);
     }
 }

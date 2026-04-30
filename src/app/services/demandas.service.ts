@@ -1,23 +1,17 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { Demanda, CreateDemandInput, UpdateDemandInput, DemandStatus, DemandFilters } from '../types';
-import { uid } from '../lib/utils';
-
-const seedData: Demanda[] = [
-    { id: 'dem_001', titulo: 'Manutenção preventiva linha 3', descricao: 'Realizar manutenção preventiva na linha de produção 3 incluindo lubrificação de equipamentos e verificação de sensores', prioridade: 4, status: DemandStatus.EM_ANDAMENTO, setor: 'Manutenção', responsavel: 'Carlos Souza', criadoEm: '2025-01-15T08:30:00.000Z', atualizadoEm: '2025-01-15T14:20:00.000Z', ordem: 0 },
-    { id: 'dem_002', titulo: 'Inspeção de qualidade lote 4523', descricao: 'Verificar conformidade do lote 4523 conforme especificações técnicas e normas ISO 9001', prioridade: 5, status: DemandStatus.PENDENTE, setor: 'Qualidade', responsavel: 'Ana Costa', criadoEm: '2025-01-15T09:15:00.000Z', atualizadoEm: '2025-01-15T09:15:00.000Z', ordem: 1 },
-    { id: 'dem_003', titulo: 'Ajuste de máquina de solda', descricao: 'Calibrar máquina de solda automática - apresentando inconsistências nos pontos de solda', prioridade: 3, status: DemandStatus.BLOQUEADO, setor: 'Soldagem', responsavel: 'Pedro Oliveira', criadoEm: '2025-01-14T16:45:00.000Z', atualizadoEm: '2025-01-15T10:30:00.000Z', ordem: 2, motivoBloqueio: 'Aguardando peça de reposição do fornecedor. Previsão de entrega: 3-5 dias úteis.' },
-    { id: 'dem_004', titulo: 'Pintura cabines setor A', descricao: 'Aplicar nova camada de pintura nas peças do lote 4401 conforme especificação de cor RAL 5012', prioridade: 2, status: DemandStatus.EM_ANDAMENTO, setor: 'Pintura', responsavel: 'João Silva', criadoEm: '2025-01-14T11:00:00.000Z', atualizadoEm: '2025-01-15T08:00:00.000Z', ordem: 3 },
-    { id: 'dem_005', titulo: 'Separação pedido cliente Acme Corp', descricao: 'Separar e embalar pedido 8845 para expedição até 17/01 - inclui 240 unidades modelo X45', prioridade: 4, status: DemandStatus.PENDENTE, setor: 'Expedição', responsavel: 'Maria Santos', criadoEm: '2025-01-15T07:20:00.000Z', atualizadoEm: '2025-01-15T07:20:00.000Z', ordem: 4 },
-    { id: 'dem_006', titulo: 'Montagem conjunto hidráulico', descricao: 'Montar 50 conjuntos hidráulicos modelo HX-200 conforme desenho técnico DT-8842', prioridade: 3, status: DemandStatus.CONCLUIDO, setor: 'Montagem', responsavel: 'Pedro Oliveira', criadoEm: '2025-01-13T13:30:00.000Z', atualizadoEm: '2025-01-14T17:45:00.000Z', ordem: 5 },
-    { id: 'dem_007', titulo: 'Reposição de ferramentas desgastadas', descricao: 'Substituir ferramentas de corte e brocas desgastadas nas máquinas CNC 1, 3 e 5', prioridade: 2, status: DemandStatus.CONCLUIDO, setor: 'Manutenção', responsavel: 'Carlos Souza', criadoEm: '2025-01-12T09:00:00.000Z', atualizadoEm: '2025-01-13T11:30:00.000Z', ordem: 6 },
-    { id: 'dem_008', titulo: 'Treinamento nova prensa hidráulica', descricao: 'Realizar treinamento da equipe de montagem para operação da nova prensa hidráulica de 200 toneladas', prioridade: 1, status: DemandStatus.PENDENTE, setor: 'Montagem', responsavel: 'João Silva', criadoEm: '2025-01-15T10:00:00.000Z', atualizadoEm: '2025-01-15T10:00:00.000Z', ordem: 7 },
-];
-
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
+import {
+    Demanda, CreateDemandInput, UpdateDemandInput, DemandStatus, DemandFilters, HistoricoAuditoria,
+} from '../types';
 
 @Injectable({ providedIn: 'root' })
 export class DemandasService {
-    private readonly _demandas = signal<Demanda[]>([...seedData]);
+    private readonly http = inject(HttpClient);
+    private readonly base = `${environment.apiUrl}/demandas`;
+
+    private readonly _demandas = signal<Demanda[]>([]);
     private readonly _loading = signal(false);
     private readonly _filtros = signal<DemandFilters>({});
 
@@ -49,43 +43,47 @@ export class DemandasService {
 
     async carregar(): Promise<Demanda[]> {
         this._loading.set(true);
-        await delay(300);
-        this._loading.set(false);
-        return this._demandas();
+        try {
+            const f = this._filtros();
+            let params = new HttpParams();
+            if (f.status?.length) params = params.set('status', f.status.join(','));
+            if (f.prioridade?.length) params = params.set('prioridade', f.prioridade.join(','));
+            if (f.setor?.length) params = params.set('setor', f.setor.join(','));
+            if (f.responsavel?.length) params = params.set('responsavel', f.responsavel.join(','));
+            if (f.dataInicio) params = params.set('dataInicio', f.dataInicio);
+            if (f.dataFim) params = params.set('dataFim', f.dataFim);
+            if (f.busca) params = params.set('busca', f.busca);
+
+            const list = await firstValueFrom(this.http.get<Demanda[]>(this.base, { params }));
+            this._demandas.set(list);
+            return list;
+        } finally {
+            this._loading.set(false);
+        }
     }
 
     async criar(input: CreateDemandInput): Promise<Demanda> {
-        await delay(400);
-        const nova: Demanda = {
-            ...input,
-            id: uid('dem'),
-            criadoEm: new Date().toISOString(),
-            atualizadoEm: new Date().toISOString(),
-            ordem: this._demandas().length,
-        };
+        const nova = await firstValueFrom(this.http.post<Demanda>(this.base, input));
         this._demandas.update((arr) => [...arr, nova]);
         return nova;
     }
 
     async atualizar(id: string, input: UpdateDemandInput): Promise<Demanda | undefined> {
-        await delay(300);
-        let updated: Demanda | undefined;
-        this._demandas.update((arr) =>
-            arr.map((d) => {
-                if (d.id !== id) return d;
-                updated = { ...d, ...input, atualizadoEm: new Date().toISOString() };
-                return updated;
-            })
-        );
+        const updated = await firstValueFrom(this.http.patch<Demanda>(`${this.base}/${id}`, input));
+        this._demandas.update((arr) => arr.map((d) => (d.id === id ? updated : d)));
         return updated;
     }
 
-    async atualizarStatus(id: string, status: DemandStatus, motivo?: string) {
-        return this.atualizar(id, { status, ...(motivo ? { motivoBloqueio: motivo } : {}) });
+    async atualizarStatus(id: string, status: DemandStatus, motivo?: string): Promise<Demanda | undefined> {
+        const updated = await firstValueFrom(
+            this.http.patch<Demanda>(`${this.base}/${id}/status`, { status, motivo }),
+        );
+        this._demandas.update((arr) => arr.map((d) => (d.id === id ? updated : d)));
+        return updated;
     }
 
     async reordenar(ids: string[]): Promise<void> {
-        await delay(150);
+        await firstValueFrom(this.http.put<{ ok: boolean }>(`${this.base}/reordenar`, { ids }));
         this._demandas.update((arr) => {
             const map = new Map(arr.map((d) => [d.id, d]));
             ids.forEach((id, i) => {
@@ -97,10 +95,23 @@ export class DemandasService {
     }
 
     async deletar(id: string): Promise<void> {
-        await delay(300);
+        await firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
         this._demandas.update((arr) => arr.filter((d) => d.id !== id));
     }
 
+    async fetchById(id: string): Promise<Demanda | undefined> {
+        try {
+            return await firstValueFrom(this.http.get<Demanda>(`${this.base}/${id}`));
+        } catch {
+            return undefined;
+        }
+    }
+
+    async historico(id: string): Promise<HistoricoAuditoria[]> {
+        return firstValueFrom(this.http.get<HistoricoAuditoria[]>(`${this.base}/${id}/historico`));
+    }
+
+    /** Lookup sincrono no cache local. Para fetch remoto use fetchById. */
     byId(id: string): Demanda | undefined {
         return this._demandas().find((d) => d.id === id);
     }
