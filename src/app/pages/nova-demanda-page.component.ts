@@ -1,7 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Plus, MessageSquare, CheckCircle2, Trash2, Bot, Menu, X } from 'lucide-angular';
+import { LucideAngularModule, Plus, MessageSquare, CheckCircle2, Trash2, PanelLeft, Sparkles } from 'lucide-angular';
 import { isToday, isYesterday } from 'date-fns';
 import { TriagemChatComponent } from '../components/demandas/triagem-chat.component';
 import { TriagemSessionService, ChatSession } from '../services/triagem-session.service';
@@ -16,103 +16,103 @@ interface SessionGroup {
   standalone: true,
   imports: [CommonModule, LucideAngularModule, TriagemChatComponent],
   template: `
-    <div class="flex h-[calc(100vh-7rem)] border border-slate-200 rounded-lg shadow-sm overflow-hidden bg-white">
+    <div class="-m-6 flex bg-slate-950" style="height: calc(100vh - 56px)">
 
-      <!-- Sessions sidebar -->
-      @if (sidebarOpen()) {
-        <div class="w-60 flex flex-col border-r bg-slate-50 shrink-0 overflow-hidden">
-          <!-- Header -->
-          <div class="p-3 border-b space-y-2 shrink-0">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Triagens</span>
-              <button type="button" (click)="sidebarOpen.set(false)"
-                class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-                <lucide-angular [img]="X" size="14" />
-              </button>
-            </div>
-            <button type="button" (click)="newSession()"
-              class="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors">
-              <lucide-angular [img]="Plus" size="15" />
-              Nova triagem
-            </button>
+      <!-- Dark sidebar -->
+      <div [class]="'flex flex-col shrink-0 bg-slate-950 transition-all duration-200 overflow-hidden ' + (sidebarOpen() ? 'w-64' : 'w-0')">
+        <!-- Brand header -->
+        <div class="px-4 pt-5 pb-3 flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center">
+            <lucide-angular [img]="Sparkles" size="14" class="text-white" />
           </div>
-
-          <!-- Sessions list -->
-          <div class="flex-1 overflow-y-auto py-2">
-            @for (group of sessionGroups(); track group.label) {
-              <div class="px-2 mb-1">
-                <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">{{ group.label }}</p>
-                @for (session of group.sessions; track session.id) {
-                  <div [class]="'group flex items-start gap-2 px-2 py-2 rounded-lg cursor-pointer mb-0.5 transition-colors ' + itemClass(session.id)"
-                    (click)="selectSession(session.id)">
-                    <lucide-angular [img]="session.status === 'criada' ? CheckCircle2 : MessageSquare"
-                      size="14"
-                      [class]="session.status === 'criada' ? 'mt-0.5 shrink-0 text-emerald-500' : 'mt-0.5 shrink-0 text-slate-400'" />
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs font-medium text-slate-800 truncate leading-tight">{{ session.titulo }}</p>
-                      <p [class]="session.status === 'criada' ? 'text-[10px] text-emerald-600' : 'text-[10px] text-slate-400'">
-                        {{ session.status === 'criada' ? 'Criada' : 'Em andamento' }}
-                      </p>
-                    </div>
-                    <button type="button" (click)="deleteSession($event, session.id)"
-                      class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 hover:text-red-500 text-slate-400 transition-all">
-                      <lucide-angular [img]="Trash2" size="13" />
-                    </button>
-                  </div>
-                }
-              </div>
-            }
-            @if (!sessionService.sessions().length) {
-              <p class="text-xs text-slate-400 text-center px-4 py-8 leading-relaxed">Nenhuma triagem iniciada.</p>
-            }
-          </div>
+          <span class="text-sm font-semibold text-white">Triagem IA</span>
         </div>
-      }
 
-      <!-- Collapsed sidebar toggle -->
-      @if (!sidebarOpen()) {
-        <div class="flex flex-col items-center py-3 px-1 border-r bg-slate-50 gap-2 shrink-0">
-          <button type="button" (click)="sidebarOpen.set(true)"
-            class="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" title="Abrir triagens">
-            <lucide-angular [img]="Menu" size="16" />
-          </button>
+        <!-- New session button -->
+        <div class="px-3 pb-3">
           <button type="button" (click)="newSession()"
-            class="p-1.5 rounded text-emerald-600 hover:bg-emerald-50 transition-colors" title="Nova triagem">
-            <lucide-angular [img]="Plus" size="16" />
+            class="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/80 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+            <lucide-angular [img]="Plus" size="15" />
+            Nova triagem
           </button>
         </div>
-      }
 
-      <!-- Chat area -->
-      <div class="flex-1 min-w-0 flex flex-col">
-        @if (activeId()) {
-          <triagem-chat [sessionId]="activeId()" (created)="onCreated()" />
-        } @else {
-          <div class="flex-1 flex items-center justify-center text-slate-400">
-            <div class="text-center space-y-3">
-              <lucide-angular [img]="Bot" size="40" class="mx-auto opacity-30" />
-              <p class="text-sm">Selecione uma triagem ou crie uma nova</p>
-              <button type="button" (click)="newSession()"
-                class="text-sm text-emerald-600 hover:text-emerald-700 underline underline-offset-2">
-                Iniciar nova triagem
-              </button>
+        <!-- Sessions list -->
+        <div class="flex-1 overflow-y-auto px-2 pb-4">
+          @for (group of sessionGroups(); track group.label) {
+            <div class="mb-4">
+              <p class="text-[10px] font-semibold text-white/30 uppercase tracking-wider px-2 mb-1">{{ group.label }}</p>
+              @for (session of group.sessions; track session.id) {
+                <div [class]="'group flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer mb-0.5 transition-colors ' + sessionItemClass(session.id)"
+                  (click)="selectSession(session.id)">
+                  <lucide-angular [img]="session.status === 'criada' ? CheckCircle2 : MessageSquare"
+                    size="14" class="shrink-0 opacity-60" />
+                  <span class="flex-1 text-xs truncate">{{ session.titulo }}</span>
+                  <button type="button" (click)="deleteSession($event, session.id)"
+                    class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all">
+                    <lucide-angular [img]="Trash2" size="13" />
+                  </button>
+                </div>
+              }
             </div>
-          </div>
-        }
+          }
+          @if (!sessionService.sessions().length) {
+            <p class="text-xs text-white/30 text-center px-4 py-6">Nenhuma triagem iniciada.</p>
+          }
+        </div>
+      </div>
+
+      <!-- Main area -->
+      <div class="flex-1 min-w-0 flex flex-col bg-white overflow-hidden">
+        <!-- Topbar -->
+        <div class="flex items-center gap-3 px-4 h-14 border-b bg-white shrink-0">
+          <button type="button" (click)="sidebarOpen.set(!sidebarOpen())"
+            class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+            <lucide-angular [img]="PanelLeft" size="18" />
+          </button>
+          @if (activeSession(); as session) {
+            <div class="flex-1 min-w-0 flex items-center gap-2">
+              <span class="text-sm font-medium text-slate-800 truncate">{{ session.titulo }}</span>
+              @if (session.status === 'criada') {
+                <span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <lucide-angular [img]="CheckCircle2" size="11" />
+                  Criada
+                </span>
+              } @else {
+                <span class="shrink-0 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                  Em andamento
+                </span>
+              }
+            </div>
+          } @else {
+            <span class="flex-1 text-sm text-slate-400">Nova triagem</span>
+          }
+        </div>
+
+        <!-- Chat -->
+        <div class="flex-1 min-h-0">
+          <triagem-chat #chat [sessionId]="activeId()" (created)="onCreated()" />
+        </div>
       </div>
     </div>
   `,
 })
 export class NovaDemandaPageComponent {
+  @ViewChild('chat') chatRef?: TriagemChatComponent;
+
   router = inject(Router);
   sessionService = inject(TriagemSessionService);
 
   readonly Plus = Plus; readonly MessageSquare = MessageSquare;
   readonly CheckCircle2 = CheckCircle2; readonly Trash2 = Trash2;
-  readonly Bot = Bot; readonly Menu = Menu; readonly X = X;
+  readonly PanelLeft = PanelLeft; readonly Sparkles = Sparkles;
 
   sidebarOpen = signal(true);
   activeId = signal<string | null>(null);
+
+  activeSession = computed(() =>
+    this.sessionService.sessions().find(s => s.id === this.activeId()) ?? null
+  );
 
   sessionGroups = computed<SessionGroup[]>(() => {
     const sessions = this.sessionService.sessions();
@@ -142,16 +142,15 @@ export class NovaDemandaPageComponent {
     }
   }
 
-  itemClass(id: string) {
+  sessionItemClass(id: string) {
     return this.activeId() === id
-      ? 'bg-slate-200 text-slate-900'
-      : 'hover:bg-slate-100 text-slate-700';
+      ? 'bg-white/15 text-white'
+      : 'hover:bg-white/10 text-white/70';
   }
 
   newSession() {
     const s = this.sessionService.createNew();
     this.activeId.set(s.id);
-    this.sidebarOpen.set(true);
   }
 
   selectSession(id: string) {
