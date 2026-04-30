@@ -1,12 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { NgxSonnerToaster } from 'ngx-sonner';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [RouterOutlet, NgxSonnerToaster],
+  template: `
+    <router-outlet />
+    <ngx-sonner-toaster position="top-right" richColors />
+  `,
+  styleUrl: './app.css',
 })
-export class App {
-  protected readonly title = signal('demands');
-}
+export class App { }
