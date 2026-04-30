@@ -31,14 +31,26 @@ export interface HistoricoAuditoria {
     timestamp: string;
 }
 
+export type NotificacaoTipo =
+    | 'demanda_criada'
+    | 'demanda_atualizada'
+    | 'demanda_bloqueada'
+    | 'demanda_concluida'
+    | 'demanda_atribuida'
+    | 'sistema'
+    | 'alerta';
+
 export interface Notificacao {
     id: string;
-    demandaId: string;
+    tipo: NotificacaoTipo;
     titulo: string;
     mensagem: string;
-    prioridade: Prioridade;
     lida: boolean;
     timestamp: string;
+    /** ID da demanda relacionada (para navegação automática ao clicar) */
+    demandaId?: string;
+    /** Rota para navegar ao clicar (ex: /demandas/123) */
+    acao?: string;
 }
 
 export interface DemandFilters {

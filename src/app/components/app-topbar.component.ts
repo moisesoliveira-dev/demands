@@ -1,21 +1,21 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LucideAngularModule, Bell, Menu, User, Lock, LogOut, Sun, Moon } from 'lucide-angular';
+import { LucideAngularModule, Menu, User, Lock, LogOut, Sun, Moon } from 'lucide-angular';
 import { UIService } from '../services/ui.service';
 import { AuthService } from '../services/auth.service';
-import { NotificacoesService } from '../services/notificacoes.service';
 import { UiAvatar } from './ui/avatar.component';
 import { UiBadge } from './ui/badge.component';
 import { UiButton } from './ui/button.component';
 import { UiBreadcrumb, BreadcrumbItem } from './ui/breadcrumb.component';
 import { UiDropdown, UiDropdownItem, UiDropdownSeparator, UiDropdownLabel } from './ui/dropdown.component';
+import { NotificacoesBellComponent } from './demandas/notificacoes-bell.component';
 import { cn } from '../lib/utils';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, UiAvatar, UiBadge, UiButton, UiBreadcrumb, UiDropdown, UiDropdownItem, UiDropdownSeparator, UiDropdownLabel],
+  imports: [CommonModule, LucideAngularModule, UiAvatar, UiBadge, UiButton, UiBreadcrumb, UiDropdown, UiDropdownItem, UiDropdownSeparator, UiDropdownLabel, NotificacoesBellComponent],
   template: `
     <header [class]="headerClass()">
       <div class="flex h-full items-center justify-between px-4 gap-4">
@@ -43,14 +43,7 @@ import { cn } from '../lib/utils';
             <lucide-angular [img]="ui.theme() === 'dark' ? Sun : Moon" size="19" />
           </ui-button>
 
-          <ui-button variant="ghost" size="icon" class="relative">
-            <lucide-angular [img]="Bell" size="20" />
-            @if (notificacoes.contadorNaoLidas() > 0) {
-              <ui-badge class="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs font-mono">
-                {{ notificacoes.contadorNaoLidas() > 9 ? '9+' : notificacoes.contadorNaoLidas() }}
-              </ui-badge>
-            }
-          </ui-button>
+          <app-notificacoes-bell />
 
           @if (auth.user(); as user) {
             <ui-dropdown align="end" contentClass="w-56">
@@ -87,10 +80,9 @@ export class AppTopbarComponent {
 
   readonly ui = inject(UIService);
   readonly auth = inject(AuthService);
-  readonly notificacoes = inject(NotificacoesService);
   private readonly router = inject(Router);
 
-  readonly Menu = Menu; readonly Bell = Bell; readonly User = User; readonly Lock = Lock; readonly LogOut = LogOut;
+  readonly Menu = Menu; readonly User = User; readonly Lock = Lock; readonly LogOut = LogOut;
   readonly Sun = Sun; readonly Moon = Moon;
 
   headerClass = computed(() =>
