@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: string; bg: string; }> = {
-  1: { label: 'Baixa', color: 'text-slate-700', bg: 'bg-slate-100 border-slate-300' },
+  1: { label: 'Baixa', color: 'text-muted-foreground', bg: 'bg-muted border-border' },
   2: { label: 'Normal', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-300' },
   3: { label: 'Alta', color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-300' },
   4: { label: 'Urgente', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-300' },
@@ -22,15 +22,15 @@ export const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: strin
   imports: [CommonModule, LucideAngularModule, UiCard, UiBadge],
   host: { class: 'block' },
   template: `
-    <ui-card class="cursor-pointer hover:shadow-md transition-shadow p-3 space-y-2 bg-white" (click)="open()">
+    <ui-card class="cursor-pointer hover:shadow-md transition-shadow p-3 space-y-2 bg-card" (click)="open()">
       <div class="flex items-start justify-between gap-2">
-        <h4 class="text-sm font-semibold text-slate-900 line-clamp-2 flex-1">{{ demanda().titulo }}</h4>
+        <h4 class="text-sm font-semibold text-foreground line-clamp-2 flex-1">{{ demanda().titulo }}</h4>
         <ui-badge variant="outline" [class]="'shrink-0 text-xs ' + prioridade().bg + ' ' + prioridade().color">
           {{ prioridade().label }}
         </ui-badge>
       </div>
-      <p class="text-xs text-slate-600 line-clamp-2">{{ demanda().descricao }}</p>
-      <div class="flex items-center gap-3 text-xs text-slate-500 pt-1 border-t border-slate-100 flex-wrap">
+      <p class="text-xs text-muted-foreground line-clamp-2">{{ demanda().descricao }}</p>
+      <div class="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t border-border flex-wrap">
         <span class="flex items-center gap-1"><lucide-angular [img]="Factory" size="12" />{{ demanda().setor }}</span>
         <span class="flex items-center gap-1"><lucide-angular [img]="User" size="12" />{{ demanda().responsavel }}</span>
         <span class="flex items-center gap-1 ml-auto"><lucide-angular [img]="Clock" size="12" />{{ tempo() }}</span>
