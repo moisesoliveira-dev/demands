@@ -186,7 +186,7 @@ export class NotificacoesBellComponent implements OnDestroy {
     }
 
     async abrirNotificacao(n: Notificacao) {
-        if (!n.lida) await this.svc.marcarLida(n.id);
+        await this.svc.removerPorId(n.id);
         // Notificações relacionadas a uma demanda → vão para o kanban com o item destacado.
         if (n.demandaId) {
             this.router.navigate(['/demandas'], {
@@ -199,6 +199,7 @@ export class NotificacoesBellComponent implements OnDestroy {
             this.router.navigateByUrl(n.acao);
             this.fechar();
         }
+        this.fechar();
     }
 
     // ── Helpers de estilo ────────────────────────────────────────────────────
