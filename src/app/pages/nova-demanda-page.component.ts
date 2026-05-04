@@ -367,15 +367,28 @@ export class NovaDemandaPageComponent {
   });
 
   constructor() {
+    if (this.setoresService.setores().length === 0) this.setoresService.listar();
+    if (this.usersService.users().length === 0) this.usersService.listar();
+    void this._init();
+  }
+
+  private async _init() {
+    try {
+      await this.sessionService.loadAll();
+    } catch {
+      // segue para criar nova mesmo em falha
+    }
     const sessions = this.sessionService.sessions();
     if (sessions.length > 0) {
       this.activeId.set(sessions[0].id);
     } else {
-      const s = this.sessionService.createNew();
-      this.activeId.set(s.id);
+      try {
+        const s = await this.sessionService.createNew();
+        this.activeId.set(s.id);
+      } catch {
+        // sem sessão ativa — chat ficará vazio
+      }
     }
-    if (this.setoresService.setores().length === 0) this.setoresService.listar();
-    if (this.usersService.users().length === 0) this.usersService.listar();
   }
 
   sessionItemClass(id: string) {
@@ -422,24 +435,14 @@ export class NovaDemandaPageComponent {
     const value = this.editValue;
     const session = this.activeSession();
     if (!session) return;
-    const updated: DraftDemanda = { ...session.draft, [field]: value || undefined };
-    this.sessionService.upsert({
-      ...session,
-      draft: updated,
-      titulo: field === 'titulo' && value ? value : session.titulo,
-      atualizadaEm: new Date().toISOString(),
-    });
+    this.sessionService.patchLocalDraft(session.id, { [field]: value || undefined } as DraftDemanda);
     this.cancelEdit();
   }
 
   saveFieldPrio(v: Prioridade) {
     const session = this.activeSession();
     if (!session) return;
-    this.sessionService.upsert({
-      ...session,
-      draft: { ...session.draft, prioridade: v },
-      atualizadaEm: new Date().toISOString(),
-    });
+    this.sessionService.patchLocalDraft(session.id, { prioridade: v });
     this.cancelEdit();
   }
 
@@ -454,9 +457,13 @@ export class NovaDemandaPageComponent {
     return c ? `${c.bg} ${c.color}` : 'border-slate-200 text-slate-500';
   }
 
-  newSession() {
-    const s = this.sessionService.createNew();
-    this.activeId.set(s.id);
+  async newSession() {
+    try {
+      const s = await this.sessionService.createNew();
+      this.activeId.set(s.id);
+    } catch (e: any) {
+      // toast já é emitido em outros pontos; aqui silenciamos
+    }
   }
 
   selectSession(id: string) {
@@ -464,16 +471,22 @@ export class NovaDemandaPageComponent {
     this.activeId.set(id);
   }
 
-  deleteSession(event: MouseEvent, id: string) {
+  async deleteSession(event: MouseEvent, id: string) {
     event.stopPropagation();
-    this.sessionService.remove(id);
+    try {
+      await this.sessionService.remove(id);
+    } catch {
+      return;
+    }
     if (this.activeId() === id) {
       const remaining = this.sessionService.sessions();
       if (remaining.length > 0) {
         this.activeId.set(remaining[0].id);
       } else {
-        const s = this.sessionService.createNew();
-        this.activeId.set(s.id);
+        try {
+          const s = await this.sessionService.createNew();
+          this.activeId.set(s.id);
+        } catch { /* ignora */ }
       }
     }
   }

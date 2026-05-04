@@ -1,15 +1,12 @@
-import { AfterViewChecked, Component, ElementRef, EventEmitter, OnInit, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, EventEmitter, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil } from 'lucide-angular';
 import { UiButton } from '../ui/button.component';
-import { Demanda, DemandStatus, Prioridade } from '../../types';
-import { DemandasService } from '../../services/demandas.service';
-import { SetoresService } from '../../services/setores.service';
-import { UsersService } from '../../services/users.service';
+import { Demanda, Prioridade } from '../../types';
 import { toast } from '../../lib/toast';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
-import { TriagemSessionService, Step, DraftDemanda } from '../../services/triagem-session.service';
+import { TriagemSessionService, Step, DraftDemanda, StoredMessage } from '../../services/triagem-session.service';
 
 interface ChatMessage {
   id: string;
@@ -157,10 +154,10 @@ const STARTER_SUGGESTIONS = [
             }
 
             <!-- Confirmation buttons -->
-            @if (step() === 'confirmacao' && !typing()) {
+            @if (readyToCreate() && step() !== 'criada' && !typing()) {
               <div class="flex gap-3 pl-11">
-                <ui-button type="button" variant="outline" size="sm" (click)="sendUser('Editar')" [disabled]="saving()">
-                  Editar dados
+                <ui-button type="button" variant="outline" size="sm" (click)="sendUser('Quero ajustar algum campo antes de criar.')" [disabled]="saving()">
+                  Ajustar dados
                 </ui-button>
                 <ui-button type="button" size="sm" (click)="confirmar()" [disabled]="saving()">
                   @if (saving()) {
@@ -211,7 +208,7 @@ const STARTER_SUGGESTIONS = [
     </div>
   `,
 })
-export class TriagemChatComponent implements AfterViewChecked, OnInit {
+export class TriagemChatComponent implements AfterViewChecked {
   @Output() created = new EventEmitter<Demanda>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -225,25 +222,19 @@ export class TriagemChatComponent implements AfterViewChecked, OnInit {
   sessionId = input<string | null>(null);
   readonly starterSuggestions = STARTER_SUGGESTIONS;
 
-  private demandasService = inject(DemandasService);
   private sessionService = inject(TriagemSessionService);
-  private setoresService = inject(SetoresService);
-  private usersService = inject(UsersService);
-
-  private setores = computed(() =>
-    this.setoresService.setores().filter(s => s.ativo).map(s => s.nome)
-  );
-  private responsaveis = computed(() =>
-    this.usersService.users().filter(u => u.ativo).map(u => u.nome)
-  );
 
   messages = signal<ChatMessage[]>([]);
   step = signal<Step>('descricao');
   typing = signal(false);
   saving = signal(false);
-  draft = signal<DraftDemanda>({});
+  readyToCreate = signal(false);
   copiedId = signal<string | null>(null);
   draftInput = '';
+
+  /** Snapshot do draft retornado pelo agente (somente leitura aqui — a edição
+   *  manual ocorre no painel de prévia da página pai). */
+  private agentDraft = signal<DraftDemanda>({});
 
   private shouldScroll = false;
   private currentSessionId: string | null = null;
@@ -255,11 +246,6 @@ export class TriagemChatComponent implements AfterViewChecked, OnInit {
     });
   }
 
-  ngOnInit(): void {
-    if (this.setoresService.setores().length === 0) this.setoresService.listar();
-    if (this.usersService.users().length === 0) this.usersService.listar();
-  }
-
   ngAfterViewChecked() {
     if (this.shouldScroll && this.scrollArea) {
       this.scrollArea.nativeElement.scrollTop = this.scrollArea.nativeElement.scrollHeight;
@@ -267,56 +253,42 @@ export class TriagemChatComponent implements AfterViewChecked, OnInit {
     }
   }
 
-  private _loadSession(id: string | null): void {
+  private async _loadSession(id: string | null): Promise<void> {
     this.currentSessionId = id;
     this.typing.set(false);
     this.saving.set(false);
+    this.readyToCreate.set(false);
     this.draftInput = '';
     if (!id) {
       this.messages.set([]);
       this.step.set('descricao');
-      this.draft.set({});
+      this.agentDraft.set({});
       return;
     }
-    const stored = this.sessionService.get(id);
-    if (stored && stored.messages.length > 0) {
-      this.messages.set(stored.messages.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })));
-      this.step.set(stored.step);
-      this.draft.set(stored.draft);
-    } else {
-      this.messages.set([]);
-      this.step.set('descricao');
-      this.draft.set({});
+    // Mostra estado vazio enquanto busca
+    this.messages.set([]);
+    try {
+      const session = await this.sessionService.get(id);
+      // Pode ter havido troca de sessão durante o fetch
+      if (this.currentSessionId !== id) return;
+      this.messages.set(session.messages.map(this._toChatMessage));
+      this.step.set(session.step);
+      this.agentDraft.set(session.draft);
+      this.readyToCreate.set(session.step === 'confirmacao');
+      this.shouldScroll = true;
+    } catch (e: any) {
+      toast.error('Falha ao carregar conversa', e?.message);
     }
   }
 
-  private persist(): void {
-    const id = this.currentSessionId;
-    if (!id) return;
-    const current = this.sessionService.get(id);
-    if (!current) return;
-    const d = this.draft();
-    this.sessionService.upsert({
-      ...current,
-      titulo: d.titulo ?? current.titulo,
-      messages: this.messages().map((m) => ({ ...m, timestamp: m.timestamp.toISOString() })),
-      step: this.step(),
-      draft: d,
-      atualizadaEm: new Date().toISOString(),
-      status: this.step() === 'criada' ? 'criada' : 'andamento',
-    });
-  }
-
-  statusLabel() {
-    switch (this.step()) {
-      case 'descricao': return 'Aguardando descrição';
-      case 'setor': return 'Identificando setor';
-      case 'responsavel': return 'Definindo responsável';
-      case 'prioridade': return 'Avaliando prioridade';
-      case 'confirmacao': return 'Aguardando confirmação';
-      case 'criada': return 'Demanda criada';
-    }
-  }
+  private _toChatMessage = (m: StoredMessage): ChatMessage => ({
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    timestamp: new Date(m.timestamp),
+    suggestions: m.suggestions,
+    summary: m.summary,
+  });
 
   placeholder() {
     if (this.step() === 'criada') return 'Triagem concluída. Inicie uma nova ou selecione outra sessão.';
@@ -387,222 +359,100 @@ export class TriagemChatComponent implements AfterViewChecked, OnInit {
     if (this.inputEl) this.inputEl.nativeElement.style.height = 'auto';
   }
 
-  sendUser(text: string) {
-    this.pushMessage({ role: 'user', content: text });
-    this.processUser(text);
-  }
+  /** Envia a mensagem ao backend e processa a resposta do agente. */
+  async sendUser(text: string): Promise<void> {
+    const sid = this.currentSessionId;
+    if (!sid) return;
 
-  private pushMessage(partial: Omit<ChatMessage, 'id' | 'timestamp'>) {
-    this.messages.update((m) => [...m, { ...partial, id: crypto.randomUUID(), timestamp: new Date() }]);
-    this.shouldScroll = true;
-    this.persist();
-  }
+    // 1) Renderiza imediatamente a mensagem do usuário (otimista)
+    this._appendMessage({ role: 'user', content: text });
 
-  private async agentSay(content: string, opts?: { suggestions?: string[]; summary?: Partial<Demanda>; delay?: number }) {
-    const atSession = this.currentSessionId;
     this.typing.set(true);
     this.shouldScroll = true;
-    await this.sleep(opts?.delay ?? 700);
-    if (this.currentSessionId !== atSession) return;
-    this.typing.set(false);
-    this.pushMessage({ role: 'agent', content, suggestions: opts?.suggestions, summary: opts?.summary });
+
+    try {
+      const reply = await this.sessionService.sendMessage(sid, text);
+
+      // Sessão pode ter trocado durante a request
+      if (this.currentSessionId !== sid) return;
+
+      this.step.set(reply.step);
+      this.agentDraft.set(reply.draft);
+      this.readyToCreate.set(reply.ready_to_create || reply.step === 'confirmacao');
+
+      const summary =
+        reply.step === 'confirmacao' && reply.draft.titulo
+          ? {
+            titulo: reply.draft.titulo,
+            setor: reply.draft.setor,
+            responsavel: reply.draft.responsavel,
+            prioridade: reply.draft.prioridade,
+          }
+          : undefined;
+
+      this._appendMessage({
+        role: 'agent',
+        content: reply.reply,
+        suggestions: reply.suggestions?.length ? reply.suggestions : undefined,
+        summary,
+      });
+    } catch (e: any) {
+      this._appendMessage({
+        role: 'agent',
+        content: `Não consegui processar agora: ${e?.message ?? 'erro de comunicação'}.`,
+      });
+      toast.error('Falha na triagem', e?.message);
+    } finally {
+      this.typing.set(false);
+    }
   }
 
-  private sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+  /** Confirma e cria a demanda. Aplica eventuais edições manuais do painel de prévia. */
+  async confirmar(): Promise<void> {
+    const sid = this.currentSessionId;
+    if (!sid || this.saving()) return;
 
-  reset() {
-    const id = this.currentSessionId;
-    if (id) {
-      const current = this.sessionService.get(id);
-      if (current) {
-        this.sessionService.upsert({
-          ...current,
-          messages: [], step: 'descricao', draft: {},
-          titulo: 'Nova triagem', atualizadaEm: new Date().toISOString(), status: 'andamento',
-        });
-      }
-    }
-    this.messages.set([]);
-    this.step.set('descricao');
-    this.draft.set({});
-    this.draftInput = '';
-    this.saving.set(false);
-  }
+    // Lê o draft atual do cache (pode ter sido editado manualmente no painel)
+    const cached = this.sessionService.sessions().find(s => s.id === sid);
+    const overrides: DraftDemanda = cached?.draft ?? this.agentDraft();
 
-  private async processUser(text: string) {
-    switch (this.step()) {
-      case 'descricao': return this.handleDescricao(text);
-      case 'setor': return this.handleSetor(text);
-      case 'responsavel': return this.handleResponsavel(text);
-      case 'prioridade': return this.handlePrioridade(text);
-      case 'confirmacao': return this.handleConfirmacao(text);
-    }
-  }
-
-  private async handleDescricao(text: string) {
-    if (text.length < 10) {
-      await this.agentSay('Preciso de mais contexto. Pode descrever com mais detalhes o problema ou a tarefa?');
-      return;
-    }
-    const titulo = this.gerarTitulo(text);
-    const setorDetectado = this.detectSetor(text);
-    const prioridadeDetectada = this.detectPrioridade(text);
-    this.draft.update((d) => ({ ...d, descricao: text, titulo, setor: setorDetectado, prioridade: prioridadeDetectada }));
-    let resumo = `Entendi. Identifiquei o seguinte:\n\n• Título sugerido: "${titulo}"`;
-    if (setorDetectado) resumo += `\n• Setor: ${setorDetectado}`;
-    if (prioridadeDetectada) resumo += `\n• Prioridade aparente: ${PRIORIDADE_CONFIG[prioridadeDetectada].label}`;
-    await this.agentSay(resumo);
-    await this.askNext();
-  }
-
-  private async handleSetor(text: string) {
-    const setores = this.setores();
-    const match = setores.find((s) => s.toLowerCase() === text.toLowerCase().trim())
-      ?? setores.find((s) => text.toLowerCase().includes(s.toLowerCase()));
-    if (!match) {
-      await this.agentSay('Não reconheci esse setor. Escolha um dos disponíveis:', { suggestions: setores });
-      return;
-    }
-    this.draft.update((d) => ({ ...d, setor: match }));
-    await this.agentSay(`Setor "${match}" registrado.`);
-    await this.askNext();
-  }
-
-  private async handleResponsavel(text: string) {
-    const responsaveis = this.responsaveis();
-    const match = responsaveis.find((r) => r.toLowerCase() === text.toLowerCase().trim())
-      ?? responsaveis.find((r) => text.toLowerCase().includes(r.toLowerCase().split(' ')[0]));
-    if (!match) {
-      await this.agentSay('Não localizei esse responsável. Selecione um da lista:', { suggestions: responsaveis.slice(0, 6) });
-      return;
-    }
-    this.draft.update((d) => ({ ...d, responsavel: match }));
-    await this.agentSay(`${match} ficará responsável.`);
-    await this.askNext();
-  }
-
-  private async handlePrioridade(text: string) {
-    const p = this.detectPrioridade(text) ?? this.parsePrioridadeNumero(text);
-    if (!p) {
-      await this.agentSay('Não entendi a prioridade. Escolha uma:', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
-      return;
-    }
-    this.draft.update((d) => ({ ...d, prioridade: p }));
-    await this.agentSay(`Prioridade ${PRIORIDADE_CONFIG[p].label} definida.`);
-    await this.askNext();
-  }
-
-  private async handleConfirmacao(text: string) {
-    const t = text.toLowerCase().trim();
-    if (['confirmar', 'confirmo', 'sim', 'ok', 'criar', 'pode criar'].some((w) => t.includes(w))) {
-      await this.confirmar();
-      return;
-    }
-    if (t.includes('setor')) { this.step.set('setor'); await this.agentSay('Qual setor correto?', { suggestions: this.setores() }); return; }
-    if (t.includes('respons')) { this.step.set('responsavel'); await this.agentSay('Quem deve ficar responsável?', { suggestions: this.responsaveis().slice(0, 6) }); return; }
-    if (t.includes('priorid')) { this.step.set('prioridade'); await this.agentSay('Qual a nova prioridade?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] }); return; }
-    if (t.includes('descri') || t.includes('título') || t.includes('titulo')) {
-      this.step.set('descricao');
-      this.draft.update((d) => ({ ...d, descricao: undefined, titulo: undefined }));
-      await this.agentSay('Reescreva a descrição da demanda.');
-      return;
-    }
-    if (['editar', 'mudar', 'alterar', 'não', 'nao'].some((w) => t.includes(w))) {
-      await this.agentSay('O que deseja ajustar? Pode dizer "setor", "responsável", "prioridade" ou "descrição".');
-      return;
-    }
-    await this.agentSay('Para confirmar, responda "sim". Para ajustar, diga qual campo (setor, responsável, prioridade ou descrição).');
-  }
-
-  private async askNext() {
-    const d = this.draft();
-    if (!d.setor) {
-      this.step.set('setor');
-      await this.agentSay('Em qual setor essa demanda deve ser executada?', { suggestions: this.setores() });
-      return;
-    }
-    if (!d.responsavel) {
-      this.step.set('responsavel');
-      await this.agentSay(`Quem do setor de ${d.setor} ficará responsável?`, { suggestions: this.responsaveis().slice(0, 6) });
-      return;
-    }
-    if (!d.prioridade) {
-      this.step.set('prioridade');
-      await this.agentSay('Qual a prioridade desta demanda?', { suggestions: ['Baixa', 'Normal', 'Alta', 'Urgente', 'Crítico'] });
-      return;
-    }
-    this.step.set('confirmacao');
-    await this.agentSay('Triagem concluída. Confira o resumo e confirme para criar a demanda:', {
-      summary: { titulo: d.titulo, setor: d.setor, responsavel: d.responsavel, prioridade: d.prioridade },
-    });
-  }
-
-  async confirmar() {
-    if (this.saving()) return;
-    const d = this.draft();
-    if (!d.titulo || !d.descricao || !d.setor || !d.responsavel || !d.prioridade) {
-      await this.agentSay('Ainda faltam informações para criar a demanda.');
-      return;
-    }
     this.saving.set(true);
     try {
-      const nova = await this.demandasService.criar({
-        titulo: d.titulo,
-        descricao: d.descricao,
-        setor: d.setor,
-        responsavel: d.responsavel,
-        prioridade: d.prioridade,
-        status: DemandStatus.PENDENTE,
-      });
+      const nova = await this.sessionService.confirmar(sid, overrides);
       this.step.set('criada');
-      await this.agentSay(`Demanda criada com sucesso!\n\nVocê será redirecionado em instantes.`);
+      this.readyToCreate.set(false);
+      this._appendMessage({
+        role: 'agent',
+        content: 'Demanda criada com sucesso! Você será redirecionado em instantes.',
+      });
       toast.success('Demanda criada!');
       this.created.emit(nova);
     } catch (e: any) {
-      await this.agentSay(`Não consegui criar a demanda: ${e?.message ?? 'erro desconhecido'}.`);
+      this._appendMessage({
+        role: 'agent',
+        content: `Não consegui criar a demanda: ${e?.message ?? 'erro desconhecido'}.`,
+      });
       toast.error('Erro ao criar demanda', e?.message);
     } finally {
       this.saving.set(false);
     }
   }
 
-  // ---- Heurísticas de extração ----
-  private gerarTitulo(text: string): string {
-    const limpo = text.replace(/\s+/g, ' ').trim();
-    const primeira = limpo.split(/[.!?\n]/)[0] ?? limpo;
-    const titulo = primeira.length > 70 ? primeira.slice(0, 67) + '...' : primeira;
-    return titulo.charAt(0).toUpperCase() + titulo.slice(1);
+  /** Limpa a UI local (a sessão server-side permanece). */
+  reset() {
+    this.messages.set([]);
+    this.step.set('descricao');
+    this.agentDraft.set({});
+    this.draftInput = '';
+    this.saving.set(false);
+    this.readyToCreate.set(false);
   }
 
-  private detectSetor(text: string): string | undefined {
-    const t = text.toLowerCase();
-    const map: Record<string, string[]> = {
-      Usinagem: ['usinagem', 'torno', 'fresa', 'cnc', 'usinar'],
-      Montagem: ['montagem', 'montar', 'linha de montagem', 'assembly'],
-      Pintura: ['pintura', 'pintar', 'cabine de pintura', 'tinta'],
-      'Manutenção': ['manutenção', 'manutencao', 'preventiva', 'corretiva', 'reparo', 'consertar', 'quebrou', 'parou'],
-      Qualidade: ['qualidade', 'inspeção', 'inspecao', 'controle de qualidade', 'cq', 'defeito', 'gabarito'],
-      'Expedição': ['expedição', 'expedicao', 'envio', 'embarque', 'entrega', 'logística'],
-    };
-    for (const [setor, kws] of Object.entries(map)) {
-      if (kws.some((kw) => t.includes(kw))) return setor;
-    }
-    return undefined;
-  }
-
-  private detectPrioridade(text: string): Prioridade | undefined {
-    const t = text.toLowerCase();
-    if (/\b(crítico|critico|emergência|emergencia|parada total|linha parada|parou)\b/.test(t)) return 5;
-    if (/\b(urgente|urgência|urgencia|imediato|asap)\b/.test(t)) return 4;
-    if (/\b(alta|importante|prioritário|prioritario)\b/.test(t)) return 3;
-    if (/\b(normal|média|media|padrão|padrao)\b/.test(t)) return 2;
-    if (/\b(baixa|quando possível|quando possivel|sem pressa)\b/.test(t)) return 1;
-    return undefined;
-  }
-
-  private parsePrioridadeNumero(text: string): Prioridade | undefined {
-    const m = text.match(/\b([1-5])\b/);
-    if (m) return Number(m[1]) as Prioridade;
-    return undefined;
+  private _appendMessage(partial: Omit<ChatMessage, 'id' | 'timestamp'>) {
+    this.messages.update((m) => [
+      ...m,
+      { ...partial, id: crypto.randomUUID(), timestamp: new Date() },
+    ]);
+    this.shouldScroll = true;
   }
 }
