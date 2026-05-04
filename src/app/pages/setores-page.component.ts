@@ -52,11 +52,11 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
       <div class="relative w-full sm:w-72">
         <lucide-angular [img]="Search" size="15"
           class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-        <input type="text" [(ngModel)]="searchQ" (ngModelChange)="page.set(1)"
+        <input type="text" [value]="searchQ()" (input)="searchQ.set($any($event.target).value); page.set(1)"
           placeholder="Buscar por nome, descrição ou responsável…"
           class="h-9 w-full rounded-md border border-input bg-transparent pl-8 pr-8 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
-        @if (searchQ.length) {
-          <button type="button" (click)="searchQ=''; page.set(1)"
+        @if (searchQ().length) {
+          <button type="button" (click)="searchQ.set(''); page.set(1)"
             class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
             <lucide-angular [img]="X" size="13" />
           </button>
@@ -64,8 +64,8 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
       </div>
 
       <!-- Status filter -->
-      <select [(ngModel)]="filterStatus" (ngModelChange)="page.set(1)"
-        class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer">
+      <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value); page.set(1)"
+        class="h-9 rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer">
         <option value="">Qualquer status</option>
         <option value="ativo">Ativos</option>
         <option value="inativo">Inativos</option>
@@ -95,7 +95,7 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
       <lucide-angular [img]="Building2" size="48" class="mb-3 opacity-30" />
       <p class="text-sm font-medium">Nenhum setor encontrado</p>
-      @if (searchQ.length || filterStatus) {
+      @if (searchQ().length || filterStatus()) {
         <button type="button" (click)="clearFilters()"
           class="mt-3 text-xs text-primary underline-offset-2 hover:underline">
           Limpar filtros
@@ -291,14 +291,14 @@ export class SetoresPageComponent implements OnInit {
 
   // ── State ─────────────────────────────────────────────────────────────────
   loading = signal(false);
-  searchQ = '';
-  filterStatus = '';
+  searchQ = signal('');
+  filterStatus = signal('');
   page = signal(1);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   filteredSetores = computed(() => {
-    const q = this.searchQ.toLowerCase().trim();
-    const status = this.filterStatus;
+    const q = this.searchQ().toLowerCase().trim();
+    const status = this.filterStatus();
     return this.svc.setores().filter(s => {
       if (q && !s.nome.toLowerCase().includes(q)
         && !s.descricao.toLowerCase().includes(q)
@@ -456,8 +456,8 @@ export class SetoresPageComponent implements OnInit {
   onConfirmClose(open: boolean) { if (!open) this.cancelConfirm(); }
 
   clearFilters() {
-    this.searchQ = '';
-    this.filterStatus = '';
+    this.searchQ.set('');
+    this.filterStatus.set('');
     this.page.set(1);
   }
 }
