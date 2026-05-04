@@ -80,13 +80,13 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
           class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input
           type="text"
-          [(ngModel)]="searchQ"
-          (ngModelChange)="page.set(1)"
+          [value]="searchQ()"
+          (input)="searchQ.set($any($event.target).value); page.set(1)"
           placeholder="Buscar por nome, e-mail ou cargo…"
           class="h-9 w-full rounded-md border border-input bg-transparent pl-8 pr-8 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
-        @if (searchQ.length) {
-          <button type="button" (click)="searchQ=''; page.set(1)"
+        @if (searchQ().length) {
+          <button type="button" (click)="searchQ.set(''); page.set(1)"
             class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
             <lucide-angular [img]="X" size="13" />
           </button>
@@ -129,7 +129,7 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
       <lucide-angular [img]="Users" size="48" class="mb-3 opacity-30" />
       <p class="text-sm font-medium">Nenhum usuário encontrado</p>
-      @if (searchQ.length || filterRole() || filterStatus()) {
+      @if (searchQ().length || filterRole() || filterStatus()) {
         <button type="button" (click)="clearFilters()"
           class="mt-3 text-xs text-primary underline-offset-2 hover:underline">
           Limpar filtros
@@ -389,7 +389,7 @@ export class UsuariosPageComponent implements OnInit {
   );
 
   // ── Filter state ──────────────────────────────────────────────────────────
-  searchQ = '';
+  searchQ = signal('');
   filterRole = signal('');
   filterStatus = signal('');
   page = signal(1);
@@ -403,7 +403,7 @@ export class UsuariosPageComponent implements OnInit {
   private allUsers = computed(() => this.usersService.users());
 
   filteredUsers = computed(() => {
-    const q = this.searchQ.toLowerCase().trim();
+    const q = this.searchQ().toLowerCase().trim();
     const role = this.filterRole();
     const status = this.filterStatus();
     return this.allUsers().filter(u => {
@@ -565,7 +565,7 @@ export class UsuariosPageComponent implements OnInit {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   clearFilters() {
-    this.searchQ = '';
+    this.searchQ.set('');
     this.filterRole.set('');
     this.filterStatus.set('');
     this.page.set(1);
