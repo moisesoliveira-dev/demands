@@ -15,10 +15,10 @@ import { cn } from '../lib/utils';
 interface NavItem { label: string; icon: any; path: string; badge?: () => number; highlight?: boolean; adminOnly?: boolean; }
 
 @Component({
-    selector: 'app-sidebar',
-    standalone: true,
-    imports: [CommonModule, RouterLink, RouterLinkActive, LucideAngularModule, UiAvatar, UiBadge, UiButton, UiSeparator],
-    template: `
+  selector: 'app-sidebar',
+  standalone: true,
+  imports: [CommonModule, RouterLink, RouterLinkActive, LucideAngularModule, UiAvatar, UiBadge, UiButton, UiSeparator],
+  template: `
     <aside [class]="asideClass()">
       <ng-container [ngTemplateOutlet]="content"></ng-container>
       <button (click)="ui.toggleSidebar()" class="absolute -right-3 top-6 h-6 w-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-amber-500 hover:border-amber-500/50 transition-colors">
@@ -74,17 +74,6 @@ interface NavItem { label: string; icon: any; path: string; badge?: () => number
         @if (auth.user(); as user) {
           <ui-separator class="bg-slate-700" />
           <div [class]="userBoxClass()">
-            @if (!collapsed()) {
-              <div class="flex items-center gap-3 rounded-md bg-slate-800 p-3">
-                <ui-avatar [name]="user.nome" [src]="user.avatar" class="h-10 w-10 border-2 border-amber-500/20" fallbackClass="bg-slate-700 text-slate-200 text-sm font-medium" />
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-slate-200 truncate">{{ user.nome }}</p>
-                  <p class="text-xs text-slate-400 truncate">{{ user.cargo }}</p>
-                </div>
-              </div>
-            } @else {
-              <ui-avatar [name]="user.nome" [src]="user.avatar" class="h-10 w-10 border-2 border-amber-500/20" fallbackClass="bg-slate-700 text-slate-200 text-sm font-medium" />
-            }
             <ui-button (click)="logout()" variant="ghost" [size]="collapsed() ? 'icon' : 'sm'" class="w-full text-slate-400 hover:text-red-400 hover:bg-red-950/20">
               <lucide-angular [img]="LogOut" size="18" />
               @if (!collapsed()) { <span class="ml-2">Sair</span> }
@@ -96,55 +85,55 @@ interface NavItem { label: string; icon: any; path: string; badge?: () => number
   `,
 })
 export class AppSidebarComponent {
-    readonly ui = inject(UIService);
-    readonly auth = inject(AuthService);
-    private readonly demandasService = inject(DemandasService);
-    private readonly router = inject(Router);
+  readonly ui = inject(UIService);
+  readonly auth = inject(AuthService);
+  private readonly demandasService = inject(DemandasService);
+  private readonly router = inject(Router);
 
-    readonly Menu = Menu; readonly X = X; readonly LogOut = LogOut;
+  readonly Menu = Menu; readonly X = X; readonly LogOut = LogOut;
 
-    collapsed = this.ui.sidebarCollapsed;
+  collapsed = this.ui.sidebarCollapsed;
 
-    pendingCount = computed(() => this.demandasService.demandas().filter((d) => d.status === DemandStatus.PENDENTE).length);
+  pendingCount = computed(() => this.demandasService.demandas().filter((d) => d.status === DemandStatus.PENDENTE).length);
 
-    navItems: NavItem[] = [
-        { label: 'Nova Demanda', icon: PlusCircle, path: '/nova-demanda', highlight: true },
-        { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-        { label: 'Demandas', icon: ClipboardList, path: '/demandas', badge: () => this.pendingCount() },
-        { label: 'Relatórios', icon: BarChart3, path: '/relatorios' },
-        { label: 'Usuários', icon: Users, path: '/usuarios', adminOnly: true },
-        { label: 'Setores', icon: Building2, path: '/setores', adminOnly: true },
-        { label: 'Configurações', icon: Settings, path: '/configuracoes', adminOnly: true },
-    ];
+  navItems: NavItem[] = [
+    { label: 'Nova Demanda', icon: PlusCircle, path: '/nova-demanda', highlight: true },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Demandas', icon: ClipboardList, path: '/demandas', badge: () => this.pendingCount() },
+    { label: 'Relatórios', icon: BarChart3, path: '/relatorios' },
+    { label: 'Usuários', icon: Users, path: '/usuarios', adminOnly: true },
+    { label: 'Setores', icon: Building2, path: '/setores', adminOnly: true },
+    { label: 'Configurações', icon: Settings, path: '/configuracoes', adminOnly: true },
+  ];
 
-    visibleItems = computed(() => {
-        const u = this.auth.user();
-        return this.navItems.filter((i) => !i.adminOnly || u?.role === 'admin');
-    });
+  visibleItems = computed(() => {
+    const u = this.auth.user();
+    return this.navItems.filter((i) => !i.adminOnly || u?.role === 'admin');
+  });
 
-    asideClass = computed(() =>
-        cn('hidden md:flex fixed left-0 top-0 h-screen flex-col bg-slate-900 border-r border-slate-700 transition-all duration-200 ease-in-out z-40',
-            this.collapsed() ? 'w-16' : 'w-60')
+  asideClass = computed(() =>
+    cn('hidden md:flex fixed left-0 top-0 h-screen flex-col bg-slate-900 border-r border-slate-700 transition-all duration-200 ease-in-out z-40',
+      this.collapsed() ? 'w-16' : 'w-60')
+  );
+
+  brandClass = computed(() =>
+    cn('flex h-14 items-center border-b border-slate-700 px-4', this.collapsed() && 'justify-center px-2')
+  );
+
+  userBoxClass = computed(() => cn('p-3 space-y-2', this.collapsed() && 'flex flex-col items-center'));
+
+  navItemClass(item: NavItem, isActive: boolean): string {
+    return cn(
+      'group relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer no-underline',
+      isActive && 'bg-amber-500/10 text-amber-500',
+      !isActive && item.highlight && 'text-amber-500 hover:bg-amber-500/5',
+      !isActive && !item.highlight && 'text-slate-300 hover:bg-slate-800 hover:text-white',
+      this.collapsed() && 'justify-center'
     );
+  }
 
-    brandClass = computed(() =>
-        cn('flex h-14 items-center border-b border-slate-700 px-4', this.collapsed() && 'justify-center px-2')
-    );
-
-    userBoxClass = computed(() => cn('p-3 space-y-2', this.collapsed() && 'flex flex-col items-center'));
-
-    navItemClass(item: NavItem, isActive: boolean): string {
-        return cn(
-            'group relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer no-underline',
-            isActive && 'bg-amber-500/10 text-amber-500',
-            !isActive && item.highlight && 'text-amber-500 hover:bg-amber-500/5',
-            !isActive && !item.highlight && 'text-slate-300 hover:bg-slate-800 hover:text-white',
-            this.collapsed() && 'justify-center'
-        );
-    }
-
-    logout() {
-        this.auth.logout();
-        this.router.navigate(['/login']);
-    }
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
 }

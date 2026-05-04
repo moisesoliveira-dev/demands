@@ -34,6 +34,15 @@ export const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: strin
       opacity: 1;
     }
     .detail-inner { overflow: hidden; }
+
+    :host(.demand-highlight) {
+      animation: demand-flash 1s ease-in-out 4;
+      border-radius: 0.5rem;
+    }
+    @keyframes demand-flash {
+      0%, 100% { box-shadow: none; }
+      50% { box-shadow: 0 0 0 3px rgba(245,158,11,0.7), 0 0 14px rgba(245,158,11,0.35); }
+    }
   `],
   template: `
     <ui-card class="cursor-pointer transition-shadow p-3 bg-card hover:shadow-md" (click)="open()">
