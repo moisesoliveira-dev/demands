@@ -1,22 +1,34 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeft, Pencil, Archive, Calendar, Clock, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Pencil, Archive, Calendar, Clock, AlertCircle, ShieldAlert } from 'lucide-angular';
 import { DemandasService } from '../services/demandas.service';
 import { DemandStatus } from '../types';
 import { UiCard, UiCardContent, UiCardHeader, UiCardTitle } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
 import { UiBadge } from '../components/ui/badge.component';
 import { UiSeparator } from '../components/ui/form-elements.component';
+import {
+  UiDialog, UiDialogHeader, UiDialogTitle,
+  UiDialogDescription, UiDialogFooter,
+} from '../components/ui/dialog.component';
+import { FormularioDemandaComponent } from '../components/demandas/formulario-demanda.component';
 import { PRIORIDADE_CONFIG } from '../components/demandas/demand-card.component';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from '../lib/toast';
 
 @Component({
-    selector: 'app-demanda-detalhe',
-    standalone: true,
-    imports: [CommonModule, LucideAngularModule, UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiButton, UiBadge, UiSeparator],
-    template: `
+  selector: 'app-demanda-detalhe',
+  standalone: true,
+  imports: [
+    CommonModule, LucideAngularModule,
+    UiCard, UiCardContent, UiCardHeader, UiCardTitle,
+    UiButton, UiBadge, UiSeparator,
+    UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter,
+    FormularioDemandaComponent,
+  ],
+  template: `
     @if (demanda(); as d) {
       <div class="space-y-4">
         <div class="flex items-center justify-between flex-wrap gap-3">
@@ -24,10 +36,12 @@ import { ptBR } from 'date-fns/locale';
             <lucide-angular [img]="ArrowLeft" size="16" class="mr-1" /> Voltar
           </ui-button>
           <div class="flex gap-2">
-            <ui-button variant="outline" size="sm">
+            <ui-button variant="outline" size="sm" (click)="editOpen.set(true)">
               <lucide-angular [img]="Pencil" size="16" class="mr-1" /> Editar
             </ui-button>
-            <ui-button variant="outline" size="sm">
+            <ui-button variant="outline" size="sm"
+              class="text-amber-700 border-amber-300 hover:bg-amber-50"
+              (click)="archiveOpen.set(true)">
               <lucide-angular [img]="Archive" size="16" class="mr-1" /> Arquivar
             </ui-button>
           </div>
@@ -101,31 +115,96 @@ import { ptBR } from 'date-fns/locale';
           </ui-card>
         </div>
       </div>
+
+      <!-- ── Edit dialog ── -->
+      <ui-dialog [open]="editOpen()" (openChange)="editOpen.set($event)" contentClass="max-w-2xl">
+        <ui-dialog-header>
+          <ui-dialog-title>Editar demanda</ui-dialog-title>
+          <ui-dialog-description>Altere os campos desejados e salve.</ui-dialog-description>
+        </ui-dialog-header>
+        <div class="pt-2">
+          <formulario-demanda
+            [demanda]="d"
+            (updated)="onUpdated()"
+            (cancel)="editOpen.set(false)"
+          />
+        </div>
+      </ui-dialog>
+
+      <!-- ── Archive confirm dialog ── -->
+      <ui-dialog [open]="archiveOpen()" (openChange)="archiveOpen.set($event)" contentClass="max-w-md">
+        <ui-dialog-header>
+          <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+              <lucide-angular [img]="ShieldAlert" size="20" class="text-amber-600" />
+            </div>
+            <div>
+              <ui-dialog-title>Arquivar demanda</ui-dialog-title>
+              <ui-dialog-description class="mt-1">
+                A demanda <strong>{{ d.titulo }}</strong> será arquivada e removida do kanban.
+                Esta ação pode ser revertida pelo administrador.
+              </ui-dialog-description>
+            </div>
+          </div>
+        </ui-dialog-header>
+        <ui-dialog-footer class="mt-4">
+          <ui-button variant="outline" [disabled]="archiving()" (click)="archiveOpen.set(false)">
+            Cancelar
+          </ui-button>
+          <ui-button variant="destructive" [disabled]="archiving()" (click)="confirmarArquivar()">
+            {{ archiving() ? 'Arquivando…' : 'Arquivar' }}
+          </ui-button>
+        </ui-dialog-footer>
+      </ui-dialog>
+
     } @else {
       <p class="text-center text-slate-500 py-12">Demanda não encontrada</p>
     }
   `,
 })
 export class DemandaDetalhePageComponent {
-    id = input.required<string>();
-    router = inject(Router);
-    private demandasService = inject(DemandasService);
+  id = input.required<string>();
+  router = inject(Router);
+  private demandasService = inject(DemandasService);
 
-    readonly ArrowLeft = ArrowLeft; readonly Pencil = Pencil; readonly Archive = Archive;
-    readonly Calendar = Calendar; readonly Clock = Clock; readonly AlertCircle = AlertCircle;
-    readonly Bloqueado = DemandStatus.BLOQUEADO;
+  readonly ArrowLeft = ArrowLeft; readonly Pencil = Pencil; readonly Archive = Archive;
+  readonly Calendar = Calendar; readonly Clock = Clock;
+  readonly AlertCircle = AlertCircle; readonly ShieldAlert = ShieldAlert;
+  readonly Bloqueado = DemandStatus.BLOQUEADO;
 
-    demanda = computed(() => this.demandasService.byId(this.id()));
-    prio = computed(() => PRIORIDADE_CONFIG[this.demanda()!.prioridade]);
-    statusLabel = computed(() => {
-        const map: Record<DemandStatus, string> = {
-            [DemandStatus.PENDENTE]: 'Pendente',
-            [DemandStatus.EM_ANDAMENTO]: 'Em Andamento',
-            [DemandStatus.BLOQUEADO]: 'Bloqueado',
-            [DemandStatus.CONCLUIDO]: 'Concluído',
-        };
-        return map[this.demanda()!.status];
-    });
+  editOpen = signal(false);
+  archiveOpen = signal(false);
+  archiving = signal(false);
 
-    formatDate(s: string) { return format(new Date(s), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR }); }
+  demanda = computed(() => this.demandasService.byId(this.id()));
+  prio = computed(() => PRIORIDADE_CONFIG[this.demanda()!.prioridade]);
+  statusLabel = computed(() => {
+    const map: Record<DemandStatus, string> = {
+      [DemandStatus.PENDENTE]: 'Pendente',
+      [DemandStatus.EM_ANDAMENTO]: 'Em Andamento',
+      [DemandStatus.BLOQUEADO]: 'Bloqueado',
+      [DemandStatus.CONCLUIDO]: 'Concluído',
+    };
+    return map[this.demanda()!.status];
+  });
+
+  formatDate(s: string) { return format(new Date(s), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR }); }
+
+  onUpdated() {
+    this.editOpen.set(false);
+  }
+
+  async confirmarArquivar() {
+    this.archiving.set(true);
+    try {
+      await this.demandasService.arquivar(this.id());
+      toast.success('Demanda arquivada', 'Ela foi removida do kanban.');
+      this.router.navigate(['/demandas']);
+    } catch (e: any) {
+      toast.error('Erro ao arquivar', e?.message);
+    } finally {
+      this.archiving.set(false);
+      this.archiveOpen.set(false);
+    }
+  }
 }

@@ -103,6 +103,13 @@ export class DemandasService {
         });
     }
 
+    async arquivar(id: string): Promise<void> {
+        await firstValueFrom(
+            this.http.patch<Demanda>(`${this.base}/${id}`, { arquivado: true }),
+        );
+        this._demandas.update((arr) => arr.filter((d) => d.id !== id));
+    }
+
     async deletar(id: string): Promise<void> {
         await firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
         this._demandas.update((arr) => arr.filter((d) => d.id !== id));

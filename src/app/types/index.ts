@@ -19,6 +19,7 @@ export interface Demanda {
     atualizadoEm: string;
     ordem?: number;
     motivoBloqueio?: string;
+    arquivado?: boolean;
 }
 
 export interface HistoricoAuditoria {

@@ -14,6 +14,8 @@ import { UsersService } from '../../services/users.service';
 import { AuthService } from '../../services/auth.service';
 import { toast } from '../../lib/toast';
 
+/** Modo: 'create' (padrão) ou 'edit' (quando [demanda] é fornecida). */
+
 @Component({
   selector: 'formulario-demanda',
   standalone: true,
@@ -63,17 +65,24 @@ import { toast } from '../../lib/toast';
 
       <div class="flex justify-end gap-2 pt-4 border-t">
         <ui-button variant="outline" type="button" (click)="cancel.emit()">Cancelar</ui-button>
-        <ui-button type="submit" [disabled]="form.invalid || saving()">{{ saving() ? 'Salvando...' : 'Criar Demanda' }}</ui-button>
+        <ui-button type="submit" [disabled]="form.invalid || saving()">
+          {{ saving() ? 'Salvando...' : (isEditing() ? 'Salvar alterações' : 'Criar Demanda') }}
+        </ui-button>
       </div>
     </form>
   `,
 })
 export class FormularioDemandaComponent implements OnInit {
+  /** Quando fornecida, o formulário entra em modo de edição. */
+  demanda = input<Demanda | null>(null);
+
   @Output() created = new EventEmitter<Demanda>();
+  @Output() updated = new EventEmitter<Demanda>();
   @Output() cancel = new EventEmitter<void>();
 
   String = String;
   saving = signal(false);
+  isEditing = computed(() => !!this.demanda());
 
   private setoresService = inject(SetoresService);
   private usersService = inject(UsersService);
@@ -93,6 +102,16 @@ export class FormularioDemandaComponent implements OnInit {
   ngOnInit(): void {
     if (this.setoresService.setores().length === 0) this.setoresService.listar();
     if (this.usersService.users().length === 0) this.usersService.listar();
+    const d = this.demanda();
+    if (d) {
+      this.form.patchValue({
+        titulo: d.titulo,
+        descricao: d.descricao,
+        setor: d.setor,
+        responsavel: d.responsavel,
+        prioridade: d.prioridade,
+      });
+    }
   }
 
   form = this.fb.group({
@@ -114,17 +133,32 @@ export class FormularioDemandaComponent implements OnInit {
     this.saving.set(true);
     try {
       const v = this.form.getRawValue();
-      const nova = await this.demandasService.criar({
-        titulo: v.titulo!,
-        descricao: v.descricao!,
-        setor: v.setor!,
-        responsavel: v.responsavel!,
-        prioridade: v.prioridade!,
-        status: DemandStatus.PENDENTE,
-      });
-      toast.success('Demanda criada!');
-      this.created.emit(nova);
-      this.form.reset({ prioridade: 3 });
+      const d = this.demanda();
+      if (d) {
+        // Modo edição
+        const editado = await this.demandasService.atualizar(d.id, {
+          titulo: v.titulo!,
+          descricao: v.descricao!,
+          setor: v.setor!,
+          responsavel: v.responsavel!,
+          prioridade: v.prioridade!,
+        });
+        toast.success('Demanda atualizada!');
+        this.updated.emit(editado!);
+      } else {
+        // Modo criação
+        const nova = await this.demandasService.criar({
+          titulo: v.titulo!,
+          descricao: v.descricao!,
+          setor: v.setor!,
+          responsavel: v.responsavel!,
+          prioridade: v.prioridade!,
+          status: DemandStatus.PENDENTE,
+        });
+        toast.success('Demanda criada!');
+        this.created.emit(nova);
+        this.form.reset({ prioridade: 3 });
+      }
     } catch (e: any) {
       toast.error('Erro', e?.message);
     } finally {
