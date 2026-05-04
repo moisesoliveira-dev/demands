@@ -29,8 +29,9 @@ export const environment = {
     authStorageKey: 'auth-storage',
     /** Habilita o fluxo de 2FA (front exige código após login). */
     twoFactorEnabled: false,
-    /** Permite o "fallback mock" do AuthService quando backend está fora (apenas dev). */
-    allowAuthMockFallback: true,
+    /** Permite o "fallback mock" do AuthService quando backend está fora (apenas dev).
+     *  Mantenha false para garantir sistema virgem — login exige backend real. */
+    allowAuthMockFallback: false,
 
     // ── UI ──────────────────────────────────────────────────────────────────
     appName: 'Demandas',

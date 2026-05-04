@@ -58,6 +58,11 @@ export class AuthService {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw) as Partial<AuthState>;
+                // Descarta tokens mock de sessões de desenvolvimento anteriores.
+                if (typeof parsed.token === 'string' && parsed.token.startsWith('mock-token-')) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    return { user: null, token: null, permissions: [] };
+                }
                 return {
                     user: parsed.user ?? null,
                     token: parsed.token ?? null,
@@ -81,7 +86,10 @@ export class AuthService {
             this.http
                 .post<LoginResponse | LoginChallengeResponse>(`${this.base}/login`, { email, senha })
                 .pipe(catchError((err) => {
-                    if (useFallback) return of(this._mockLoginFallback(email, senha));
+                    // Só usa mock quando o backend está inacessível (erro de rede, status 0).
+                    // Erros HTTP reais (401, 400, 500) são propagados para a UI.
+                    const isNetworkError = !err?.status;
+                    if (useFallback && isNetworkError) return of(this._mockLoginFallback(email, senha));
                     throw err;
                 })),
         );
@@ -107,7 +115,8 @@ export class AuthService {
             this.http
                 .post<LoginResponse>(`${this.base}/2fa/verificar`, { challengeToken, codigo })
                 .pipe(catchError((err) => {
-                    if (useFallback) return of(this._mock2FAFallback(challengeToken, codigo));
+                    const isNetworkError = !err?.status;
+                    if (useFallback && isNetworkError) return of(this._mock2FAFallback(challengeToken, codigo));
                     throw err;
                 })),
         );
