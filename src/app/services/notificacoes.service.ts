@@ -68,6 +68,15 @@ export class NotificacoesService {
         this._items.set([]);
     }
 
+    async removerPorId(id: string): Promise<void> {
+        try {
+            await firstValueFrom(
+                this.http.delete<void>(`${this.base}/${id}`).pipe(catchError(() => of(null)))
+            );
+        } catch { /* sem backend */ }
+        this._items.update(arr => arr.filter(n => n.id !== id));
+    }
+
     // ── Método local (sem backend, uso interno / frontend-driven) ─────────────
 
     /** Adiciona uma notificação localmente sem chamar o backend.
