@@ -1,9 +1,10 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
 import { UIService } from '../services/ui.service';
+import { IdleService } from '../services/idle.service';
 import { AppSidebarComponent } from './app-sidebar.component';
 import { AppTopbarComponent } from './app-topbar.component';
 import { GsapRouteTransitionDirective } from '../lib/gsap-route.directive';
@@ -25,9 +26,14 @@ import { cn } from '../lib/utils';
     </div>
   `,
 })
-export class AppShellComponent {
+export class AppShellComponent implements OnInit {
   private readonly ui = inject(UIService);
   private readonly router = inject(Router);
+  private readonly idle = inject(IdleService);
+
+  ngOnInit() {
+    this.idle.start();
+  }
 
   private routeData = toSignal(
     this.router.events.pipe(

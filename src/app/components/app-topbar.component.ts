@@ -60,8 +60,8 @@ import { cn } from '../lib/utils';
                   </div>
                 </ui-dropdown-label>
                 <ui-dropdown-separator />
-                <ui-dropdown-item><lucide-angular [img]="User" size="16" class="mr-2" />Meu perfil</ui-dropdown-item>
-                <ui-dropdown-item><lucide-angular [img]="Lock" size="16" class="mr-2" />Alterar senha</ui-dropdown-item>
+                <ui-dropdown-item (select)="router.navigate(['/perfil'])"><lucide-angular [img]="User" size="16" class="mr-2" />Meu perfil</ui-dropdown-item>
+                <ui-dropdown-item (select)="router.navigate(['/perfil'])"><lucide-angular [img]="Lock" size="16" class="mr-2" />Alterar senha</ui-dropdown-item>
                 <ui-dropdown-separator />
                 <ui-dropdown-item class="text-red-600 hover:bg-red-50" (select)="logout()">
                   <lucide-angular [img]="LogOut" size="16" class="mr-2" />Sair
@@ -80,7 +80,7 @@ export class AppTopbarComponent {
 
   readonly ui = inject(UIService);
   readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
 
   readonly Menu = Menu; readonly User = User; readonly Lock = Lock; readonly LogOut = LogOut;
   readonly Sun = Sun; readonly Moon = Moon;

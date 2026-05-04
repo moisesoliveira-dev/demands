@@ -26,6 +26,15 @@ export class DemandasService {
         if (f.prioridade?.length) list = list.filter((d) => f.prioridade!.includes(d.prioridade));
         if (f.setor?.length) list = list.filter((d) => f.setor!.includes(d.setor));
         if (f.responsavel?.length) list = list.filter((d) => f.responsavel!.includes(d.responsavel));
+        if (f.dataInicio) {
+            const from = new Date(f.dataInicio).getTime();
+            if (!isNaN(from)) list = list.filter((d) => new Date(d.criadoEm).getTime() >= from);
+        }
+        if (f.dataFim) {
+            // Inclui o dia inteiro de "fim" → soma 23:59:59.
+            const to = new Date(f.dataFim).getTime() + 86_399_000;
+            if (!isNaN(to)) list = list.filter((d) => new Date(d.criadoEm).getTime() <= to);
+        }
         if (f.busca) {
             const q = f.busca.toLowerCase();
             list = list.filter((d) => d.titulo.toLowerCase().includes(q) || d.descricao.toLowerCase().includes(q));

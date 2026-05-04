@@ -20,7 +20,7 @@ export const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: strin
   selector: 'demand-card',
   standalone: true,
   imports: [CommonModule, LucideAngularModule, UiCard, UiBadge],
-  host: { class: 'block' },
+  host: { class: 'block', '[class.demand-highlight]': 'highlight()' },
   template: `
     <ui-card class="cursor-pointer hover:shadow-md transition-shadow p-3 space-y-2 bg-card" (click)="open()">
       <div class="flex items-start justify-between gap-2">
@@ -46,6 +46,8 @@ export const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: strin
 })
 export class DemandCardComponent {
   demanda = input.required<Demanda>();
+  /** Quando true, aplica animação de destaque (vindo de notificação). */
+  highlight = input<boolean>(false);
   private router = inject(Router);
 
   readonly Factory = Factory; readonly User = User; readonly Clock = Clock; readonly AlertCircle = AlertCircle;

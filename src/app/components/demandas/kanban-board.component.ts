@@ -1,4 +1,4 @@
-import { Component, computed, inject, viewChild } from '@angular/core';
+import { Component, computed, inject, input, viewChild, effect, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, transferArrayItem, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Demanda, DemandStatus } from '../../types';
@@ -38,8 +38,8 @@ const COLUMNS: ColumnConfig[] = [
             class="flex-1 p-2 space-y-2 min-h-50 max-h-[calc(100vh-280px)] overflow-y-auto"
           >
             @for (d of col.items; track d.id) {
-              <div cdkDrag gsapFadeIn>
-                <demand-card [demanda]="d" />
+              <div cdkDrag gsapFadeIn [attr.data-demand-id]="d.id">
+                <demand-card [demanda]="d" [highlight]="highlightId() === d.id" />
                 <div *cdkDragPlaceholder class="rounded-lg border-2 border-dashed border-border bg-muted/40 h-24"></div>
               </div>
             }
@@ -55,7 +55,11 @@ const COLUMNS: ColumnConfig[] = [
 })
 export class KanbanBoardComponent {
   columns = COLUMNS;
+  /** ID da demanda a ser destacada (vindo de notificação). Aciona scroll automático. */
+  highlightId = input<string | null>(null);
+
   private demandasService = inject(DemandasService);
+  private host: ElementRef<HTMLElement> = inject(ElementRef);
   blockDialog = viewChild<BlockReasonDialogComponent>('blockDialog');
 
   private pendingMove?: { id: string; status: DemandStatus };
@@ -68,6 +72,23 @@ export class KanbanBoardComponent {
         .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
     }))
   );
+
+  constructor() {
+    // Quando o highlightId muda e os dados estão prontos, rola até o item.
+    effect(() => {
+      const id = this.highlightId();
+      if (!id) return;
+      // Aguarda render
+      const data = this.columnData();
+      if (!data.some((c) => c.items.some((d) => d.id === id))) return;
+      queueMicrotask(() => this.scrollToHighlighted(id));
+    });
+  }
+
+  private scrollToHighlighted(id: string) {
+    const el = this.host.nativeElement.querySelector<HTMLElement>(`[data-demand-id="${id}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   drop(e: CdkDragDrop<Demanda[]>) {
     const item = e.previousContainer.data[e.previousIndex];

@@ -55,6 +55,11 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/configuracoes-page.component').then((m) => m.ConfiguracoesPageComponent),
                 data: { pageTitle: 'Configurações', breadcrumbs: [{ label: 'Configurações' }] },
             },
+            {
+                path: 'perfil',
+                loadComponent: () => import('./pages/perfil-page.component').then((m) => m.PerfilPageComponent),
+                data: { pageTitle: 'Meu Perfil', breadcrumbs: [{ label: 'Meu Perfil' }] },
+            },
         ],
     },
     {
