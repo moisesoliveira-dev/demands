@@ -1,284 +1,272 @@
-import { Component, computed, inject, signal } from '@angular/core';
+﻿import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import {
   LucideAngularModule,
-  Sparkles, Download, ChevronRight, X, Filter,
-  AlertTriangle, CheckCircle2, Clock, ShieldAlert,
+  Sparkles, Download, Plus, ChevronDown, ChevronUp,
+  AlertTriangle, Trash2, FilePlus, History,
 } from 'lucide-angular';
 import { DemandasService } from '../services/demandas.service';
-import { DemandStatus, Prioridade } from '../types';
-import { PRIORIDADE_CONFIG } from '../components/demandas/demand-card.component';
-import { UiCard, UiCardContent, UiCardHeader, UiCardTitle } from '../components/ui/card.component';
+import { DemandStatus } from '../types';
+import { UiCard, UiCardContent } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
 import { exportarDemandasCSV } from '../lib/export';
+import { toast } from '../lib/toast';
 
-const STATUS_LABEL: Record<string, string> = {
-  [DemandStatus.PENDENTE]:     'Pendente',
-  [DemandStatus.EM_ANDAMENTO]: 'Em Andamento',
-  [DemandStatus.BLOQUEADO]:    'Bloqueado',
-  [DemandStatus.CONCLUIDO]:    'Concluído',
-};
+const STORAGE_KEY = 'demands_relatorios_historico';
 
-const STATUS_BADGE: Record<string, string> = {
-  [DemandStatus.PENDENTE]:     'bg-slate-100 text-slate-700 border-slate-200',
-  [DemandStatus.EM_ANDAMENTO]: 'bg-blue-50 text-blue-700 border-blue-200',
-  [DemandStatus.BLOQUEADO]:    'bg-red-50 text-red-700 border-red-200',
-  [DemandStatus.CONCLUIDO]:    'bg-emerald-50 text-emerald-700 border-emerald-200',
-};
+interface RelatorioGerado {
+  id: string;
+  dataISO: string;
+  totalDemandas: number;
+  concluidas: number;
+  bloqueadas: number;
+  andamento: number;
+  pendentes: number;
+  taxa: number;
+  insights: string[];
+  recomendacao: string | null;
+}
 
 @Component({
   selector: 'app-relatorios',
   standalone: true,
-  imports: [
-    CommonModule, RouterModule, LucideAngularModule,
-    UiCard, UiCardContent, UiCardHeader, UiCardTitle,
-    UiButton,
-  ],
+  imports: [CommonModule, LucideAngularModule, UiCard, UiCardContent, UiButton],
   template: `
 <div class="space-y-6">
 
-  <!-- ── Cabeçalho ────────────────────────────────────────────────────────── -->
+  <!-- ── Cabeçalho ─────────────────────────────────────────────────────────── -->
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-bold text-foreground">Relatório de Demandas</h1>
-      <p class="text-sm text-muted-foreground mt-0.5">Gerado em {{ today }}</p>
+      <h1 class="text-2xl font-bold text-foreground">Relatórios</h1>
+      <p class="text-sm text-muted-foreground mt-0.5">Histórico de análises geradas por IA</p>
     </div>
-    <ui-button size="sm" variant="outline" (click)="exportar()">
-      <lucide-angular [img]="Download" size="15" class="mr-1.5" /> Exportar CSV
-    </ui-button>
+    <div class="flex gap-2">
+      <ui-button variant="outline" size="sm" (click)="exportarCSV()">
+        <lucide-angular [img]="Download" size="15" class="mr-1.5" /> Exportar CSV
+      </ui-button>
+      <ui-button size="sm" (click)="gerar()">
+        <lucide-angular [img]="Plus" size="15" class="mr-1.5" /> Gerar Relatório
+      </ui-button>
+    </div>
   </div>
 
-  <!-- ── Análise IA ────────────────────────────────────────────────────────── -->
-  <ui-card class="border-l-4 border-l-primary">
-    <ui-card-header class="pb-3">
-      <ui-card-title class="flex items-center gap-2 text-base">
-        <lucide-angular [img]="Sparkles" size="16" class="text-primary" />
-        Análise por IA
-        <span class="ml-auto text-[11px] font-normal px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-          Gerado automaticamente
-        </span>
-      </ui-card-title>
-    </ui-card-header>
-    <ui-card-content class="space-y-3">
-      <ul class="space-y-2">
-        @for (insight of insights(); track insight) {
-          <li class="flex items-start gap-2 text-sm text-foreground leading-relaxed">
-            <span class="text-primary shrink-0 mt-0.5">›</span>
-            <span [innerHTML]="insight"></span>
-          </li>
-        }
-      </ul>
+  <!-- ── Empty state ────────────────────────────────────────────────────────── -->
+  @if (historico().length === 0) {
+    <div class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border
+                bg-muted/30 py-20 text-center">
+      <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+        <lucide-angular [img]="FilePlus" size="26" class="text-primary" />
+      </div>
+      <div>
+        <p class="font-semibold text-foreground">Nenhum relatório gerado ainda</p>
+        <p class="text-sm text-muted-foreground mt-1">
+          Clique em "Gerar Relatório" para criar uma análise automática com IA
+          com base nos dados atuais.
+        </p>
+      </div>
+      <ui-button (click)="gerar()">
+        <lucide-angular [img]="Sparkles" size="15" class="mr-1.5" /> Gerar primeiro relatório
+      </ui-button>
+    </div>
+  }
 
-      @if (recomendacao()) {
-        <div class="mt-1 flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-3">
-          <lucide-angular [img]="AlertTriangle" size="15" class="text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-0.5">Recomendação</p>
-            <p class="text-sm text-amber-900">{{ recomendacao() }}</p>
+  <!-- ── Histórico ──────────────────────────────────────────────────────────── -->
+  @for (r of historico(); track r.id) {
+    <ui-card>
+      <!-- Linha resumo (sempre visível) -->
+      <button class="w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors rounded-t-xl"
+        [class.rounded-b-xl]="expandedId() !== r.id"
+        (click)="toggle(r.id)">
+
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          <lucide-angular [img]="History" size="18" class="text-primary" />
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-foreground text-sm">Relatório · {{ formatDate(r.dataISO) }}</p>
+          <div class="flex flex-wrap gap-2 mt-1">
+            <span class="text-xs text-muted-foreground">{{ r.totalDemandas }} demanda(s)</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
+                         bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {{ r.taxa }}% concluído
+            </span>
+            @if (r.andamento > 0) {
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
+                           bg-blue-50 text-blue-700 border border-blue-200">
+                {{ r.andamento }} em andamento
+              </span>
+            }
+            @if (r.bloqueadas > 0) {
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
+                           bg-red-50 text-red-700 border border-red-200">
+                {{ r.bloqueadas }} bloqueada(s)
+              </span>
+            }
           </div>
         </div>
-      }
-    </ui-card-content>
-  </ui-card>
 
-  <!-- ── Filtros ───────────────────────────────────────────────────────────── -->
-  <div class="flex flex-wrap items-center gap-2">
-    <lucide-angular [img]="Filter" size="14" class="text-muted-foreground shrink-0" />
-
-    <select class="h-8 rounded-md border border-border bg-background text-foreground text-sm px-2"
-      [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
-      <option value="">Todos os status</option>
-      <option value="PENDENTE">Pendente</option>
-      <option value="EM_ANDAMENTO">Em Andamento</option>
-      <option value="BLOQUEADO">Bloqueado</option>
-      <option value="CONCLUIDO">Concluído</option>
-    </select>
-
-    <select class="h-8 rounded-md border border-border bg-background text-foreground text-sm px-2"
-      [value]="filterSetor()" (change)="filterSetor.set($any($event.target).value)">
-      <option value="">Todos os setores</option>
-      @for (s of setores(); track s) {
-        <option [value]="s">{{ s }}</option>
-      }
-    </select>
-
-    <select class="h-8 rounded-md border border-border bg-background text-foreground text-sm px-2"
-      [value]="filterPrio()" (change)="filterPrio.set($any($event.target).value)">
-      <option value="">Todas as prioridades</option>
-      <option value="5">Crítico</option>
-      <option value="4">Urgente</option>
-      <option value="3">Alta</option>
-      <option value="2">Normal</option>
-      <option value="1">Baixa</option>
-    </select>
-
-    @if (hasFilters()) {
-      <button class="h-8 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground
-                     border border-border rounded-md px-2 transition-colors"
-        (click)="clearFilters()">
-        <lucide-angular [img]="X" size="12" /> Limpar
+        <div class="flex items-center gap-1 shrink-0">
+          <button
+            class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-red-600
+                   hover:bg-red-50 transition-colors"
+            (click)="excluir($event, r.id)"
+            title="Excluir relatório">
+            <lucide-angular [img]="Trash2" size="15" />
+          </button>
+          <span class="flex h-8 w-8 items-center justify-center text-muted-foreground">
+            <lucide-angular [img]="expandedId() === r.id ? ChevronUp : ChevronDown" size="16" />
+          </span>
+        </div>
       </button>
-    }
 
-    <span class="ml-auto text-xs text-muted-foreground">
-      {{ filtered().length }} resultado(s)
-    </span>
-  </div>
+      <!-- Conteúdo expandido -->
+      @if (expandedId() === r.id) {
+        <div class="px-5 pb-5 pt-4 border-t border-border space-y-4">
 
-  <!-- ── Tabela ────────────────────────────────────────────────────────────── -->
-  <ui-card class="overflow-hidden p-0">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-border bg-muted/50">
-            <th class="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-4 py-3">Título</th>
-            <th class="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-4 py-3">Status</th>
-            <th class="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-4 py-3">Prioridade</th>
-            <th class="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-4 py-3">Setor</th>
-            <th class="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-4 py-3">Responsável</th>
-            <th class="w-8 px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (filtered().length === 0) {
-            <tr>
-              <td colspan="6" class="text-center text-muted-foreground py-16 text-sm">
-                Nenhuma demanda encontrada.
-              </td>
-            </tr>
+          <!-- Insights IA -->
+          <div class="flex items-center gap-2 mb-2">
+            <lucide-angular [img]="Sparkles" size="14" class="text-primary" />
+            <span class="text-xs font-semibold uppercase tracking-wide text-primary">Análise por IA</span>
+          </div>
+
+          <ul class="space-y-2">
+            @for (insight of r.insights; track insight) {
+              <li class="flex items-start gap-2 text-sm text-foreground leading-relaxed">
+                <span class="text-primary shrink-0 mt-0.5">›</span>
+                <span [innerHTML]="insight"></span>
+              </li>
+            }
+          </ul>
+
+          @if (r.recomendacao) {
+            <div class="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-3">
+              <lucide-angular [img]="AlertTriangle" size="15" class="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-0.5">Recomendação</p>
+                <p class="text-sm text-amber-900">{{ r.recomendacao }}</p>
+              </div>
+            </div>
           }
-          @for (d of filtered(); track d.id; let odd = $odd) {
-            <tr class="border-b border-border/50 last:border-0 transition-colors group hover:bg-muted/40"
-              [class.bg-muted/20]="odd">
-              <td class="px-4 py-3 font-medium text-foreground">
-                <span class="line-clamp-1 max-w-72">{{ d.titulo }}</span>
-              </td>
-              <td class="px-4 py-3">
-                <span [class]="'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ' + statusBadge(d.status)">
-                  {{ statusLabel(d.status) }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <span [class]="'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ' + prioBadge(d.prioridade)">
-                  {{ prioLabel(d.prioridade) }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-muted-foreground whitespace-nowrap">{{ d.setor }}</td>
-              <td class="px-4 py-3 text-muted-foreground whitespace-nowrap">{{ d.responsavel }}</td>
-              <td class="px-4 py-3">
-                <a [routerLink]="['/demanda-detalhe', d.id]"
-                  class="flex items-center justify-center text-muted-foreground hover:text-foreground
-                         opacity-0 group-hover:opacity-100 transition-opacity">
-                  <lucide-angular [img]="ChevronRight" size="16" />
-                </a>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </ui-card>
+        </div>
+      }
+    </ui-card>
+  }
 
 </div>
   `,
 })
-export class RelatoriosPageComponent {
-  readonly Sparkles = Sparkles;
-  readonly Download = Download;
-  readonly ChevronRight = ChevronRight;
-  readonly X = X;
-  readonly Filter = Filter;
-  readonly AlertTriangle = AlertTriangle;
+export class RelatoriosPageComponent implements OnInit {
+  readonly Sparkles = Sparkles; readonly Download = Download; readonly Plus = Plus;
+  readonly ChevronDown = ChevronDown; readonly ChevronUp = ChevronUp;
+  readonly AlertTriangle = AlertTriangle; readonly Trash2 = Trash2;
+  readonly FilePlus = FilePlus; readonly History = History;
 
   private demandasService = inject(DemandasService);
   private all = computed(() => this.demandasService.demandas());
 
-  readonly today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  historico = signal<RelatorioGerado[]>([]);
+  expandedId = signal<string | null>(null);
 
-  // ── Filtros ──────────────────────────────────────────────────────────────
-  filterStatus = signal('');
-  filterSetor  = signal('');
-  filterPrio   = signal('');
-
-  hasFilters = computed(() => !!this.filterStatus() || !!this.filterSetor() || !!this.filterPrio());
-  setores    = computed(() => [...new Set(this.all().map(d => d.setor))].sort());
-
-  filtered = computed(() => {
-    let list = this.all();
-    const s = this.filterStatus();
-    const sec = this.filterSetor();
-    const p = this.filterPrio();
-    if (s)   list = list.filter(d => d.status === s);
-    if (sec) list = list.filter(d => d.setor === sec);
-    if (p)   list = list.filter(d => d.prioridade === +p as Prioridade);
-    return list;
-  });
-
-  clearFilters() {
-    this.filterStatus.set('');
-    this.filterSetor.set('');
-    this.filterPrio.set('');
+  ngOnInit() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) this.historico.set(JSON.parse(saved));
+    } catch { /* noop */ }
   }
 
-  // ── Análise IA ──────────────────────────────────────────────────────────
-  insights = computed<string[]>(() => {
+  private save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.historico()));
+  }
+
+  gerar() {
     const all = this.all();
     const total = all.length;
-    if (total === 0) return ['Nenhuma demanda cadastrada ainda.'];
-
     const concluidas = all.filter(d => d.status === DemandStatus.CONCLUIDO).length;
     const bloqueadas = all.filter(d => d.status === DemandStatus.BLOQUEADO).length;
     const andamento  = all.filter(d => d.status === DemandStatus.EM_ANDAMENTO).length;
     const pendentes  = all.filter(d => d.status === DemandStatus.PENDENTE).length;
-    const taxa       = Math.round((concluidas / total) * 100);
+    const taxa       = total ? Math.round((concluidas / total) * 100) : 0;
+    const criticas   = all.filter(d => d.prioridade === 5 && d.status !== DemandStatus.CONCLUIDO).length;
 
-    // Setor com mais demandas ativas (não concluídas)
+    const relatorio: RelatorioGerado = {
+      id: Date.now().toString(),
+      dataISO: new Date().toISOString(),
+      totalDemandas: total,
+      concluidas,
+      bloqueadas,
+      andamento,
+      pendentes,
+      taxa,
+      insights: this.buildInsights(all, total, concluidas, bloqueadas, andamento, pendentes, taxa),
+      recomendacao: this.buildRecomendacao(bloqueadas, criticas),
+    };
+
+    this.historico.update(h => [relatorio, ...h]);
+    this.expandedId.set(relatorio.id);
+    this.save();
+    toast.success('Relatório gerado', 'A análise foi adicionada ao histórico.');
+  }
+
+  excluir(event: Event, id: string) {
+    event.stopPropagation();
+    this.historico.update(h => h.filter(r => r.id !== id));
+    if (this.expandedId() === id) this.expandedId.set(null);
+    this.save();
+  }
+
+  toggle(id: string) {
+    this.expandedId.set(this.expandedId() === id ? null : id);
+  }
+
+  formatDate(iso: string) {
+    return new Date(iso).toLocaleString('pt-BR', {
+      day: '2-digit', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  exportarCSV() {
+    exportarDemandasCSV(this.all());
+  }
+
+  private buildInsights(
+    all: ReturnType<typeof this.demandasService.demandas>,
+    total: number, concluidas: number, bloqueadas: number,
+    andamento: number, pendentes: number, taxa: number,
+  ): string[] {
+    if (total === 0) return ['Nenhuma demanda cadastrada no momento da geração.'];
+
+    const taxaLabel = taxa >= 70 ? 'acima da meta' : taxa >= 40 ? 'abaixo da meta' : 'muito abaixo da meta';
+
     const setorMap = new Map<string, number>();
     for (const d of all.filter(d => d.status !== DemandStatus.CONCLUIDO))
       setorMap.set(d.setor, (setorMap.get(d.setor) ?? 0) + 1);
     const [topSetor, topSetorCount] = [...setorMap.entries()].sort((a, b) => b[1] - a[1])[0] ?? ['—', 0];
 
-    // Responsável com mais em aberto
     const respMap = new Map<string, number>();
     for (const d of all.filter(d => d.status !== DemandStatus.CONCLUIDO))
       respMap.set(d.responsavel, (respMap.get(d.responsavel) ?? 0) + 1);
     const [topResp, topRespCount] = [...respMap.entries()].sort((a, b) => b[1] - a[1])[0] ?? ['—', 0];
 
     const criticas = all.filter(d => d.prioridade === 5 && d.status !== DemandStatus.CONCLUIDO).length;
-    const taxaLabel = taxa >= 70 ? 'acima da meta' : taxa >= 40 ? 'abaixo da meta' : 'muito abaixo da meta';
 
     const list: string[] = [];
-    list.push(`A taxa de conclusão atual é <strong>${taxa}%</strong> (${concluidas} de ${total} demandas concluídas) — <em>${taxaLabel} de 70%</em>.`);
-    list.push(`Existem <strong>${andamento}</strong> demanda(s) em andamento, <strong>${pendentes}</strong> pendente(s) e <strong>${bloqueadas}</strong> bloqueada(s).`);
+    list.push(`A taxa de conclusão no momento da geração era <strong>${taxa}%</strong> (${concluidas} de ${total} demandas) — <em>${taxaLabel} de 70%</em>.`);
+    list.push(`<strong>${andamento}</strong> demanda(s) estavam em andamento, <strong>${pendentes}</strong> pendente(s) e <strong>${bloqueadas}</strong> bloqueada(s).`);
     if (criticas > 0)
-      list.push(`<strong>${criticas}</strong> demanda(s) com prioridade <strong>Crítica</strong> ainda estão em aberto e requerem atenção imediata.`);
+      list.push(`<strong>${criticas}</strong> demanda(s) com prioridade <strong>Crítica</strong> estavam em aberto.`);
     if (topSetorCount > 0)
-      list.push(`O setor <strong>"${topSetor}"</strong> concentra o maior volume de demandas ativas (${topSetorCount}).`);
+      list.push(`O setor <strong>"${topSetor}"</strong> concentrava o maior volume de demandas ativas (${topSetorCount}).`);
     if (topRespCount > 0)
-      list.push(`<strong>${topResp}</strong> é o responsável com maior carga de demandas em aberto (${topRespCount}).`);
+      list.push(`<strong>${topResp}</strong> era o responsável com maior carga de demandas em aberto (${topRespCount}).`);
     return list;
-  });
-
-  recomendacao = computed<string | null>(() => {
-    const all = this.all();
-    const bloqueadas = all.filter(d => d.status === DemandStatus.BLOQUEADO).length;
-    const criticas   = all.filter(d => d.prioridade === 5 && d.status !== DemandStatus.CONCLUIDO).length;
-    if (bloqueadas >= 3)
-      return `Há ${bloqueadas} demandas bloqueadas. Recomenda-se realizar uma reunião de desbloqueio para identificar os impedimentos e definir responsáveis pela resolução.`;
-    if (criticas >= 2)
-      return `Existem ${criticas} demandas críticas em aberto. Priorize a alocação de recursos para garantir a entrega dentro do prazo.`;
-    return null;
-  });
-
-  // ── Helpers de template ─────────────────────────────────────────────────
-  statusLabel(s: string) { return STATUS_LABEL[s] ?? s; }
-  statusBadge(s: string) { return STATUS_BADGE[s] ?? ''; }
-  prioLabel(p: Prioridade) { return PRIORIDADE_CONFIG[p]?.label ?? String(p); }
-  prioBadge(p: Prioridade) {
-    const cfg = PRIORIDADE_CONFIG[p];
-    return cfg ? `${cfg.bg} ${cfg.color}` : '';
   }
 
-  exportar() { exportarDemandasCSV(this.all()); }
+  private buildRecomendacao(bloqueadas: number, criticas: number): string | null {
+    if (bloqueadas >= 3)
+      return `Havia ${bloqueadas} demandas bloqueadas. Recomendava-se realizar uma reunião de desbloqueio para identificar os impedimentos.`;
+    if (criticas >= 2)
+      return `Existiam ${criticas} demandas críticas em aberto. Era necessário priorizar a alocação de recursos.`;
+    return null;
+  }
 }
