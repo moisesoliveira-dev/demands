@@ -6,6 +6,8 @@ export const environment = {
     production: true,
 
     apiUrl: '/api',
+    aiUrl: '/api/ai',
+    aiEnabled: true,
     apiTimeoutMs: 30_000,
     apiRetries: 2,
 

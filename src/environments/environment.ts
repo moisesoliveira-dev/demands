@@ -13,6 +13,10 @@ export const environment = {
     // ── HTTP / API ──────────────────────────────────────────────────────────
     /** URL base da API REST. Inclua o prefixo /api se houver. */
     apiUrl: 'http://localhost:3000/api',
+    /** URL base do proxy de IA — roteado via NestJS (que encaminha ao Agno). */
+    aiUrl: 'http://localhost:3000/api/ai',
+    /** Habilita features de IA (chat de relatórios, triagem assistida). */
+    aiEnabled: true,
     /** Timeout (ms) padrão de requisições HTTP. 0 = sem timeout. */
     apiTimeoutMs: 30_000,
     /** Quantidade de retries automáticos em falhas de rede (5xx / network). */

@@ -1,16 +1,19 @@
 ﻿import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
   Sparkles, Download, Plus, ChevronDown, ChevronUp,
-  AlertTriangle, Trash2, FilePlus, History,
+  AlertTriangle, Trash2, FilePlus, History, Send, Bot, Loader2,
 } from 'lucide-angular';
 import { DemandasService } from '../services/demandas.service';
+import { IaService } from '../services/ia.service';
 import { DemandStatus } from '../types';
 import { UiCard, UiCardContent } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
 import { exportarDemandasCSV } from '../lib/export';
 import { toast } from '../lib/toast';
+import { environment } from '../../environments/environment';
 
 const STORAGE_KEY = 'demands_relatorios_historico';
 
@@ -30,7 +33,7 @@ interface RelatorioGerado {
 @Component({
   selector: 'app-relatorios',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, UiCard, UiCardContent, UiButton],
+  imports: [CommonModule, FormsModule, LucideAngularModule, UiCard, UiCardContent, UiButton],
   template: `
 <div class="space-y-6">
 
@@ -44,11 +47,55 @@ interface RelatorioGerado {
       <ui-button variant="outline" size="sm" (click)="exportarCSV()">
         <lucide-angular [img]="Download" size="15" class="mr-1.5" /> Exportar CSV
       </ui-button>
+      @if (iaHabilitada) {
+        <ui-button variant="outline" size="sm" [disabled]="ia.carregando()" (click)="gerarComIA()">
+          @if (ia.carregando()) {
+            <lucide-angular [img]="Loader2" size="15" class="mr-1.5 animate-spin" />
+          } @else {
+            <lucide-angular [img]="Bot" size="15" class="mr-1.5" />
+          }
+          Gerar com IA
+        </ui-button>
+      }
       <ui-button size="sm" (click)="gerar()">
         <lucide-angular [img]="Plus" size="15" class="mr-1.5" /> Gerar Relatório
       </ui-button>
     </div>
   </div>
+
+  <!-- ── Pergunte à IA ──────────────────────────────────────────────── -->
+  @if (iaHabilitada) {
+    <ui-card>
+      <div class="px-5 py-4 space-y-3">
+        <div class="flex items-center gap-2">
+          <lucide-angular [img]="Sparkles" size="15" class="text-primary" />
+          <span class="text-sm font-semibold text-foreground">Pergunte à IA</span>
+          <span class="text-xs text-muted-foreground">— faça perguntas livres sobre suas demandas.</span>
+        </div>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            class="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder="Ex.: Quais setores têm mais demandas bloqueadas?"
+            [(ngModel)]="perguntaIA"
+            (keydown.enter)="perguntar()"
+            [disabled]="ia.carregando()" />
+          <ui-button size="sm" [disabled]="ia.carregando() || !perguntaIA().trim()" (click)="perguntar()">
+            @if (ia.carregando()) {
+              <lucide-angular [img]="Loader2" size="15" class="animate-spin" />
+            } @else {
+              <lucide-angular [img]="Send" size="15" />
+            }
+          </ui-button>
+        </div>
+        @if (respostaIA()) {
+          <div class="rounded-lg border border-border bg-muted/30 p-3 text-sm whitespace-pre-wrap text-foreground">
+            {{ respostaIA() }}
+          </div>
+        }
+      </div>
+    </ui-card>
+  }
 
   <!-- ── Empty state ────────────────────────────────────────────────────────── -->
   @if (historico().length === 0) {
@@ -160,9 +207,16 @@ export class RelatoriosPageComponent implements OnInit {
   readonly ChevronDown = ChevronDown; readonly ChevronUp = ChevronUp;
   readonly AlertTriangle = AlertTriangle; readonly Trash2 = Trash2;
   readonly FilePlus = FilePlus; readonly History = History;
+  readonly Send = Send; readonly Bot = Bot; readonly Loader2 = Loader2;
 
   private demandasService = inject(DemandasService);
+  readonly ia = inject(IaService);
   private all = computed(() => this.demandasService.demandas());
+
+  readonly iaHabilitada = environment.aiEnabled === true;
+  readonly perguntaIA = signal('');
+  readonly respostaIA = signal('');
+  private readonly sessionId = `relatorios-${Date.now()}`;
 
   historico = signal<RelatorioGerado[]>([]);
   expandedId = signal<string | null>(null);
@@ -183,10 +237,10 @@ export class RelatoriosPageComponent implements OnInit {
     const total = all.length;
     const concluidas = all.filter(d => d.status === DemandStatus.CONCLUIDO).length;
     const bloqueadas = all.filter(d => d.status === DemandStatus.BLOQUEADO).length;
-    const andamento  = all.filter(d => d.status === DemandStatus.EM_ANDAMENTO).length;
-    const pendentes  = all.filter(d => d.status === DemandStatus.PENDENTE).length;
-    const taxa       = total ? Math.round((concluidas / total) * 100) : 0;
-    const criticas   = all.filter(d => d.prioridade === 5 && d.status !== DemandStatus.CONCLUIDO).length;
+    const andamento = all.filter(d => d.status === DemandStatus.EM_ANDAMENTO).length;
+    const pendentes = all.filter(d => d.status === DemandStatus.PENDENTE).length;
+    const taxa = total ? Math.round((concluidas / total) * 100) : 0;
+    const criticas = all.filter(d => d.prioridade === 5 && d.status !== DemandStatus.CONCLUIDO).length;
 
     const relatorio: RelatorioGerado = {
       id: Date.now().toString(),
@@ -227,6 +281,61 @@ export class RelatoriosPageComponent implements OnInit {
 
   exportarCSV() {
     exportarDemandasCSV(this.all());
+  }
+
+  /** Pergunta livre ao FinanceAgent. */
+  async perguntar() {
+    const q = this.perguntaIA().trim();
+    if (!q) return;
+    try {
+      const r = await this.ia.perguntar(q, this.sessionId);
+      this.respostaIA.set(r.content);
+      this.perguntaIA.set('');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Falha ao consultar a IA.';
+      toast.error('IA indisponível', msg);
+    }
+  }
+
+  /** Aciona o workflow `content_pipeline` para os últimos 30 dias. */
+  async gerarComIA() {
+    const fim = new Date();
+    const inicio = new Date();
+    inicio.setDate(inicio.getDate() - 30);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    try {
+      const r = await this.ia.gerarRelatorioPeriodo(fmt(inicio), fmt(fim));
+      const all = this.all();
+      const total = all.length;
+      const concluidas = all.filter(d => d.status === DemandStatus.CONCLUIDO).length;
+      const bloqueadas = all.filter(d => d.status === DemandStatus.BLOQUEADO).length;
+      const andamento = all.filter(d => d.status === DemandStatus.EM_ANDAMENTO).length;
+      const pendentes = all.filter(d => d.status === DemandStatus.PENDENTE).length;
+      const taxa = total ? Math.round((concluidas / total) * 100) : 0;
+      // Quebra o markdown da IA em insights (linhas não vazias).
+      const insights = (r.relatorio_md ?? '')
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(l => l && !l.startsWith('#'))
+        .slice(0, 12);
+      const relatorio: RelatorioGerado = {
+        id: Date.now().toString(),
+        dataISO: new Date().toISOString(),
+        totalDemandas: total,
+        concluidas, bloqueadas, andamento, pendentes, taxa,
+        insights: insights.length ? insights : ['Relatório gerado pela IA (sem itens enumerados).'],
+        recomendacao: r.gargalos?.total_bloqueadas
+          ? `IA identificou ${r.gargalos.total_bloqueadas} demanda(s) bloqueada(s) e ${r.gargalos.total_criticas} crítica(s) no período.`
+          : null,
+      };
+      this.historico.update(h => [relatorio, ...h]);
+      this.expandedId.set(relatorio.id);
+      this.save();
+      toast.success('Relatório IA gerado', 'Análise dos últimos 30 dias adicionada ao histórico.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Falha ao gerar relatório com IA.';
+      toast.error('IA indisponível', msg);
+    }
   }
 
   private buildInsights(
