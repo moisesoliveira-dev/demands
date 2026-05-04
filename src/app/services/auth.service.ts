@@ -4,7 +4,7 @@ import { firstValueFrom, catchError, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { User } from '../types';
 
-const STORAGE_KEY = 'auth-storage';
+const STORAGE_KEY = environment.authStorageKey;
 
 interface AuthState {
     user: User | null;
@@ -76,10 +76,14 @@ export class AuthService {
     /** Etapa 1: envia credenciais. Backend pode responder com sessão completa
      *  (`{ kind: 'authenticated' }`) ou com desafio 2FA (`{ kind: 'challenge' }`). */
     async login(email: string, senha: string): Promise<LoginResult> {
+        const useFallback = !environment.production && environment.allowAuthMockFallback;
         const res = await firstValueFrom(
             this.http
                 .post<LoginResponse | LoginChallengeResponse>(`${this.base}/login`, { email, senha })
-                .pipe(catchError(() => of(this._mockLoginFallback(email, senha)))),
+                .pipe(catchError((err) => {
+                    if (useFallback) return of(this._mockLoginFallback(email, senha));
+                    throw err;
+                })),
         );
 
         if (res && (res as LoginChallengeResponse).requer2FA) {
@@ -98,10 +102,14 @@ export class AuthService {
 
     /** Etapa 2: confirma o código de 6 dígitos enviado ao usuário. */
     async verificar2FA(challengeToken: string, codigo: string): Promise<{ user: User; token: string }> {
+        const useFallback = !environment.production && environment.allowAuthMockFallback;
         const res = await firstValueFrom(
             this.http
                 .post<LoginResponse>(`${this.base}/2fa/verificar`, { challengeToken, codigo })
-                .pipe(catchError(() => of(this._mock2FAFallback(challengeToken, codigo)))),
+                .pipe(catchError((err) => {
+                    if (useFallback) return of(this._mock2FAFallback(challengeToken, codigo));
+                    throw err;
+                })),
         );
         if (!res) throw new Error('Código inválido ou expirado');
         this._state.set({ user: res.user, token: res.token, permissions: res.permissions });
@@ -159,20 +167,25 @@ export class AuthService {
     // ── Fallbacks de desenvolvimento (sem backend) ────────────────────────────
 
     private _mockLoginFallback(email: string, senha: string): LoginChallengeResponse | LoginResponse {
-        if (environment.production) throw new Error('Credenciais inválidas');
+        if (!environment.allowAuthMockFallback || environment.production) {
+            throw new Error('Credenciais inválidas');
+        }
         if (senha.length < 4) throw new Error('Senha muito curta');
-        // Em dev, sempre exigimos 2FA para validar o fluxo
-        return {
-            requer2FA: true,
-            challengeToken: `challenge-${Date.now()}-${email}`,
-            canal: 'email',
-            destino: this._maskEmail(email),
-        };
+        // Em dev, sempre exigimos 2FA para validar o fluxo (se habilitado)
+        if (environment.twoFactorEnabled) {
+            return {
+                requer2FA: true,
+                challengeToken: `challenge-${Date.now()}-${email}`,
+                canal: 'email',
+                destino: this._maskEmail(email),
+            };
+        }
+        return this._mock2FAFallback(`challenge-${Date.now()}-${email}`, '123456')!;
     }
 
     private _mock2FAFallback(challengeToken: string, codigo: string): LoginResponse | null {
-        if (environment.production) return null;
-        if (codigo !== '123456') return null;
+        if (!environment.allowAuthMockFallback || environment.production) return null;
+        if (environment.twoFactorEnabled && codigo !== '123456') return null;
         const email = challengeToken.split('-').slice(2).join('-') || 'admin@fabrica.com';
         const isAdmin = email.startsWith('admin');
         const user: User = {

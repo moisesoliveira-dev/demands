@@ -14,9 +14,8 @@ export class NotificacoesService {
     readonly contadorNaoLidas = computed(() => this._items().filter((n) => !n.lida).length);
 
     constructor() {
-        if (!environment.production) {
-            this._seededMock();
-        }
+        // Sem seed mock: o estado inicial é vazio.
+        // Use carregar() para buscar do backend.
     }
 
     // ── Métodos HTTP (backend real) ───────────────────────────────────────────
@@ -97,12 +96,14 @@ export class NotificacoesService {
     private _wsConnection: WebSocket | null = null;
 
     /** Conecta ao canal de notificações em tempo real via WebSocket.
-     *  Substitua a URL e o protocolo conforme o backend (ex: Socket.IO, SSE). */
+     *  Respeita `environment.realtimeEnabled` e `environment.wsUrl`. */
     conectarRealtime(token: string): void {
+        if (!environment.realtimeEnabled) return;
         if (this._wsConnection) return;
-        const wsUrl = environment.apiUrl
-            .replace(/^http/, 'ws')
-            .replace('/api', `/api/notificacoes/ws?token=${token}`);
+        const baseWs = environment.wsUrl?.trim()
+            ? environment.wsUrl
+            : environment.apiUrl.replace(/^http/, 'ws') + '/notificacoes/ws';
+        const wsUrl = `${baseWs}${baseWs.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
         try {
             const ws = new WebSocket(wsUrl);
             ws.onmessage = (event) => {
@@ -123,62 +124,5 @@ export class NotificacoesService {
     }
 
     // ── Mock de desenvolvimento ───────────────────────────────────────────────
-
-    private _seededMock(): void {
-        const t = (minutesAgo: number) =>
-            new Date(Date.now() - minutesAgo * 60_000).toISOString();
-
-        const mock: Notificacao[] = [
-            {
-                id: 'mock-1',
-                tipo: 'demanda_criada',
-                titulo: 'Nova demanda criada',
-                mensagem: 'A demanda "Integração com sistema legado" foi criada por João Silva.',
-                lida: false,
-                timestamp: t(4),
-                demandaId: '1',
-                acao: '/demandas',
-            },
-            {
-                id: 'mock-2',
-                tipo: 'demanda_bloqueada',
-                titulo: 'Demanda bloqueada',
-                mensagem: 'A demanda "Migração de dados" foi bloqueada: aguardando aprovação do cliente.',
-                lida: false,
-                timestamp: t(28),
-                demandaId: '2',
-                acao: '/demandas',
-            },
-            {
-                id: 'mock-3',
-                tipo: 'demanda_concluida',
-                titulo: 'Demanda concluída',
-                mensagem: 'A demanda "Correção de bug crítico" foi marcada como concluída por Ana Oliveira.',
-                lida: false,
-                timestamp: t(120),
-                demandaId: '3',
-                acao: '/demandas',
-            },
-            {
-                id: 'mock-4',
-                tipo: 'demanda_atribuida',
-                titulo: 'Demanda atribuída a você',
-                mensagem: 'Você foi designado como responsável pela demanda "Relatório mensal Q1".',
-                lida: true,
-                timestamp: t(300),
-                demandaId: '4',
-                acao: '/demandas',
-            },
-            {
-                id: 'mock-5',
-                tipo: 'alerta',
-                titulo: 'Prazo crítico próximo',
-                mensagem: '3 demandas com prioridade alta vencem nas próximas 24 horas.',
-                lida: true,
-                timestamp: t(1440),
-                acao: '/dashboard',
-            },
-        ];
-        this._items.set(mock);
-    }
+    // Removido: o estado inicial é vazio. Use carregar() para popular do backend.
 }
