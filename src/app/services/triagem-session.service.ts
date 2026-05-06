@@ -154,7 +154,12 @@ export class TriagemSessionService {
     }
 
     async remove(id: string): Promise<void> {
-        await firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
+        try {
+            await firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
+        } catch (e: any) {
+            // 404 = sessão já não existe no backend → trata como sucesso
+            if (e?.status !== 404) throw e;
+        }
         this.sessions.update((list) => list.filter((s) => s.id !== id));
     }
 

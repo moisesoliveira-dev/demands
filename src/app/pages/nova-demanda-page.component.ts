@@ -2,14 +2,15 @@ import { Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Plus, MessageSquare, CheckCircle2, Trash2, PanelLeft, Sparkles, PanelRight, Pencil, Check } from 'lucide-angular';
+import { LucideAngularModule, Plus, MessageSquare, CheckCircle2, Trash2, PanelLeft, Sparkles, PanelRight, Pencil, Check, AlertTriangle, Loader2 } from 'lucide-angular';
 import { isToday, isYesterday } from 'date-fns';
 import { TriagemChatComponent } from '../components/demandas/triagem-chat.component';
 import { TriagemSessionService, ChatSession, DraftDemanda } from '../services/triagem-session.service';
 import { SetoresService } from '../services/setores.service';
-import { UsersService } from '../services/users.service';
 import { PRIORIDADE_CONFIG } from '../components/demandas/demand-card.component';
 import { Prioridade } from '../types';
+import { UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter } from '../components/ui/dialog.component';
+import { UiButton } from '../components/ui/button.component';
 
 interface SessionGroup {
   label: string;
@@ -19,7 +20,7 @@ interface SessionGroup {
 @Component({
   selector: 'app-nova-demanda',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, TriagemChatComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, TriagemChatComponent, UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter, UiButton],
   template: `
     <div class="-m-6 flex bg-slate-950" style="height: calc(100vh - 56px)">
 
@@ -46,7 +47,7 @@ interface SessionGroup {
                   (click)="selectSession(session.id)">
                   <lucide-angular [img]="session.status === 'criada' ? CheckCircle2 : MessageSquare" size="14" class="shrink-0 opacity-60" />
                   <span class="flex-1 text-xs truncate">{{ session.titulo }}</span>
-                  <button type="button" (click)="deleteSession($event, session.id)"
+                  <button type="button" (click)="askDeleteSession($event, session)"
                     class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all">
                     <lucide-angular [img]="Trash2" size="13" />
                   </button>
@@ -294,6 +295,33 @@ interface SessionGroup {
       </div>
 
     </div>
+
+    <ui-dialog [open]="deleteDialogOpen()" (openChange)="onDeleteDialogChange($event)" contentClass="max-w-md">
+      <ui-dialog-header>
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+            <lucide-angular [img]="AlertTriangle" size="18" class="text-red-600" />
+          </div>
+          <div>
+            <ui-dialog-title>Apagar bate-papo</ui-dialog-title>
+            <ui-dialog-description class="mt-1">
+              Tem certeza que deseja apagar "{{ deleteTargetTitle() }}"? Esta ação não pode ser desfeita.
+            </ui-dialog-description>
+          </div>
+        </div>
+      </ui-dialog-header>
+      <ui-dialog-footer class="mt-4">
+        <ui-button type="button" variant="outline" [disabled]="deletingSession()" (click)="cancelDeleteSession()">
+          Cancelar
+        </ui-button>
+        <ui-button type="button" variant="destructive" [disabled]="deletingSession()" (click)="confirmDeleteSession()">
+          @if (deletingSession()) {
+            <lucide-angular [img]="Loader2" size="14" class="animate-spin" />
+          }
+          Apagar
+        </ui-button>
+      </ui-dialog-footer>
+    </ui-dialog>
   `,
 })
 export class NovaDemandaPageComponent {
@@ -302,17 +330,21 @@ export class NovaDemandaPageComponent {
   router = inject(Router);
   sessionService = inject(TriagemSessionService);
   private setoresService = inject(SetoresService);
-  private usersService = inject(UsersService);
 
   readonly Plus = Plus; readonly MessageSquare = MessageSquare;
   readonly CheckCircle2 = CheckCircle2; readonly Trash2 = Trash2;
   readonly PanelLeft = PanelLeft; readonly PanelRight = PanelRight;
   readonly Sparkles = Sparkles; readonly Pencil = Pencil; readonly Check = Check;
+  readonly AlertTriangle = AlertTriangle; readonly Loader2 = Loader2;
 
   sidebarOpen = signal(true);
   previewOpen = signal(true);
   activeId = signal<string | null>(null);
   editingField = signal<string | null>(null);
+  deleteDialogOpen = signal(false);
+  deleteTargetId = signal<string | null>(null);
+  deleteTargetTitle = signal('');
+  deletingSession = signal(false);
   editValue = '';
   selectedPrio: Prioridade | null = null;
 
@@ -344,9 +376,16 @@ export class NovaDemandaPageComponent {
     this.setoresService.setores().filter(s => s.ativo).map(s => s.nome)
   );
 
-  responsaveis = computed(() =>
-    this.usersService.users().filter(u => u.ativo).map(u => u.nome)
-  );
+  responsaveis = computed(() => {
+    const selectedSetor = (this.draft().setor || '').toLowerCase();
+    const setores = this.setoresService.setores().filter(s => s.ativo);
+    const base = selectedSetor
+      ? setores.filter(s => s.nome.toLowerCase() === selectedSetor)
+      : setores;
+    const nomes = base.map(s => s.responsavel).filter(Boolean);
+    const fallback = setores.map(s => s.responsavel).filter(Boolean);
+    return [...new Set(nomes.length ? nomes : fallback)];
+  });
 
   sessionGroups = computed<SessionGroup[]>(() => {
     const sessions = this.sessionService.sessions();
@@ -368,7 +407,6 @@ export class NovaDemandaPageComponent {
 
   constructor() {
     if (this.setoresService.setores().length === 0) this.setoresService.listar();
-    if (this.usersService.users().length === 0) this.usersService.listar();
     void this._init();
   }
 
@@ -471,12 +509,36 @@ export class NovaDemandaPageComponent {
     this.activeId.set(id);
   }
 
-  async deleteSession(event: MouseEvent, id: string) {
+  askDeleteSession(event: MouseEvent, session: ChatSession) {
     event.stopPropagation();
+    this.deleteTargetId.set(session.id);
+    this.deleteTargetTitle.set(session.titulo || 'Nova triagem');
+    this.deleteDialogOpen.set(true);
+  }
+
+  onDeleteDialogChange(open: boolean) {
+    this.deleteDialogOpen.set(open);
+    if (!open && !this.deletingSession()) this.clearDeleteTarget();
+  }
+
+  cancelDeleteSession() {
+    if (this.deletingSession()) return;
+    this.deleteDialogOpen.set(false);
+    this.clearDeleteTarget();
+  }
+
+  async confirmDeleteSession() {
+    const id = this.deleteTargetId();
+    if (!id || this.deletingSession()) return;
+    this.deletingSession.set(true);
     try {
       await this.sessionService.remove(id);
     } catch {
       return;
+    } finally {
+      this.deletingSession.set(false);
+      this.deleteDialogOpen.set(false);
+      this.clearDeleteTarget();
     }
     if (this.activeId() === id) {
       const remaining = this.sessionService.sessions();
@@ -489,6 +551,11 @@ export class NovaDemandaPageComponent {
         } catch { /* ignora */ }
       }
     }
+  }
+
+  private clearDeleteTarget() {
+    this.deleteTargetId.set(null);
+    this.deleteTargetTitle.set('');
   }
 
   onCreated() {

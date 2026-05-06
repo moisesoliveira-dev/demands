@@ -15,6 +15,7 @@ import { UiLabel } from '../components/ui/form-elements.component';
 import { toast } from '../lib/toast';
 import { MotionInViewDirective } from '../lib/motion.directives';
 import { SetoresService, Setor } from '../services/setores.service';
+import { UsersService } from '../services/users.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -215,8 +216,19 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
       <!-- Responsavel -->
       <div class="space-y-1.5">
         <ui-label for="s-resp">Responsável *</ui-label>
-        <input id="s-resp" name="responsavel" type="text" [(ngModel)]="form.responsavel"
-          placeholder="Nome do responsável pelo setor" [class]="INPUT_CLS" />
+        @if (loadingUsers()) {
+          <p class="text-xs text-slate-400">Carregando usuários…</p>
+        } @else if (activeUsers().length === 0) {
+          <p class="text-xs text-amber-600">Nenhum usuário ativo encontrado. Cadastre um usuário antes de criar um setor.</p>
+        } @else {
+          <select id="s-resp" name="responsavel" [(ngModel)]="form.responsavel"
+            [class]="INPUT_CLS + ' cursor-pointer'">
+            <option value="" disabled>Selecione um responsável…</option>
+            @for (u of activeUsers(); track u.id) {
+              <option [value]="u.nome">{{ u.nome }}</option>
+            }
+          </select>
+        }
         @if (formErrors.responsavel) {
           <p class="text-xs text-red-600">{{ formErrors.responsavel }}</p>
         }
@@ -288,9 +300,12 @@ export class SetoresPageComponent implements OnInit {
   readonly INPUT_CLS = INPUT_CLS;
 
   private readonly svc = inject(SetoresService);
+  private readonly usersSvc = inject(UsersService);
 
-  // ── State ─────────────────────────────────────────────────────────────────
+  // ── State ─────────────────────────────────────────────────────────────────────────────
   loading = signal(false);
+  loadingUsers = signal(false);
+  activeUsers = computed(() => this.usersSvc.users().filter(u => u.ativo));
   searchQ = signal('');
   filterStatus = signal('');
   page = signal(1);
@@ -322,10 +337,12 @@ export class SetoresPageComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
+    this.loadingUsers.set(true);
     try {
-      await this.svc.listar();
+      await Promise.all([this.svc.listar(), this.usersSvc.listar()]);
     } finally {
       this.loading.set(false);
+      this.loadingUsers.set(false);
     }
   }
 
@@ -359,8 +376,10 @@ export class SetoresPageComponent implements OnInit {
       const dup = this.svc.setores().find(s => s.nome.trim().toLowerCase() === f.nome.trim().toLowerCase() && s.id !== this.editTarget()?.id);
       if (dup) errs.nome = 'Já existe um setor com este nome.';
     }
-    if (!f.responsavel.trim() || f.responsavel.trim().length < 2)
-      errs.responsavel = 'Informe o responsável (mínimo 2 caracteres).';
+    if (!f.responsavel.trim())
+      errs.responsavel = 'Selecione um responsável.';
+    else if (!this.activeUsers().some(u => u.nome === f.responsavel.trim()))
+      errs.responsavel = 'Selecione um usuário válido da lista.';
     this.formErrors = errs;
     return Object.keys(errs).length === 0;
   }
