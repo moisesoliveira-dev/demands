@@ -124,8 +124,28 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
     <span class="text-slate-400">{{ inactiveCount() }} inativo(s)</span>
   </div>
 
-  <!-- ── Empty state ── -->
-  @if (filteredTotal() === 0) {
+  <!-- ── Empty / Loading state ── -->
+  @if (loading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (_ of [1,2,3,4,5,6]; track $index) {
+        <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full bg-slate-200 animate-pulse shrink-0"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 bg-slate-200 animate-pulse rounded w-2/3"></div>
+              <div class="h-3 bg-slate-200 animate-pulse rounded w-1/2"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="h-3 bg-slate-200 animate-pulse rounded"></div>
+            <div class="h-3 bg-slate-200 animate-pulse rounded"></div>
+          </div>
+          <div class="h-px bg-slate-100"></div>
+          <div class="h-5 bg-slate-200 animate-pulse rounded w-16"></div>
+        </div>
+      }
+    </div>
+  } @else if (filteredTotal() === 0) {
     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
       <lucide-angular [img]="Users" size="48" class="mb-3 opacity-30" />
       <p class="text-sm font-medium">Nenhum usuário encontrado</p>
@@ -389,14 +409,20 @@ export class UsuariosPageComponent implements OnInit {
   );
 
   // ── Filter state ──────────────────────────────────────────────────────────
+  loading = signal(true);
   searchQ = signal('');
   filterRole = signal('');
   filterStatus = signal('');
   page = signal(1);
 
-  ngOnInit(): void {
-    this.usersService.listar();
-    if (this.setoresService.setores().length === 0) this.setoresService.listar();
+  async ngOnInit(): Promise<void> {
+    this.loading.set(true);
+    try {
+      await this.usersService.listar();
+      if (this.setoresService.setores().length === 0) this.setoresService.listar();
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   // ── Derived data ──────────────────────────────────────────────────────────

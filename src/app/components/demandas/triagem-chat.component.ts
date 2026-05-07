@@ -35,7 +35,20 @@ const STARTER_SUGGESTIONS = [
       <!-- ── Messages / Empty state ── -->
       <div #scrollArea class="flex-1 overflow-y-auto">
 
-        @if (messages().length === 0 && !typing()) {
+        @if (loadingSession()) {
+          <!-- Loading skeleton -->
+          <div class="max-w-3xl mx-auto px-6 pt-8 pb-4 space-y-8">
+            @for (_ of [1,2,3]; track $index) {
+              <div class="flex gap-4">
+                <div class="w-7 h-7 rounded-full bg-slate-200 animate-pulse shrink-0 mt-0.5"></div>
+                <div class="flex-1 space-y-2 pt-1">
+                  <div class="h-4 bg-slate-200 animate-pulse rounded-md w-3/4"></div>
+                  <div class="h-4 bg-slate-200 animate-pulse rounded-md w-1/2"></div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (messages().length === 0 && !typing()) {
           <!-- Empty state -->
           <div class="flex flex-col items-center justify-center min-h-full px-6 py-16 gap-10">
             <div class="text-center space-y-3">
@@ -298,6 +311,7 @@ export class TriagemChatComponent implements AfterViewChecked {
   typing = signal(false);
   saving = signal(false);
   readyToCreate = signal(false);
+  loadingSession = signal(false);
   copiedId = signal<string | null>(null);
   draftInput = '';
 
@@ -336,10 +350,12 @@ export class TriagemChatComponent implements AfterViewChecked {
       this.messages.set([]);
       this.step.set('descricao');
       this.agentDraft.set({});
+      this.loadingSession.set(false);
       return;
     }
     // Mostra estado vazio enquanto busca
     this.messages.set([]);
+    this.loadingSession.set(true);
     try {
       const session = await this.sessionService.get(id);
       // Pode ter havido troca de sessão durante o fetch
@@ -351,6 +367,8 @@ export class TriagemChatComponent implements AfterViewChecked {
       this.shouldScroll = true;
     } catch (e: any) {
       toast.error('Falha ao carregar conversa', e?.message);
+    } finally {
+      if (this.currentSessionId === id) this.loadingSession.set(false);
     }
   }
 

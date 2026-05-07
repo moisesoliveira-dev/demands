@@ -52,7 +52,13 @@ import { exportarDemandasCSV } from '../lib/export';
         </div>
       </div>
 
-      @if (view() === 'kanban') {
+      @if (demandasService.loading()) {
+        <div class="space-y-3">
+          @for (_ of [1,2,3,4]; track $index) {
+            <div class="h-20 rounded-lg border border-slate-200 bg-slate-200 animate-pulse"></div>
+          }
+        </div>
+      } @else if (view() === 'kanban') {
         <kanban-board [highlightId]="highlight()" />
       } @else {
         <demandas-table />

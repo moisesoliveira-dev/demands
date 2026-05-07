@@ -12,7 +12,7 @@ export class DemandasService {
     private readonly base = `${environment.apiUrl}/demandas`;
 
     private readonly _demandas = signal<Demanda[]>([]);
-    private readonly _loading = signal(false);
+    private readonly _loading = signal(true);
     private readonly _filtros = signal<DemandFilters>({});
 
     readonly demandas = this._demandas.asReadonly();

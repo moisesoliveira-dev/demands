@@ -55,17 +55,3 @@ export class UiSkeleton {
     class = input('');
     classes = computed(() => cn('animate-pulse rounded-md bg-slate-200', this.class()));
 }
-
-@Component({
-    selector: 'ui-progress',
-    template: `
-    <div [class]="classes()">
-      <div class="h-full bg-primary transition-all" [style.width.%]="value()"></div>
-    </div>
-  `,
-})
-export class UiProgress {
-    value = input(0);
-    class = input('');
-    classes = computed(() => cn('h-2 w-full overflow-hidden rounded-full bg-secondary', this.class()));
-}

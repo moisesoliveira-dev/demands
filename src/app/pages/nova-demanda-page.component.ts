@@ -39,24 +39,30 @@ interface SessionGroup {
           </button>
         </div>
         <div class="flex-1 overflow-y-auto px-2 pb-4">
-          @for (group of sessionGroups(); track group.label) {
-            <div class="mb-4">
-              <p class="text-[10px] font-semibold text-white/30 uppercase tracking-wider px-2 mb-1">{{ group.label }}</p>
-              @for (session of group.sessions; track session.id) {
-                <div [class]="'group flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer mb-0.5 transition-colors ' + sessionItemClass(session.id)"
-                  (click)="selectSession(session.id)">
-                  <lucide-angular [img]="session.status === 'criada' ? CheckCircle2 : MessageSquare" size="14" class="shrink-0 opacity-60" />
-                  <span class="flex-1 text-xs truncate">{{ session.titulo }}</span>
-                  <button type="button" (click)="askDeleteSession($event, session)"
-                    class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all">
-                    <lucide-angular [img]="Trash2" size="13" />
-                  </button>
-                </div>
-              }
-            </div>
-          }
-          @if (!sessionService.sessions().length) {
-            <p class="text-xs text-white/30 text-center px-4 py-6">Nenhuma triagem iniciada.</p>
+          @if (sessionService.loading()) {
+            @for (_ of [1,2,3,4,5]; track $index) {
+              <div class="h-8 mb-1 rounded-lg bg-white/10 animate-pulse"></div>
+            }
+          } @else {
+            @for (group of sessionGroups(); track group.label) {
+              <div class="mb-4">
+                <p class="text-[10px] font-semibold text-white/30 uppercase tracking-wider px-2 mb-1">{{ group.label }}</p>
+                @for (session of group.sessions; track session.id) {
+                  <div [class]="'group flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer mb-0.5 transition-colors ' + sessionItemClass(session.id)"
+                    (click)="selectSession(session.id)">
+                    <lucide-angular [img]="session.status === 'criada' ? CheckCircle2 : MessageSquare" size="14" class="shrink-0 opacity-60" />
+                    <span class="flex-1 text-xs truncate">{{ session.titulo }}</span>
+                    <button type="button" (click)="askDeleteSession($event, session)"
+                      class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all">
+                      <lucide-angular [img]="Trash2" size="13" />
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+            @if (!sessionService.sessions().length) {
+              <p class="text-xs text-white/30 text-center px-4 py-6">Nenhuma triagem iniciada.</p>
+            }
           }
         </div>
       </div>

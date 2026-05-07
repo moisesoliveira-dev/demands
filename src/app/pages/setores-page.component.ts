@@ -89,8 +89,23 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
 
   <!-- ── Empty state ── -->
   @if (loading()) {
-    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
-      <p class="text-sm font-medium">Carregando setores…</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (_ of [1,2,3,4,5,6]; track $index) {
+        <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-lg bg-slate-200 animate-pulse shrink-0"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 bg-slate-200 animate-pulse rounded w-2/3"></div>
+              <div class="h-3 bg-slate-200 animate-pulse rounded w-1/3"></div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="h-3 bg-slate-200 animate-pulse rounded"></div>
+            <div class="h-3 bg-slate-200 animate-pulse rounded w-2/3"></div>
+          </div>
+          <div class="h-3 bg-slate-200 animate-pulse rounded w-1/4"></div>
+        </div>
+      }
     </div>
   } @else if (filteredTotal() === 0) {
     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
@@ -303,8 +318,8 @@ export class SetoresPageComponent implements OnInit {
   private readonly usersSvc = inject(UsersService);
 
   // ── State ─────────────────────────────────────────────────────────────────────────────
-  loading = signal(false);
-  loadingUsers = signal(false);
+  loading = signal(true);
+  loadingUsers = signal(true);
   activeUsers = computed(() => this.usersSvc.users().filter(u => u.ativo));
   searchQ = signal('');
   filterStatus = signal('');

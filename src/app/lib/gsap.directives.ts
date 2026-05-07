@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject, input } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, OnDestroy, inject, input } from '@angular/core';
 import { gsap } from 'gsap';
 
 const reducedMotion = typeof window !== 'undefined'
@@ -105,42 +105,10 @@ export class GsapScaleInDirective implements AfterViewInit, OnDestroy {
 }
 
 /**
- * Subtle hover lift effect.
- * Usage: <div gsapHover></div>
- */
-@Directive({ selector: '[gsapHover]', standalone: true })
-export class GsapHoverDirective implements AfterViewInit, OnDestroy {
-    private el = inject(ElementRef<HTMLElement>);
-    private enterListener?: () => void;
-    private leaveListener?: () => void;
-
-    ngAfterViewInit(): void {
-        if (reducedMotion) return;
-        const node = this.el.nativeElement;
-        this.enterListener = () => {
-            gsap.to(node, { y: -2, scale: 1.01, duration: 0.18, ease: 'power2.out' });
-        };
-        this.leaveListener = () => {
-            gsap.to(node, { y: 0, scale: 1, duration: 0.22, ease: 'power2.out' });
-        };
-        node.addEventListener('mouseenter', this.enterListener);
-        node.addEventListener('mouseleave', this.leaveListener);
-    }
-
-    ngOnDestroy(): void {
-        const node = this.el.nativeElement;
-        if (this.enterListener) node.removeEventListener('mouseenter', this.enterListener);
-        if (this.leaveListener) node.removeEventListener('mouseleave', this.leaveListener);
-        gsap.killTweensOf(node);
-    }
-}
-
-/**
  * Convenience: re-export an array for spread imports.
  */
 export const GSAP_DIRECTIVES = [
     GsapFadeInDirective,
     GsapStaggerDirective,
     GsapScaleInDirective,
-    GsapHoverDirective,
 ] as const;

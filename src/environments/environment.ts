@@ -36,28 +36,6 @@ export const environment = {
     /** Permite o "fallback mock" do AuthService quando backend está fora (apenas dev).
      *  Mantenha false para garantir sistema virgem — login exige backend real. */
     allowAuthMockFallback: false,
-
-    // ── UI ──────────────────────────────────────────────────────────────────
-    appName: 'Demandas',
-    appVersion: '0.1.0',
-    /** Tema padrão se nenhum estiver salvo. */
-    defaultTheme: 'light' as 'light' | 'dark' | 'system',
-    /** Liga animações pesadas (GSAP, Motion). */
-    animationsEnabled: true,
-
-    // ── Feature flags ───────────────────────────────────────────────────────
-    features: {
-        triagemChat: true,
-        relatoriosCsv: true,
-        kanbanDragDrop: true,
-        notificacoesPush: false,
-    },
-
-    // ── Observabilidade (opcional) ──────────────────────────────────────────
-    /** URL do endpoint de logs/erros. Vazio = desabilitado. */
-    telemetryUrl: '' as string,
-    /** Liga logs detalhados no console. */
-    debug: true,
 };
 
 export type AppEnvironment = typeof environment;

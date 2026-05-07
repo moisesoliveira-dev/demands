@@ -124,7 +124,22 @@ type TabId = 'geral' | 'ia-config' | 'ia-metricas' | 'ia-conhecimento' | 'ia-per
                 </div>
               </div>
             } @else {
-              <p class="text-sm text-slate-500">Carregando configuração...</p>
+              <div class="space-y-4">
+                @for (_ of [1,2]; track $index) {
+                  <div class="grid sm:grid-cols-2 gap-4">
+                    @for (__ of [1,2]; track $index) {
+                      <div class="space-y-2">
+                        <div class="h-3 bg-slate-200 animate-pulse rounded w-24"></div>
+                        <div class="h-9 bg-slate-200 animate-pulse rounded"></div>
+                      </div>
+                    }
+                  </div>
+                }
+                <div class="space-y-2">
+                  <div class="h-3 bg-slate-200 animate-pulse rounded w-32"></div>
+                  <div class="h-28 bg-slate-200 animate-pulse rounded"></div>
+                </div>
+              </div>
             }
           </ui-card-content>
         </ui-card>
@@ -243,7 +258,15 @@ type TabId = 'geral' | 'ia-config' | 'ia-metricas' | 'ia-conhecimento' | 'ia-per
               </ui-card-content>
             </ui-card>
           } @else {
-            <p class="text-sm text-slate-500">Carregando métricas...</p>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              @for (_ of [1,2,3,4]; track $index) {
+                <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
+                  <div class="h-3 bg-slate-200 animate-pulse rounded w-20"></div>
+                  <div class="h-8 bg-slate-200 animate-pulse rounded w-16"></div>
+                  <div class="h-3 bg-slate-200 animate-pulse rounded w-24"></div>
+                </div>
+              }
+            </div>
           }
         </div>
       }
@@ -403,7 +426,14 @@ type TabId = 'geral' | 'ia-config' | 'ia-metricas' | 'ia-conhecimento' | 'ia-per
                   <p class="text-xs text-slate-500">Confirme algumas demandas para começar a alimentar as estatísticas.</p>
                 }
               } @else {
-                <p class="text-sm text-slate-500">Carregando...</p>
+                <div class="grid grid-cols-2 gap-3">
+                  @for (_ of [1,2]; track $index) {
+                    <div class="rounded-lg border border-slate-200 p-3 space-y-2">
+                      <div class="h-3 bg-slate-200 animate-pulse rounded w-24"></div>
+                      <div class="h-8 bg-slate-200 animate-pulse rounded w-12"></div>
+                    </div>
+                  }
+                </div>
               }
             </ui-card-content>
           </ui-card>

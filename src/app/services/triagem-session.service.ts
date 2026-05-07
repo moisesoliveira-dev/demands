@@ -127,13 +127,19 @@ export class TriagemSessionService {
     /** Cache local das sessões — preenchido por `loadAll()`. */
     sessions = signal<ChatSession[]>([]);
     loaded = signal(false);
+    loading = signal(true);
 
     async loadAll(): Promise<ChatSession[]> {
-        const list = await firstValueFrom(this.http.get<ServerSession[]>(this.base));
-        const mapped = list.map(mapSession);
-        this.sessions.set(mapped);
-        this.loaded.set(true);
-        return mapped;
+        this.loading.set(true);
+        try {
+            const list = await firstValueFrom(this.http.get<ServerSession[]>(this.base));
+            const mapped = list.map(mapSession);
+            this.sessions.set(mapped);
+            this.loaded.set(true);
+            return mapped;
+        } finally {
+            this.loading.set(false);
+        }
     }
 
     /** Sessão completa (com mensagens). Atualiza o cache. */

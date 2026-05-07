@@ -33,6 +33,34 @@ Chart.register(
   template: `
     <div class="space-y-6">
 
+      @if (dashboardLoading()) {
+        <!-- ── Skeleton ── -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          @for (_ of [1,2,3,4]; track $index) {
+            <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+              <div class="flex justify-between">
+                <div class="space-y-2">
+                  <div class="h-3 bg-slate-200 animate-pulse rounded w-16"></div>
+                  <div class="h-10 bg-slate-200 animate-pulse rounded w-14"></div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-slate-200 animate-pulse"></div>
+              </div>
+              <div class="h-3 bg-slate-200 animate-pulse rounded w-3/4"></div>
+            </div>
+          }
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="rounded-lg border border-slate-200 bg-slate-200 animate-pulse h-64"></div>
+          <div class="rounded-lg border border-slate-200 bg-slate-200 animate-pulse h-64 lg:col-span-2"></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="rounded-lg border border-slate-200 bg-slate-200 animate-pulse h-64 lg:col-span-2"></div>
+          <div class="rounded-lg border border-slate-200 bg-slate-200 animate-pulse h-64"></div>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-slate-200 animate-pulse h-48"></div>
+
+      } @else {
+
       <!-- KPIs -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <ui-card motionInView class="border-t-4 border-t-border overflow-hidden relative">
@@ -243,12 +271,16 @@ Chart.register(
           </div>
         </ui-card-content>
       </ui-card>
+
+      } <!-- end @else -->
     </div>
   `,
 })
 export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private demandasService = inject(DemandasService);
   private auth = inject(AuthService);
+
+  readonly dashboardLoading = this.demandasService.loading;
 
   @ViewChild('donutCanvas') donutCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('barCanvas') barCanvas!: ElementRef<HTMLCanvasElement>;

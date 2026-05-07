@@ -17,21 +17,6 @@ export const environment = {
     authStorageKey: 'auth-storage',
     twoFactorEnabled: false,
     allowAuthMockFallback: false,
-
-    appName: 'Demandas',
-    appVersion: '0.1.0',
-    defaultTheme: 'light' as 'light' | 'dark' | 'system',
-    animationsEnabled: true,
-
-    features: {
-        triagemChat: true,
-        relatoriosCsv: true,
-        kanbanDragDrop: true,
-        notificacoesPush: false,
-    },
-
-    telemetryUrl: '' as string,
-    debug: false,
 };
 
 export type AppEnvironment = typeof environment;

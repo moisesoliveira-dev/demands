@@ -9,6 +9,5 @@ export * from './dialog.component';
 export * from './checkbox.component';
 export * from './select.component';
 export * from './radio-group.component';
-export * from './table.component';
 export * from './breadcrumb.component';
 export * from './pagination.component';
