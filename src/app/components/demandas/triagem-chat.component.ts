@@ -470,6 +470,13 @@ export class TriagemChatComponent implements AfterViewChecked {
         summary,
       });
     } catch (e: any) {
+      const sessionStillActive =
+        this.currentSessionId === sid &&
+        this.sessionService.sessions().some((s) => s.id === sid);
+
+      // Requisição antiga: sessão foi trocada ou apagada enquanto a IA respondia.
+      if (!sessionStillActive || e?.status === 404 || e?.status === 409) return;
+
       this._appendMessage({
         role: 'agent',
         content: `Não consegui processar agora: ${e?.message ?? 'erro de comunicação'}.`,
