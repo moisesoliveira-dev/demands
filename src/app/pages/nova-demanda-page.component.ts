@@ -328,6 +328,31 @@ interface SessionGroup {
         </ui-button>
       </ui-dialog-footer>
     </ui-dialog>
+
+    <!-- Cancel-generation confirm dialog -->
+    <ui-dialog [open]="cancelConfirmOpen()" (openChange)="onCancelConfirmChange($event)" contentClass="max-w-md">
+      <ui-dialog-header>
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+            <lucide-angular [img]="AlertTriangle" size="18" class="text-amber-600" />
+          </div>
+          <div>
+            <ui-dialog-title>IA em processamento</ui-dialog-title>
+            <ui-dialog-description class="mt-1">
+              O agente ainda está gerando uma resposta. Trocar de sessão irá cancelar o processamento e remover a mensagem em andamento.
+            </ui-dialog-description>
+          </div>
+        </div>
+      </ui-dialog-header>
+      <ui-dialog-footer class="mt-4">
+        <ui-button type="button" variant="outline" (click)="dismissCancelConfirm()">
+          Aguardar IA
+        </ui-button>
+        <ui-button type="button" variant="destructive" (click)="confirmCancelAndSwitch()">
+          Cancelar e trocar
+        </ui-button>
+      </ui-dialog-footer>
+    </ui-dialog>
   `,
 })
 export class NovaDemandaPageComponent {
@@ -351,6 +376,8 @@ export class NovaDemandaPageComponent {
   deleteTargetId = signal<string | null>(null);
   deleteTargetTitle = signal('');
   deletingSession = signal(false);
+  cancelConfirmOpen = signal(false);
+  private _pendingSwitchFn: (() => Promise<void>) | null = null;
   editValue = '';
   selectedPrio: Prioridade | null = null;
 
@@ -502,6 +529,16 @@ export class NovaDemandaPageComponent {
   }
 
   async newSession() {
+    if (this.chatRef?.typing() || this.chatRef?.autoDrafting()) {
+      this._pendingSwitchFn = async () => {
+        try {
+          const s = await this.sessionService.createNew();
+          this.activeId.set(s.id);
+        } catch { /* silently ignored */ }
+      };
+      this.cancelConfirmOpen.set(true);
+      return;
+    }
     try {
       const s = await this.sessionService.createNew();
       this.activeId.set(s.id);
@@ -511,8 +548,33 @@ export class NovaDemandaPageComponent {
   }
 
   selectSession(id: string) {
+    if (id === this.activeId()) return;
     this.cancelEdit();
+    if (this.chatRef?.typing() || this.chatRef?.autoDrafting()) {
+      this._pendingSwitchFn = async () => this.activeId.set(id);
+      this.cancelConfirmOpen.set(true);
+      return;
+    }
     this.activeId.set(id);
+  }
+
+  onCancelConfirmChange(open: boolean) {
+    if (!open) this.dismissCancelConfirm();
+  }
+
+  dismissCancelConfirm() {
+    this._pendingSwitchFn = null;
+    this.cancelConfirmOpen.set(false);
+  }
+
+  async confirmCancelAndSwitch() {
+    const fn = this._pendingSwitchFn;
+    this._pendingSwitchFn = null;
+    this.cancelConfirmOpen.set(false);
+    // Cancel the in-flight request and rollback server state.
+    await this.chatRef?.cancelAndRollback();
+    // Perform the queued navigation.
+    if (fn) await fn();
   }
 
   askDeleteSession(event: MouseEvent, session: ChatSession) {

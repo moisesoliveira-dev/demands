@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Demanda, Prioridade } from '../types';
 
@@ -124,10 +125,18 @@ export class TriagemSessionService {
     private http = inject(HttpClient);
     private readonly base = `${environment.aiUrl}/triagem/sessions`;
 
+    /** Fires when the user explicitly cancels an in-flight AI request. */
+    private readonly _cancel$ = new Subject<void>();
+
     /** Cache local das sessões — preenchido por `loadAll()`. */
     sessions = signal<ChatSession[]>([]);
     loaded = signal(false);
     loading = signal(true);
+
+    /** Abort the current in-flight sendMessage / autoDraft request. */
+    cancelCurrentRequest(): void {
+        this._cancel$.next();
+    }
 
     async loadAll(): Promise<ChatSession[]> {
         this.loading.set(true);
@@ -172,7 +181,8 @@ export class TriagemSessionService {
     /** Envia uma mensagem do usuário e retorna a resposta do agente. */
     async sendMessage(sessionId: string, message: string): Promise<MessageReply> {
         const reply = await firstValueFrom(
-            this.http.post<MessageReply>(`${this.base}/${sessionId}/message`, { message }),
+            this.http.post<MessageReply>(`${this.base}/${sessionId}/message`, { message })
+                .pipe(takeUntil(this._cancel$))
         );
         // Atualiza o cache local com o novo step/draft/título sugerido.
         this.sessions.update((list) =>
@@ -200,8 +210,25 @@ export class TriagemSessionService {
             this.http.post<PipelineResult>(
                 `${environment.aiUrl}/triagem/auto-draft`,
                 { description },
-            ),
+            ).pipe(takeUntil(this._cancel$))
         );
+    }
+
+    /**
+     * Rollback: deletes the last user message (and any subsequent messages)
+     * from the server-side session.  Called after `cancelCurrentRequest()` so
+     * any state the server managed to persist before the XHR was aborted is
+     * also cleaned up.  Fire-and-forget — errors are silently swallowed.
+     */
+    async rollbackLastMessage(sessionId: string): Promise<void> {
+        try {
+            await firstValueFrom(
+                this.http.delete<void>(`${this.base}/${sessionId}/last-message`)
+            );
+            // Refresh the local cache entry so the sidebar title / step reflect
+            // the rolled-back state.
+            await this.get(sessionId);
+        } catch { /* best-effort — proceed regardless */ }
     }
 
     /** Confirma a triagem e cria a demanda no backend. */

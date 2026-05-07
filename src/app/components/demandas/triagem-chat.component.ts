@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ElementRef, EventEmitter, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { AfterViewChecked, ChangeDetectorRef, Component, DestroyRef, ElementRef, EventEmitter, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil, Sparkles, Zap } from 'lucide-angular';
@@ -305,6 +305,8 @@ export class TriagemChatComponent implements AfterViewChecked {
 
   private sessionService = inject(TriagemSessionService);
   private demandasService = inject(DemandasService);
+  private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
 
   messages = signal<ChatMessage[]>([]);
   step = signal<Step>('descricao');
@@ -331,6 +333,16 @@ export class TriagemChatComponent implements AfterViewChecked {
       const id = this.sessionId();
       untracked(() => this._loadSession(id));
     });
+
+    // When the user returns to this browser tab after the AI has already responded,
+    // requestAnimationFrame (which Angular uses to batch renders) was suspended while
+    // the tab was in the background. Force a check so signals that fired during that
+    // window are reflected in the DOM immediately.
+    const onVisible = () => {
+      if (!document.hidden) this.cdr.detectChanges();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    this.destroyRef.onDestroy(() => document.removeEventListener('visibilitychange', onVisible));
   }
 
   ngAfterViewChecked() {
@@ -488,6 +500,10 @@ export class TriagemChatComponent implements AfterViewChecked {
         summary,
       });
     } catch (e: any) {
+      // Intentionally cancelled via cancelCurrentRequest() — takeUntil fired before
+      // a value arrived, so firstValueFrom throws EmptyError.  Do nothing.
+      if (e?.name === 'EmptyError') return;
+
       const sessionStillActive =
         this.currentSessionId === sid &&
         this.sessionService.sessions().some((s) => s.id === sid);
@@ -578,6 +594,7 @@ export class TriagemChatComponent implements AfterViewChecked {
         } : undefined,
       });
     } catch (e: any) {
+      if (e?.name === 'EmptyError') return; // user cancelled
       this._appendMessage({
         role: 'agent',
         content: `Falha ao gerar rascunho: ${e?.message ?? 'erro desconhecido'}.`,
@@ -642,5 +659,30 @@ export class TriagemChatComponent implements AfterViewChecked {
       { ...partial, id: crypto.randomUUID(), timestamp: new Date() },
     ]);
     this.shouldScroll = true;
+  }
+
+  /**
+   * Called by the page component when the user confirms switching sessions
+   * while the AI is generating.  Aborts the in-flight HTTP request and
+   * asks the server to roll back any messages it may have already persisted.
+   */
+  async cancelAndRollback(): Promise<void> {
+    // Guard: nothing to cancel if not currently generating.
+    const wasTyping = this.typing();
+    const wasAutoDrafting = this.autoDrafting();
+    if (!wasTyping && !wasAutoDrafting) return;
+
+    const sid = this.currentSessionId;
+
+    // 1) Cancel the in-flight XHR immediately (throws EmptyError in sendUser/generateAutoDraft).
+    this.sessionService.cancelCurrentRequest();
+    this.typing.set(false);
+    this.autoDrafting.set(false);
+
+    // 2) Roll back server state (only for regular chat messages, not auto-draft).
+    //    auto-draft does not persist anything to the DB, so no rollback needed.
+    if (wasTyping && sid) {
+      void this.sessionService.rollbackLastMessage(sid);
+    }
   }
 }

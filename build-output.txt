@@ -1,0 +1,49 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                         [2m | [22m [1mRaw size[22m
+[32mchunk-7GRVMTP4.js[39m  [2m | [22m[2m-[22m                             [2m | [22m  [36m1.13 MB[39m[2m | [22m
+[32mchunk-LPKHRVW6.js[39m  [2m | [22m[2m-[22m                             [2m | [22m[36m258.95 kB[39m[2m | [22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m                          [2m | [22m[36m160.88 kB[39m[2m | [22m
+[32mchunk-2WXU5DAU.js[39m  [2m | [22m[2m-[22m                             [2m | [22m [36m93.96 kB[39m[2m | [22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m                        [2m | [22m [36m82.71 kB[39m[2m | [22m
+[32mchunk-RWRWRRPG.js[39m  [2m | [22m[2m-[22m                             [2m | [22m  [36m7.49 kB[39m[2m | [22m
+[32mchunk-LMJJRXN7.js[39m  [2m | [22m[2m-[22m                             [2m | [22m  [36m1.79 kB[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m                 [2m | [22m  [1m1.74 MB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                         [2m | [22m [1mRaw size[22m
+[32mchunk-U5RWKPV3.js[39m  [2m | [22m[2mdashboard-page-component[22m      [2m | [22m[36m451.87 kB[39m[2m | [22m
+[32mchunk-7P7ESX3D.js[39m  [2m | [22m[2m-[22m                             [2m | [22m[36m267.52 kB[39m[2m | [22m
+[32mchunk-SNRMVQNY.js[39m  [2m | [22m[2mdemandas-page-component[22m       [2m | [22m[36m198.16 kB[39m[2m | [22m
+[32mchunk-PV6JCA6J.js[39m  [2m | [22m[2m-[22m                             [2m | [22m[36m169.41 kB[39m[2m | [22m
+[32mchunk-MUNJH3O4.js[39m  [2m | [22m[2m-[22m                             [2m | [22m[36m167.85 kB[39m[2m | [22m
+[32mchunk-CXCHQJY7.js[39m  [2m | [22m[2m-[22m                             [2m | [22m[36m153.15 kB[39m[2m | [22m
+[32mchunk-FADPGM6B.js[39m  [2m | [22m[2mnova-demanda-page-component[22m   [2m | [22m[36m139.50 kB[39m[2m | [22m
+[32mchunk-FZP67ETF.js[39m  [2m | [22m[2mconfiguracoes-page-component[22m  [2m | [22m[36m101.96 kB[39m[2m | [22m
+[32mchunk-ENPZYQ42.js[39m  [2m | [22m[2mapp-shell-component[22m           [2m | [22m [36m84.66 kB[39m[2m | [22m
+[32mchunk-EHAYXE2E.js[39m  [2m | [22m[2musuarios-page-component[22m       [2m | [22m [36m60.65 kB[39m[2m | [22m
+[32mchunk-OSEYH4SZ.js[39m  [2m | [22m[2msetores-page-component[22m        [2m | [22m [36m52.82 kB[39m[2m | [22m
+[32mchunk-N546L736.js[39m  [2m | [22m[2mdemanda-detalhe-page-component[22m[2m | [22m [36m42.35 kB[39m[2m | [22m
+[32mchunk-N4DAWKWB.js[39m  [2m | [22m[2mrelatorios-page-component[22m     [2m | [22m [36m40.20 kB[39m[2m | [22m
+[32mchunk-CI6QTH4G.js[39m  [2m | [22m[2mperfil-page-component[22m         [2m | [22m [36m33.88 kB[39m[2m | [22m
+[32mchunk-HHQYJE74.js[39m  [2m | [22m[2m-[22m                             [2m | [22m [36m32.21 kB[39m[2m | [22m
+[2m...and 16 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [5.111 seconds] - 2026-05-07T19:16:44.694Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UiAvatar is not used within the template of AppSidebarComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/app-sidebar.component.ts:20:77:
+[37m      20 │ ...ctive, LucideAngularModule, [32mUiAvatar[37m, UiBadge, UiButton, UiSepa...
+         ╵                                [32m~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UiCardContent is not used within the template of RelatoriosPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/relatorios-page.component.ts:36:68:
+[37m      36 │ ...ormsModule, LucideAngularModule, UiCard, [32mUiCardContent[37m, UiButton],
+         ╵                                             [32m~~~~~~~~~~~~~[0m
+
+[39m[22m
+Output location: C:\Users\mduarte\temp\demands\dist\demands
+

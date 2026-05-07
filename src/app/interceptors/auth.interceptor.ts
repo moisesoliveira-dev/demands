@@ -18,7 +18,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
     let stream = next(request);
 
-    if (environment.apiTimeoutMs > 0) {
+    // AI endpoints (LLM generation) can take much longer — skip the global timeout for them.
+    const isAiRequest = !!environment.aiUrl && req.url.startsWith(environment.aiUrl);
+    if (environment.apiTimeoutMs > 0 && !isAiRequest) {
         stream = stream.pipe(timeout({ each: environment.apiTimeoutMs }));
     }
 
