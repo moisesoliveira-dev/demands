@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, catchError, of } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Notificacao, NotificacaoTipo } from '../types';
+import { Notificacao } from '../types';
 
 @Injectable({ providedIn: 'root' })
 export class NotificacoesService {

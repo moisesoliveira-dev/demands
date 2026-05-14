@@ -1,14 +1,13 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { cn } from '../../lib/utils';
 
 export interface BreadcrumbItem { label: string; path?: string }
 
 @Component({
-    selector: 'ui-breadcrumb',
-    imports: [CommonModule, RouterLink],
-    template: `
+  selector: 'ui-breadcrumb',
+  imports: [CommonModule, RouterLink],
+  template: `
     <nav class="mt-0.5">
       <ol class="flex items-center gap-1.5 text-xs text-slate-600">
         @for (item of items(); track $index; let last = $last) {
@@ -28,5 +27,5 @@ export interface BreadcrumbItem { label: string; path?: string }
   `,
 })
 export class UiBreadcrumb {
-    items = input<BreadcrumbItem[]>([]);
+  items = input<BreadcrumbItem[]>([]);
 }

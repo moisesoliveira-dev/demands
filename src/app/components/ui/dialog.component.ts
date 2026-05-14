@@ -1,8 +1,6 @@
-import { Component, EventEmitter, Output, input, signal, computed, ElementRef, ViewChild, TemplateRef, ViewContainerRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { Dialog } from '@angular/cdk/dialog';
+import { Component, EventEmitter, Output, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GsapScaleInDirective } from '../../lib/gsap.directives';
-import { cn } from '../../lib/utils';
 
 @Component({
     selector: 'ui-dialog',

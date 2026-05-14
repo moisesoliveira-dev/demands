@@ -1,6 +1,6 @@
 import {
   Component, OnInit, computed, inject, effect, ViewChild, ElementRef,
-  AfterViewInit, OnDestroy, signal, ChangeDetectionStrategy,
+  AfterViewInit, OnDestroy, ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -13,8 +13,7 @@ import {
   LineElement, Tooltip, Legend, Filler,
 } from 'chart.js';
 import { DemandasService } from '../services/demandas.service';
-import { AuthService } from '../services/auth.service';
-import { DemandStatus, Prioridade } from '../types';
+import { DemandStatus } from '../types';
 import { UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription } from '../components/ui/card.component';
 import { UiBadge } from '../components/ui/badge.component';
 import { MotionInViewDirective } from '../lib/motion.directives';
@@ -278,7 +277,6 @@ Chart.register(
 })
 export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private demandasService = inject(DemandasService);
-  private auth = inject(AuthService);
 
   readonly dashboardLoading = this.demandasService.loading;
 

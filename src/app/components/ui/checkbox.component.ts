@@ -1,11 +1,11 @@
-import { Component, EventEmitter, Output, input, computed, signal } from '@angular/core';
+import { Component, EventEmitter, Output, input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { cn } from '../../lib/utils';
 
 @Component({
-    selector: 'ui-checkbox',
-    imports: [CommonModule],
-    template: `
+  selector: 'ui-checkbox',
+  imports: [CommonModule],
+  template: `
     <button
       type="button"
       role="checkbox"
@@ -23,28 +23,28 @@ import { cn } from '../../lib/utils';
   `,
 })
 export class UiCheckbox {
-    checked = input(false);
-    disabled = input(false);
-    class = input('');
-    @Output() checkedChange = new EventEmitter<boolean>();
+  checked = input(false);
+  disabled = input(false);
+  class = input('');
+  @Output() checkedChange = new EventEmitter<boolean>();
 
-    classes = computed(() =>
-        cn(
-            'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow flex items-center justify-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-            this.checked() && 'bg-primary text-primary-foreground',
-            this.class()
-        )
-    );
+  classes = computed(() =>
+    cn(
+      'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow flex items-center justify-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+      this.checked() && 'bg-primary text-primary-foreground',
+      this.class()
+    )
+  );
 
-    toggle() {
-        if (this.disabled()) return;
-        this.checkedChange.emit(!this.checked());
-    }
+  toggle() {
+    if (this.disabled()) return;
+    this.checkedChange.emit(!this.checked());
+  }
 }
 
 @Component({
-    selector: 'ui-switch',
-    template: `
+  selector: 'ui-switch',
+  template: `
     <button
       type="button"
       role="switch"
@@ -58,26 +58,26 @@ export class UiCheckbox {
   `,
 })
 export class UiSwitch {
-    checked = input(false);
-    disabled = input(false);
-    @Output() checkedChange = new EventEmitter<boolean>();
+  checked = input(false);
+  disabled = input(false);
+  @Output() checkedChange = new EventEmitter<boolean>();
 
-    classes = computed(() =>
-        cn(
-            'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-            this.checked() ? 'bg-primary' : 'bg-input'
-        )
-    );
+  classes = computed(() =>
+    cn(
+      'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+      this.checked() ? 'bg-primary' : 'bg-input'
+    )
+  );
 
-    thumbClasses = computed(() =>
-        cn(
-            'pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform',
-            this.checked() ? 'translate-x-4' : 'translate-x-0'
-        )
-    );
+  thumbClasses = computed(() =>
+    cn(
+      'pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform',
+      this.checked() ? 'translate-x-4' : 'translate-x-0'
+    )
+  );
 
-    toggle() {
-        if (this.disabled()) return;
-        this.checkedChange.emit(!this.checked());
-    }
+  toggle() {
+    if (this.disabled()) return;
+    this.checkedChange.emit(!this.checked());
+  }
 }

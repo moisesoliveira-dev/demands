@@ -1,5 +1,5 @@
 import { Component, computed, input, EventEmitter, Output, ElementRef, ViewChild, signal, ViewContainerRef, TemplateRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { Overlay, OverlayRef, ConnectedPosition } from '@angular/cdk/overlay';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { CommonModule } from '@angular/common';
 import { cn } from '../../lib/utils';
@@ -7,9 +7,9 @@ import { cn } from '../../lib/utils';
 export interface SelectOption { value: string; label: string; }
 
 @Component({
-    selector: 'ui-select',
-    imports: [CommonModule],
-    template: `
+  selector: 'ui-select',
+  imports: [CommonModule],
+  template: `
     <button
       #trigger
       type="button"
@@ -39,61 +39,61 @@ export interface SelectOption { value: string; label: string; }
   `,
 })
 export class UiSelect implements AfterViewInit, OnDestroy {
-    options = input<SelectOption[]>([]);
-    value = input<string>('');
-    placeholder = input('Selecionar...');
-    disabled = input(false);
-    class = input('');
-    @Output() valueChange = new EventEmitter<string>();
+  options = input<SelectOption[]>([]);
+  value = input<string>('');
+  placeholder = input('Selecionar...');
+  disabled = input(false);
+  class = input('');
+  @Output() valueChange = new EventEmitter<string>();
 
-    @ViewChild('trigger') trigger!: ElementRef;
-    @ViewChild('menu') menu!: TemplateRef<any>;
+  @ViewChild('trigger') trigger!: ElementRef;
+  @ViewChild('menu') menu!: TemplateRef<any>;
 
-    open = signal(false);
-    triggerWidth = signal(0);
-    private overlayRef?: OverlayRef;
+  open = signal(false);
+  triggerWidth = signal(0);
+  private overlayRef?: OverlayRef;
 
-    classes = computed(() =>
-        cn('flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', this.class())
-    );
+  classes = computed(() =>
+    cn('flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', this.class())
+  );
 
-    displayLabel = computed(() => this.options().find((o) => o.value === this.value())?.label ?? '');
+  displayLabel = computed(() => this.options().find((o) => o.value === this.value())?.label ?? '');
 
-    constructor(private overlay: Overlay, private vcr: ViewContainerRef) { }
-    ngAfterViewInit() { }
+  constructor(private overlay: Overlay, private vcr: ViewContainerRef) { }
+  ngAfterViewInit() { }
 
-    toggle() {
-        if (this.open()) this.close();
-        else this.openMenu();
-    }
+  toggle() {
+    if (this.open()) this.close();
+    else this.openMenu();
+  }
 
-    openMenu() {
-        this.triggerWidth.set(this.trigger.nativeElement.offsetWidth);
-        const positionStrategy = this.overlay.position().flexibleConnectedTo(this.trigger.nativeElement).withPositions([
-            { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
-            { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 },
-        ]);
-        this.overlayRef = this.overlay.create({
-            positionStrategy,
-            hasBackdrop: true,
-            backdropClass: 'cdk-overlay-transparent-backdrop',
-            scrollStrategy: this.overlay.scrollStrategies.reposition(),
-        });
-        this.overlayRef.attach(new TemplatePortal(this.menu, this.vcr));
-        this.overlayRef.backdropClick().subscribe(() => this.close());
-        this.open.set(true);
-    }
+  openMenu() {
+    this.triggerWidth.set(this.trigger.nativeElement.offsetWidth);
+    const positionStrategy = this.overlay.position().flexibleConnectedTo(this.trigger.nativeElement).withPositions([
+      { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
+      { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 },
+    ]);
+    this.overlayRef = this.overlay.create({
+      positionStrategy,
+      hasBackdrop: true,
+      backdropClass: 'cdk-overlay-transparent-backdrop',
+      scrollStrategy: this.overlay.scrollStrategies.reposition(),
+    });
+    this.overlayRef.attach(new TemplatePortal(this.menu, this.vcr));
+    this.overlayRef.backdropClick().subscribe(() => this.close());
+    this.open.set(true);
+  }
 
-    close() {
-        this.overlayRef?.dispose();
-        this.overlayRef = undefined;
-        this.open.set(false);
-    }
+  close() {
+    this.overlayRef?.dispose();
+    this.overlayRef = undefined;
+    this.open.set(false);
+  }
 
-    select(opt: SelectOption) {
-        this.valueChange.emit(opt.value);
-        this.close();
-    }
+  select(opt: SelectOption) {
+    this.valueChange.emit(opt.value);
+    this.close();
+  }
 
-    ngOnDestroy() { this.close(); }
+  ngOnDestroy() { this.close(); }
 }

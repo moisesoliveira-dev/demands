@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { LucideAngularModule, User as UserIcon, Mail, Shield, Building2, Calendar, KeyRound, Save, Camera } from 'lucide-angular';
@@ -14,15 +14,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 @Component({
-    selector: 'app-perfil-page',
-    standalone: true,
-    imports: [
-        CommonModule, ReactiveFormsModule, LucideAngularModule,
-        UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription,
-        UiButton, UiLabel, UiAvatar, UiBadge,
-        MotionInViewDirective,
-    ],
-    template: `
+  selector: 'app-perfil-page',
+  standalone: true,
+  imports: [
+    CommonModule, ReactiveFormsModule, LucideAngularModule,
+    UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription,
+    UiButton, UiLabel, UiAvatar, UiBadge,
+    MotionInViewDirective,
+  ],
+  template: `
     @if (auth.user(); as user) {
       <div class="max-w-5xl mx-auto space-y-6">
         <!-- Header / cartão de identificação -->
@@ -205,84 +205,84 @@ import { ptBR } from 'date-fns/locale';
   `,
 })
 export class PerfilPageComponent {
-    readonly UserIcon = UserIcon; readonly Mail = Mail; readonly Shield = Shield;
-    readonly Building2 = Building2; readonly Calendar = Calendar;
-    readonly KeyRound = KeyRound; readonly Save = Save; readonly Camera = Camera;
+  readonly UserIcon = UserIcon; readonly Mail = Mail; readonly Shield = Shield;
+  readonly Building2 = Building2; readonly Calendar = Calendar;
+  readonly KeyRound = KeyRound; readonly Save = Save; readonly Camera = Camera;
 
-    readonly auth = inject(AuthService);
-    private fb = inject(FormBuilder);
+  readonly auth = inject(AuthService);
+  private fb = inject(FormBuilder);
 
-    savingPerfil = signal(false);
-    savingSenha = signal(false);
+  savingPerfil = signal(false);
+  savingSenha = signal(false);
 
-    perfilForm = this.fb.nonNullable.group({
-        nome: [this.auth.user()?.nome ?? '', [Validators.required, Validators.minLength(3)]],
-        email: [this.auth.user()?.email ?? '', [Validators.required, Validators.email]],
-        cargo: [this.auth.user()?.cargo ?? ''],
-    });
+  perfilForm = this.fb.nonNullable.group({
+    nome: [this.auth.user()?.nome ?? '', [Validators.required, Validators.minLength(3)]],
+    email: [this.auth.user()?.email ?? '', [Validators.required, Validators.email]],
+    cargo: [this.auth.user()?.cargo ?? ''],
+  });
 
-    senhaForm = this.fb.nonNullable.group(
-        {
-            senhaAtual: ['', [Validators.required]],
-            novaSenha: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
-            confirmarSenha: ['', [Validators.required]],
-        },
-        { validators: [matchPasswordsValidator] },
-    );
+  senhaForm = this.fb.nonNullable.group(
+    {
+      senhaAtual: ['', [Validators.required]],
+      novaSenha: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
+      confirmarSenha: ['', [Validators.required]],
+    },
+    { validators: [matchPasswordsValidator] },
+  );
 
-    showError(control: AbstractControl): boolean {
-        return control.invalid && (control.dirty || control.touched);
+  showError(control: AbstractControl): boolean {
+    return control.invalid && (control.dirty || control.touched);
+  }
+
+  formatDate(iso?: string): string {
+    if (!iso) return '—';
+    try { return format(new Date(iso), "d 'de' MMMM 'de' yyyy", { locale: ptBR }); }
+    catch { return iso; }
+  }
+
+  async salvarPerfil() {
+    if (this.perfilForm.invalid) return;
+    this.savingPerfil.set(true);
+    try {
+      const v = this.perfilForm.getRawValue();
+      await this.auth.atualizarMeuPerfil(v);
+      toast.success('Perfil atualizado');
+      this.perfilForm.markAsPristine();
+    } catch (e: any) {
+      toast.error('Erro ao salvar', e?.message || 'Tente novamente');
+    } finally {
+      this.savingPerfil.set(false);
     }
+  }
 
-    formatDate(iso?: string): string {
-        if (!iso) return '—';
-        try { return format(new Date(iso), "d 'de' MMMM 'de' yyyy", { locale: ptBR }); }
-        catch { return iso; }
-    }
+  resetarPerfil() {
+    const u = this.auth.user();
+    if (!u) return;
+    this.perfilForm.reset({ nome: u.nome, email: u.email, cargo: u.cargo });
+  }
 
-    async salvarPerfil() {
-        if (this.perfilForm.invalid) return;
-        this.savingPerfil.set(true);
-        try {
-            const v = this.perfilForm.getRawValue();
-            await this.auth.atualizarMeuPerfil(v);
-            toast.success('Perfil atualizado');
-            this.perfilForm.markAsPristine();
-        } catch (e: any) {
-            toast.error('Erro ao salvar', e?.message || 'Tente novamente');
-        } finally {
-            this.savingPerfil.set(false);
-        }
+  async alterarSenha() {
+    if (this.senhaForm.invalid) return;
+    this.savingSenha.set(true);
+    try {
+      const { senhaAtual, novaSenha } = this.senhaForm.getRawValue();
+      await this.auth.alterarSenha(senhaAtual, novaSenha);
+      toast.success('Senha alterada com sucesso');
+      this.senhaForm.reset();
+    } catch (e: any) {
+      toast.error('Erro ao alterar senha', e?.message || 'Verifique sua senha atual');
+    } finally {
+      this.savingSenha.set(false);
     }
+  }
 
-    resetarPerfil() {
-        const u = this.auth.user();
-        if (!u) return;
-        this.perfilForm.reset({ nome: u.nome, email: u.email, cargo: u.cargo });
-    }
-
-    async alterarSenha() {
-        if (this.senhaForm.invalid) return;
-        this.savingSenha.set(true);
-        try {
-            const { senhaAtual, novaSenha } = this.senhaForm.getRawValue();
-            await this.auth.alterarSenha(senhaAtual, novaSenha);
-            toast.success('Senha alterada com sucesso');
-            this.senhaForm.reset();
-        } catch (e: any) {
-            toast.error('Erro ao alterar senha', e?.message || 'Verifique sua senha atual');
-        } finally {
-            this.savingSenha.set(false);
-        }
-    }
-
-    alterarFoto() {
-        toast.info('Em breve', 'Upload de avatar será habilitado em uma próxima versão.');
-    }
+  alterarFoto() {
+    toast.info('Em breve', 'Upload de avatar será habilitado em uma próxima versão.');
+  }
 }
 
 function matchPasswordsValidator(group: AbstractControl): ValidationErrors | null {
-    const nova = group.get('novaSenha')?.value;
-    const conf = group.get('confirmarSenha')?.value;
-    return nova && conf && nova !== conf ? { naoConfere: true } : null;
+  const nova = group.get('novaSenha')?.value;
+  const conf = group.get('confirmarSenha')?.value;
+  return nova && conf && nova !== conf ? { naoConfere: true } : null;
 }

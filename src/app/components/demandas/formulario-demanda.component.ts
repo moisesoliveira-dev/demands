@@ -11,7 +11,6 @@ import { PRIORIDADE_CONFIG } from './demand-card.component';
 import { DemandasService } from '../../services/demandas.service';
 import { SetoresService } from '../../services/setores.service';
 import { UsersService } from '../../services/users.service';
-import { AuthService } from '../../services/auth.service';
 import { toast } from '../../lib/toast';
 
 /** Modo: 'create' (padrão) ou 'edit' (quando [demanda] é fornecida). */
@@ -97,7 +96,6 @@ export class FormularioDemandaComponent implements OnInit {
 
   private fb = inject(FormBuilder);
   private demandasService = inject(DemandasService);
-  private auth = inject(AuthService);
 
   ngOnInit(): void {
     if (this.setoresService.setores().length === 0) this.setoresService.listar();

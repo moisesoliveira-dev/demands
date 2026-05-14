@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, viewChild, effect, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, transferArrayItem, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Demanda, DemandStatus } from '../../types';
 import { DemandasService } from '../../services/demandas.service';
 import { DemandCardComponent } from './demand-card.component';
