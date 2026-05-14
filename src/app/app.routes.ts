@@ -56,6 +56,12 @@ export const routes: Routes = [
                 data: { pageTitle: 'Configurações', breadcrumbs: [{ label: 'Configurações' }] },
             },
             {
+                path: 'ia-admin',
+                canActivate: [adminGuard],
+                loadComponent: () => import('./pages/ia-admin-page.component').then((m) => m.IaAdminPageComponent),
+                data: { pageTitle: 'IA — Admin', breadcrumbs: [{ label: 'IA — Admin' }] },
+            },
+            {
                 path: 'perfil',
                 loadComponent: () => import('./pages/perfil-page.component').then((m) => m.PerfilPageComponent),
                 data: { pageTitle: 'Meu Perfil', breadcrumbs: [{ label: 'Meu Perfil' }] },

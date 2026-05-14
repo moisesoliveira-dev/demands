@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, LayoutDashboard, ClipboardList, PlusCircle, BarChart3, Settings, LogOut, Menu, X, Users, Building2 } from 'lucide-angular';
+import { LucideAngularModule, LayoutDashboard, ClipboardList, PlusCircle, BarChart3, Settings, LogOut, Menu, X, Users, Building2, Brain } from 'lucide-angular';
 import { UIService } from '../services/ui.service';
 import { AuthService } from '../services/auth.service';
 import { DemandasService } from '../services/demandas.service';
@@ -103,6 +103,7 @@ export class AppSidebarComponent {
     { label: 'Relatórios', icon: BarChart3, path: '/relatorios' },
     { label: 'Usuários', icon: Users, path: '/usuarios', adminOnly: true },
     { label: 'Setores', icon: Building2, path: '/setores', adminOnly: true },
+    { label: 'IA', icon: Brain, path: '/ia-admin', adminOnly: true },
     { label: 'Configurações', icon: Settings, path: '/configuracoes', adminOnly: true },
   ];
 
