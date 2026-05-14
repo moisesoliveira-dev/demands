@@ -291,6 +291,7 @@ const STARTER_SUGGESTIONS = [
 export class TriagemChatComponent implements AfterViewChecked {
   @Output() created = new EventEmitter<Demanda>();
   @Output() cancel = new EventEmitter<void>();
+  @Output() sessionCreated = new EventEmitter<string>();
 
   @ViewChild('scrollArea') scrollArea?: ElementRef<HTMLElement>;
   @ViewChild('inputEl') inputEl?: ElementRef<HTMLTextAreaElement>;
@@ -464,8 +465,24 @@ export class TriagemChatComponent implements AfterViewChecked {
 
   /** Envia a mensagem ao backend e processa a resposta do agente. */
   async sendUser(text: string): Promise<void> {
-    const sid = this.currentSessionId;
-    if (!sid) return;
+    let sid = this.currentSessionId;
+
+    // Criação lazy: a sessão só é criada no primeiro envio de mensagem.
+    if (!sid) {
+      try {
+        const newSession = await this.sessionService.createNew();
+        this.currentSessionId = newSession.id;
+        sid = newSession.id;
+        this.sessionCreated.emit(sid);
+      } catch (e: any) {
+        this._appendMessage({
+          role: 'agent',
+          content: `Não consegui iniciar a sessão: ${e?.message ?? 'erro de comunicação'}.`,
+        });
+        toast.error('Falha ao criar sessão', e?.message);
+        return;
+      }
+    }
 
     // 1) Renderiza imediatamente a mensagem do usuário (otimista)
     this._appendMessage({ role: 'user', content: text });

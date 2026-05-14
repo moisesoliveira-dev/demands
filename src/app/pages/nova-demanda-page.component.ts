@@ -100,7 +100,7 @@ interface SessionGroup {
         </div>
         <!-- Chat -->
         <div class="flex-1 min-h-0">
-          <triagem-chat #chat [sessionId]="activeId()" (created)="onCreated()" />
+          <triagem-chat #chat [sessionId]="activeId()" (created)="onCreated()" (sessionCreated)="onSessionCreated($event)" />
         </div>
       </div>
 
@@ -447,19 +447,14 @@ export class NovaDemandaPageComponent {
     try {
       await this.sessionService.loadAll();
     } catch {
-      // segue para criar nova mesmo em falha
+      // ignora falha de rede — chat fica vazio, usuário pode tentar manualmente
     }
     const sessions = this.sessionService.sessions();
     if (sessions.length > 0) {
       this.activeId.set(sessions[0].id);
-    } else {
-      try {
-        const s = await this.sessionService.createNew();
-        this.activeId.set(s.id);
-      } catch {
-        // sem sessão ativa — chat ficará vazio
-      }
     }
+    // Se não há sessões, mantém activeId = null: o empty-state do chat é exibido
+    // e a sessão só é criada quando o usuário enviar a primeira mensagem.
   }
 
   sessionItemClass(id: string) {
@@ -530,21 +525,11 @@ export class NovaDemandaPageComponent {
 
   async newSession() {
     if (this.chatRef?.typing() || this.chatRef?.autoDrafting()) {
-      this._pendingSwitchFn = async () => {
-        try {
-          const s = await this.sessionService.createNew();
-          this.activeId.set(s.id);
-        } catch { /* silently ignored */ }
-      };
+      this._pendingSwitchFn = async () => { this.activeId.set(null); };
       this.cancelConfirmOpen.set(true);
       return;
     }
-    try {
-      const s = await this.sessionService.createNew();
-      this.activeId.set(s.id);
-    } catch (e: any) {
-      // toast já é emitido em outros pontos; aqui silenciamos
-    }
+    this.activeId.set(null);
   }
 
   selectSession(id: string) {
@@ -628,5 +613,10 @@ export class NovaDemandaPageComponent {
 
   onCreated() {
     setTimeout(() => this.router.navigate(['/demandas']), 2000);
+  }
+
+  /** Chamado pelo chat quando ele cria uma sessão lazily (primeira mensagem). */
+  onSessionCreated(id: string) {
+    this.activeId.set(id);
   }
 }
