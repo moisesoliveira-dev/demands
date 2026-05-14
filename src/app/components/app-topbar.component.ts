@@ -47,9 +47,8 @@ import { cn } from '../lib/utils';
 
           @if (auth.user(); as user) {
             <ui-dropdown align="end" contentClass="w-56">
-              <ui-button trigger variant="ghost" class="flex items-center gap-2 h-10 px-2">
+              <ui-button trigger variant="ghost" class="h-10 w-10 p-0">
                 <ui-avatar [name]="user.nome" [src]="user.avatar" class="h-8 w-8 border-2 border-amber-500/20" fallbackClass="bg-slate-700 text-slate-200 text-xs font-medium" />
-                <span class="hidden md:block text-sm font-medium text-foreground max-w-30 truncate">{{ user.nome }}</span>
               </ui-button>
               <div menu>
                 <ui-dropdown-label>

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil } from 'lucide-angular';
 import { UiButton } from '../ui/button.component';
+import { UiAvatar } from '../ui/avatar.component';
+import { AuthService } from '../../services/auth.service';
 import { Demanda, Prioridade } from '../../types';
 import { toast } from '../../lib/toast';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
@@ -27,7 +29,7 @@ const STARTER_SUGGESTIONS = [
 @Component({
   selector: 'triagem-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, UiButton],
+  imports: [CommonModule, FormsModule, LucideAngularModule, UiButton, UiAvatar],
   template: `
     <div class="flex flex-col h-full bg-white">
 
@@ -145,9 +147,9 @@ const STARTER_SUGGESTIONS = [
                       </button>
                     </div>
                   </div>
-                  <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
-                    <lucide-angular [img]="UserIcon" size="14" />
-                  </div>
+                  <ui-avatar [name]="auth.user()?.nome ?? ''" [src]="auth.user()?.avatar"
+                    class="h-7 w-7 shrink-0 mt-0.5"
+                    fallbackClass="bg-slate-200 text-slate-600 text-xs font-medium" />
                 </div>
               }
             }
@@ -238,6 +240,7 @@ export class TriagemChatComponent implements AfterViewChecked {
   sessionId = input<string | null>(null);
   readonly starterSuggestions = STARTER_SUGGESTIONS;
 
+  readonly auth = inject(AuthService);
   private sessionService = inject(TriagemSessionService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
