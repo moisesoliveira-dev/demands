@@ -7,34 +7,32 @@ import { UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogF
 import { UiButton } from '../ui/button.component';
 import { UiBadge } from '../ui/badge.component';
 import { UiLabel } from '../ui/form-elements.component';
-import { UiCheckbox } from '../ui/checkbox.component';
-
 interface Option<T> { value: T; label: string; }
 
 const STATUS_OPTIONS: Option<DemandStatus>[] = [
-    { value: DemandStatus.PENDENTE, label: 'Pendente' },
-    { value: DemandStatus.EM_ANDAMENTO, label: 'Em Andamento' },
-    { value: DemandStatus.BLOQUEADO, label: 'Bloqueado' },
-    { value: DemandStatus.CONCLUIDO, label: 'Concluído' },
+  { value: DemandStatus.PENDENTE, label: 'Pendente' },
+  { value: DemandStatus.EM_ANDAMENTO, label: 'Em Andamento' },
+  { value: DemandStatus.BLOQUEADO, label: 'Bloqueado' },
+  { value: DemandStatus.CONCLUIDO, label: 'Concluído' },
 ];
 
 const PRIORIDADE_OPTIONS: Option<Prioridade>[] = [
-    { value: 1, label: 'Baixa' },
-    { value: 2, label: 'Normal' },
-    { value: 3, label: 'Alta' },
-    { value: 4, label: 'Urgente' },
-    { value: 5, label: 'Crítico' },
+  { value: 1, label: 'Baixa' },
+  { value: 2, label: 'Normal' },
+  { value: 3, label: 'Alta' },
+  { value: 4, label: 'Urgente' },
+  { value: 5, label: 'Crítico' },
 ];
 
 @Component({
-    selector: 'demandas-filtros-dialog',
-    standalone: true,
-    imports: [
-        CommonModule, LucideAngularModule,
-        UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter,
-        UiButton, UiBadge, UiLabel, UiCheckbox,
-    ],
-    template: `
+  selector: 'demandas-filtros-dialog',
+  standalone: true,
+  imports: [
+    CommonModule, LucideAngularModule,
+    UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter,
+    UiButton, UiBadge, UiLabel,
+  ],
+  template: `
     <ui-dialog [open]="open()" (openChange)="openChange.emit($event)" contentClass="max-w-2xl">
       <ui-dialog-header>
         <ui-dialog-title class="flex items-center gap-2">
@@ -65,15 +63,12 @@ const PRIORIDADE_OPTIONS: Option<Prioridade>[] = [
         <!-- Status -->
         <div class="space-y-2">
           <ui-label>Status</ui-label>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="flex flex-wrap gap-2">
             @for (opt of statusOptions; track opt.value) {
-              <label class="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md border border-border hover:bg-muted transition-colors"
-                [class.bg-primary]="isStatusSelected(opt.value)"
-                [class.text-primary-foreground]="isStatusSelected(opt.value)"
-                [class.border-primary]="isStatusSelected(opt.value)">
-                <ui-checkbox [checked]="isStatusSelected(opt.value)" (checkedChange)="toggleStatus(opt.value)" />
-                <span>{{ opt.label }}</span>
-              </label>
+              <button type="button" (click)="toggleStatus(opt.value)"
+                [class]="chipClass(isStatusSelected(opt.value))">
+                {{ opt.label }}
+              </button>
             }
           </div>
         </div>
@@ -81,15 +76,12 @@ const PRIORIDADE_OPTIONS: Option<Prioridade>[] = [
         <!-- Prioridade -->
         <div class="space-y-2">
           <ui-label>Prioridade</ui-label>
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div class="flex flex-wrap gap-2">
             @for (opt of prioridadeOptions; track opt.value) {
-              <label class="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md border border-border hover:bg-muted transition-colors"
-                [class.bg-primary]="isPrioridadeSelected(opt.value)"
-                [class.text-primary-foreground]="isPrioridadeSelected(opt.value)"
-                [class.border-primary]="isPrioridadeSelected(opt.value)">
-                <ui-checkbox [checked]="isPrioridadeSelected(opt.value)" (checkedChange)="togglePrioridade(opt.value)" />
-                <span>{{ opt.label }}</span>
-              </label>
+              <button type="button" (click)="togglePrioridade(opt.value)"
+                [class]="chipClass(isPrioridadeSelected(opt.value))">
+                {{ opt.label }}
+              </button>
             }
           </div>
         </div>
@@ -165,106 +157,106 @@ const PRIORIDADE_OPTIONS: Option<Prioridade>[] = [
   `,
 })
 export class DemandasFiltrosDialogComponent {
-    open = input(false);
-    @Output() openChange = new EventEmitter<boolean>();
+  open = input(false);
+  @Output() openChange = new EventEmitter<boolean>();
 
-    readonly Filter = Filter; readonly X = X; readonly Search = Search;
-    readonly statusOptions = STATUS_OPTIONS;
-    readonly prioridadeOptions = PRIORIDADE_OPTIONS;
+  readonly Filter = Filter; readonly X = X; readonly Search = Search;
+  readonly statusOptions = STATUS_OPTIONS;
+  readonly prioridadeOptions = PRIORIDADE_OPTIONS;
 
-    private demandas = inject(DemandasService);
+  private demandas = inject(DemandasService);
 
-    /** Cópia local mutável dos filtros — só aplica no service ao clicar "Aplicar". */
-    local = signal<DemandFilters>({});
+  /** Cópia local mutável dos filtros — só aplica no service ao clicar "Aplicar". */
+  local = signal<DemandFilters>({});
 
-    constructor() {
-        // Quando abrir o dialog, sincroniza com filtros vigentes do service.
-        effect(() => {
-            if (this.open()) {
-                this.local.set({ ...this.demandas.filtros() });
-            }
-        });
-    }
-
-    // ── Listas dinâmicas (a partir das demandas atuais) ──────────────────────
-    setoresDisponiveis = computed(() =>
-        Array.from(new Set(this.demandas.demandas().map((d) => d.setor).filter(Boolean))).sort(),
-    );
-    responsaveisDisponiveis = computed(() =>
-        Array.from(new Set(this.demandas.demandas().map((d) => d.responsavel).filter(Boolean))).sort(),
-    );
-
-    totalAtivos = computed(() => {
-        const f = this.local();
-        return Object.values(f).reduce((acc: number, v) => acc + (Array.isArray(v) ? v.length : v ? 1 : 0), 0);
+  constructor() {
+    // Quando abrir o dialog, sincroniza com filtros vigentes do service.
+    effect(() => {
+      if (this.open()) {
+        this.local.set({ ...this.demandas.filtros() });
+      }
     });
+  }
 
-    // ── Helpers de seleção ───────────────────────────────────────────────────
-    isStatusSelected(s: DemandStatus) { return (this.local().status ?? []).includes(s); }
-    isPrioridadeSelected(p: Prioridade) { return (this.local().prioridade ?? []).includes(p); }
-    isSetorSelected(s: string) { return (this.local().setor ?? []).includes(s); }
-    isResponsavelSelected(r: string) { return (this.local().responsavel ?? []).includes(r); }
+  // ── Listas dinâmicas (a partir das demandas atuais) ──────────────────────
+  setoresDisponiveis = computed(() =>
+    Array.from(new Set(this.demandas.demandas().map((d) => d.setor).filter(Boolean))).sort(),
+  );
+  responsaveisDisponiveis = computed(() =>
+    Array.from(new Set(this.demandas.demandas().map((d) => d.responsavel).filter(Boolean))).sort(),
+  );
 
-    toggleStatus(s: DemandStatus) {
-        this.local.update((f) => ({ ...f, status: toggleArr(f.status, s) }));
-    }
-    togglePrioridade(p: Prioridade) {
-        this.local.update((f) => ({ ...f, prioridade: toggleArr(f.prioridade, p) }));
-    }
-    toggleSetor(s: string) {
-        this.local.update((f) => ({ ...f, setor: toggleArr(f.setor, s) }));
-    }
-    toggleResponsavel(r: string) {
-        this.local.update((f) => ({ ...f, responsavel: toggleArr(f.responsavel, r) }));
-    }
-    setBusca(v: string) {
-        this.local.update((f) => ({ ...f, busca: v.trim() || undefined }));
-    }
-    setDataInicio(v: string) {
-        this.local.update((f) => ({ ...f, dataInicio: v || undefined }));
-    }
-    setDataFim(v: string) {
-        this.local.update((f) => ({ ...f, dataFim: v || undefined }));
-    }
+  totalAtivos = computed(() => {
+    const f = this.local();
+    return Object.values(f).reduce((acc: number, v) => acc + (Array.isArray(v) ? v.length : v ? 1 : 0), 0);
+  });
 
-    chipClass(active: boolean): string {
-        return [
-            'px-3 py-1.5 text-xs rounded-full border transition-colors',
-            active
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-card text-foreground border-border hover:bg-muted',
-        ].join(' ');
-    }
+  // ── Helpers de seleção ───────────────────────────────────────────────────
+  isStatusSelected(s: DemandStatus) { return (this.local().status ?? []).includes(s); }
+  isPrioridadeSelected(p: Prioridade) { return (this.local().prioridade ?? []).includes(p); }
+  isSetorSelected(s: string) { return (this.local().setor ?? []).includes(s); }
+  isResponsavelSelected(r: string) { return (this.local().responsavel ?? []).includes(r); }
 
-    aplicar() {
-        // Limpa propriedades vazias antes de enviar para o service.
-        const cleaned = sanitize(this.local());
-        this.demandas.setFiltros(cleaned);
-        this.openChange.emit(false);
-    }
+  toggleStatus(s: DemandStatus) {
+    this.local.update((f) => ({ ...f, status: toggleArr(f.status, s) }));
+  }
+  togglePrioridade(p: Prioridade) {
+    this.local.update((f) => ({ ...f, prioridade: toggleArr(f.prioridade, p) }));
+  }
+  toggleSetor(s: string) {
+    this.local.update((f) => ({ ...f, setor: toggleArr(f.setor, s) }));
+  }
+  toggleResponsavel(r: string) {
+    this.local.update((f) => ({ ...f, responsavel: toggleArr(f.responsavel, r) }));
+  }
+  setBusca(v: string) {
+    this.local.update((f) => ({ ...f, busca: v.trim() || undefined }));
+  }
+  setDataInicio(v: string) {
+    this.local.update((f) => ({ ...f, dataInicio: v || undefined }));
+  }
+  setDataFim(v: string) {
+    this.local.update((f) => ({ ...f, dataFim: v || undefined }));
+  }
 
-    limpar() {
-        this.local.set({});
-        this.demandas.limparFiltros();
-    }
+  chipClass(active: boolean): string {
+    return [
+      'px-3 py-1.5 text-xs rounded-full border transition-colors',
+      active
+        ? 'bg-primary text-primary-foreground border-primary'
+        : 'bg-card text-foreground border-border hover:bg-muted',
+    ].join(' ');
+  }
+
+  aplicar() {
+    // Limpa propriedades vazias antes de enviar para o service.
+    const cleaned = sanitize(this.local());
+    this.demandas.setFiltros(cleaned);
+    this.openChange.emit(false);
+  }
+
+  limpar() {
+    this.local.set({});
+    this.demandas.limparFiltros();
+  }
 }
 
 function toggleArr<T>(arr: T[] | undefined, value: T): T[] | undefined {
-    const set = new Set(arr ?? []);
-    if (set.has(value)) set.delete(value);
-    else set.add(value);
-    const next = Array.from(set);
-    return next.length > 0 ? next : undefined;
+  const set = new Set(arr ?? []);
+  if (set.has(value)) set.delete(value);
+  else set.add(value);
+  const next = Array.from(set);
+  return next.length > 0 ? next : undefined;
 }
 
 function sanitize(f: DemandFilters): DemandFilters {
-    const out: DemandFilters = {};
-    if (f.status?.length) out.status = f.status;
-    if (f.prioridade?.length) out.prioridade = f.prioridade;
-    if (f.setor?.length) out.setor = f.setor;
-    if (f.responsavel?.length) out.responsavel = f.responsavel;
-    if (f.busca) out.busca = f.busca;
-    if (f.dataInicio) out.dataInicio = f.dataInicio;
-    if (f.dataFim) out.dataFim = f.dataFim;
-    return out;
+  const out: DemandFilters = {};
+  if (f.status?.length) out.status = f.status;
+  if (f.prioridade?.length) out.prioridade = f.prioridade;
+  if (f.setor?.length) out.setor = f.setor;
+  if (f.responsavel?.length) out.responsavel = f.responsavel;
+  if (f.busca) out.busca = f.busca;
+  if (f.dataInicio) out.dataInicio = f.dataInicio;
+  if (f.dataFim) out.dataFim = f.dataFim;
+  return out;
 }
