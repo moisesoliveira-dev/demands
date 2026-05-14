@@ -54,22 +54,6 @@ export interface PipelineDraft {
     prioridade?: Prioridade;
 }
 
-export interface PipelineStepTelemetry {
-    name: string;
-    latency_ms: number;
-    input_tokens: number;
-    output_tokens: number;
-    error: string | null;
-}
-
-export interface PipelineResult {
-    draft: PipelineDraft;
-    references: string[];
-    issues: string[];
-    ok: boolean;
-    telemetry: PipelineStepTelemetry[];
-}
-
 // ─── Server DTOs ─────────────────────────────────────────────────────────────
 
 interface ServerSession {
@@ -133,7 +117,7 @@ export class TriagemSessionService {
     loaded = signal(false);
     loading = signal(true);
 
-    /** Abort the current in-flight sendMessage / autoDraft request. */
+    /** Abort the current in-flight sendMessage request. */
     cancelCurrentRequest(): void {
         this._cancel$.next();
     }
@@ -201,17 +185,6 @@ export class TriagemSessionService {
             ),
         );
         return reply;
-    }
-
-    /** Pipeline one-shot: gera um rascunho completo a partir de texto livre.
-     *  Não cria sessão nem demanda — apenas retorna o draft + telemetria. */
-    async autoDraft(description: string): Promise<PipelineResult> {
-        return await firstValueFrom(
-            this.http.post<PipelineResult>(
-                `${environment.aiUrl}/triagem/auto-draft`,
-                { description },
-            ).pipe(takeUntil(this._cancel$))
-        );
     }
 
     /**

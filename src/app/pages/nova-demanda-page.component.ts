@@ -524,7 +524,7 @@ export class NovaDemandaPageComponent {
   }
 
   async newSession() {
-    if (this.chatRef?.typing() || this.chatRef?.autoDrafting()) {
+    if (this.chatRef?.typing()) {
       this._pendingSwitchFn = async () => { this.activeId.set(null); };
       this.cancelConfirmOpen.set(true);
       return;
@@ -535,8 +535,7 @@ export class NovaDemandaPageComponent {
   selectSession(id: string) {
     if (id === this.activeId()) return;
     this.cancelEdit();
-    if (this.chatRef?.typing() || this.chatRef?.autoDrafting()) {
-      this._pendingSwitchFn = async () => this.activeId.set(id);
+    if (this.chatRef?.typing()) {
       this.cancelConfirmOpen.set(true);
       return;
     }

@@ -1,13 +1,12 @@
 import { AfterViewChecked, ChangeDetectorRef, Component, DestroyRef, ElementRef, EventEmitter, Output, ViewChild, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil, Sparkles, Zap } from 'lucide-angular';
+import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil } from 'lucide-angular';
 import { UiButton } from '../ui/button.component';
-import { Demanda, DemandStatus, Prioridade } from '../../types';
+import { Demanda, Prioridade } from '../../types';
 import { toast } from '../../lib/toast';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
-import { TriagemSessionService, Step, DraftDemanda, StoredMessage, PipelineResult } from '../../services/triagem-session.service';
-import { DemandasService } from '../../services/demandas.service';
+import { TriagemSessionService, Step, DraftDemanda, StoredMessage } from '../../services/triagem-session.service';
 
 interface ChatMessage {
   id: string;
@@ -68,32 +67,6 @@ const STARTER_SUGGESTIONS = [
                   <p class="text-xs text-slate-400 mt-0.5 line-clamp-2">{{ s.prompt }}</p>
                 </button>
               }
-            </div>
-            <!-- Auto-draft (Fase 4): one-shot pipeline -->
-            <div class="w-full max-w-2xl border-t border-slate-100 pt-6">
-              <div class="flex items-start gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50/40">
-                <lucide-angular [img]="Zap" size="18" class="text-emerald-600 mt-0.5 shrink-0" />
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold text-slate-800">Gerar rascunho automaticamente</p>
-                  <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                    Pipeline Intake → Enrichment → Draft → Validator. Digite uma descrição longa abaixo e clique para receber um rascunho completo em uma só etapa.
-                  </p>
-                  <button type="button" (click)="generateAutoDraft()"
-                    [disabled]="!draftInput.trim() || autoDrafting()"
-                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors">
-                    @if (autoDrafting()) {
-                      <lucide-angular [img]="Loader2" size="13" class="animate-spin" />
-                      Gerando...
-                    } @else {
-                      <lucide-angular [img]="Sparkles" size="13" />
-                      Gerar a partir do texto abaixo
-                    }
-                  </button>
-                  @if (!draftInput.trim()) {
-                    <p class="text-[11px] text-slate-400 mt-1.5">Digite uma descrição no campo de mensagem para habilitar.</p>
-                  }
-                </div>
-              </div>
             </div>
           </div>
 
@@ -211,45 +184,7 @@ const STARTER_SUGGESTIONS = [
               </div>
             }
 
-            <!-- Auto-draft result (Fase 4) -->
-            @if (autoDraftResult(); as result) {
-              <div class="pl-11 space-y-3">
-                @if (result.issues.length) {
-                  <div class="border border-amber-200 bg-amber-50 rounded-lg px-3 py-2 text-xs text-amber-800">
-                    <p class="font-semibold mb-1">Avisos do validador:</p>
-                    <ul class="list-disc pl-4 space-y-0.5">
-                      @for (i of result.issues; track i) { <li>{{ i }}</li> }
-                    </ul>
-                  </div>
-                }
-                @if (result.references.length) {
-                  <div class="text-[11px] text-slate-500">
-                    <span class="font-semibold">Referências da KB:</span> {{ result.references.join(', ') }}
-                  </div>
-                }
-                <div class="flex flex-wrap gap-1.5">
-                  @for (t of result.telemetry; track t.name) {
-                    <span [class]="'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border ' + (t.error ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-slate-50 text-slate-600')">
-                      {{ t.name }} · {{ t.latency_ms }}ms · {{ t.input_tokens + t.output_tokens }}tk
-                    </span>
-                  }
-                </div>
-                <div class="flex gap-3">
-                  <ui-button type="button" variant="outline" size="sm" (click)="discardAutoDraft()" [disabled]="saving()">
-                    Descartar
-                  </ui-button>
-                  <ui-button type="button" size="sm" (click)="createFromAutoDraft()" [disabled]="saving() || !canCreateAutoDraft()">
-                    @if (saving()) {
-                      <lucide-angular [img]="Loader2" size="14" class="animate-spin mr-1.5" />
-                      Criando...
-                    } @else {
-                      <lucide-angular [img]="CheckCircle2" size="14" class="mr-1.5" />
-                      Criar demanda
-                    }
-                  </ui-button>
-                </div>
-              </div>
-            }
+
 
             <div class="h-2"></div>
           </div>
@@ -299,13 +234,11 @@ export class TriagemChatComponent implements AfterViewChecked {
   readonly Bot = Bot; readonly UserIcon = UserIcon; readonly ArrowUp = ArrowUp;
   readonly Loader2 = Loader2; readonly CheckCircle2 = CheckCircle2;
   readonly Copy = Copy; readonly Check = Check; readonly Pencil = Pencil;
-  readonly Sparkles = Sparkles; readonly Zap = Zap;
 
   sessionId = input<string | null>(null);
   readonly starterSuggestions = STARTER_SUGGESTIONS;
 
   private sessionService = inject(TriagemSessionService);
-  private demandasService = inject(DemandasService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
 
@@ -317,10 +250,6 @@ export class TriagemChatComponent implements AfterViewChecked {
   loadingSession = signal(false);
   copiedId = signal<string | null>(null);
   draftInput = '';
-
-  // Auto-draft (Fase 4 — pipeline one-shot)
-  autoDrafting = signal(false);
-  autoDraftResult = signal<PipelineResult | null>(null);
 
   /** Snapshot do draft retornado pelo agente (somente leitura aqui — a edição
    *  manual ocorre no painel de prévia da página pai). */
@@ -577,98 +506,8 @@ export class TriagemChatComponent implements AfterViewChecked {
     this.draftInput = '';
     this.saving.set(false);
     this.readyToCreate.set(false);
-    this.autoDrafting.set(false);
-    this.autoDraftResult.set(null);
   }
 
-  // ─── Auto-draft pipeline (Fase 4) ────────────────────────────────────────
-
-  /** Roda o pipeline one-shot a partir do texto digitado. Não cria sessão nem demanda. */
-  async generateAutoDraft(): Promise<void> {
-    const text = this.draftInput.trim();
-    if (!text || this.autoDrafting()) return;
-    this.autoDrafting.set(true);
-    this.autoDraftResult.set(null);
-    // Mostra a entrada como mensagem do usuário (para contexto visual).
-    this._appendMessage({ role: 'user', content: text });
-    this.draftInput = '';
-    if (this.inputEl) this.inputEl.nativeElement.style.height = 'auto';
-    this.shouldScroll = true;
-    try {
-      const result = await this.sessionService.autoDraft(text);
-      this.autoDraftResult.set(result);
-      const d = result.draft;
-      this._appendMessage({
-        role: 'agent',
-        content: result.ok
-          ? 'Rascunho gerado pelo pipeline. Revise os dados abaixo e clique em “Criar demanda” para confirmar.'
-          : 'Rascunho gerado com avisos do validador. Verifique antes de confirmar.',
-        summary: (d.titulo || d.setor) ? {
-          titulo: d.titulo,
-          setor: d.setor,
-          responsavel: d.responsavel,
-          prioridade: d.prioridade,
-        } : undefined,
-      });
-    } catch (e: any) {
-      if (e?.name === 'EmptyError') return; // user cancelled
-      this._appendMessage({
-        role: 'agent',
-        content: `Falha ao gerar rascunho: ${e?.message ?? 'erro desconhecido'}.`,
-      });
-      toast.error('Falha no auto-draft', e?.message);
-    } finally {
-      this.autoDrafting.set(false);
-    }
-  }
-
-  canCreateAutoDraft(): boolean {
-    const r = this.autoDraftResult();
-    if (!r) return false;
-    const d = r.draft;
-    return !!(d.titulo && d.descricao && d.setor && d.responsavel && d.prioridade);
-  }
-
-  discardAutoDraft(): void {
-    this.autoDraftResult.set(null);
-  }
-
-  /** Cria a demanda diretamente a partir do auto-draft (sem sessão de triagem). */
-  async createFromAutoDraft(): Promise<void> {
-    const r = this.autoDraftResult();
-    if (!r || this.saving()) return;
-    if (!this.canCreateAutoDraft()) {
-      toast.error('Rascunho incompleto', 'Faltam campos obrigatórios.');
-      return;
-    }
-    const d = r.draft;
-    this.saving.set(true);
-    try {
-      const nova = await this.demandasService.criar({
-        titulo: d.titulo!,
-        descricao: d.descricao!,
-        setor: d.setor!,
-        responsavel: d.responsavel!,
-        prioridade: d.prioridade!,
-        status: DemandStatus.PENDENTE,
-      });
-      this.autoDraftResult.set(null);
-      this._appendMessage({
-        role: 'agent',
-        content: 'Demanda criada com sucesso a partir do rascunho automatizado.',
-      });
-      toast.success('Demanda criada!');
-      this.created.emit(nova);
-    } catch (e: any) {
-      this._appendMessage({
-        role: 'agent',
-        content: `Não consegui criar a demanda: ${e?.message ?? 'erro desconhecido'}.`,
-      });
-      toast.error('Erro ao criar demanda', e?.message);
-    } finally {
-      this.saving.set(false);
-    }
-  }
 
   private _appendMessage(partial: Omit<ChatMessage, 'id' | 'timestamp'>) {
     this.messages.update((m) => [
@@ -686,18 +525,15 @@ export class TriagemChatComponent implements AfterViewChecked {
   async cancelAndRollback(): Promise<void> {
     // Guard: nothing to cancel if not currently generating.
     const wasTyping = this.typing();
-    const wasAutoDrafting = this.autoDrafting();
-    if (!wasTyping && !wasAutoDrafting) return;
+    if (!wasTyping) return;
 
     const sid = this.currentSessionId;
 
-    // 1) Cancel the in-flight XHR immediately (throws EmptyError in sendUser/generateAutoDraft).
+    // 1) Cancel the in-flight XHR immediately (throws EmptyError in sendUser).
     this.sessionService.cancelCurrentRequest();
     this.typing.set(false);
-    this.autoDrafting.set(false);
 
-    // 2) Roll back server state (only for regular chat messages, not auto-draft).
-    //    auto-draft does not persist anything to the DB, so no rollback needed.
+    // 2) Roll back server state.
     if (wasTyping && sid) {
       void this.sessionService.rollbackLastMessage(sid);
     }

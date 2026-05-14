@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { LucideAngularModule, User as UserIcon, Mail, Shield, Building2, Calendar, KeyRound, Save, Camera } from 'lucide-angular';
+import { LucideAngularModule, User as UserIcon, Mail, Shield, Building2, Calendar, KeyRound, Save, Camera, Check as CheckIcon, X as XIcon, Loader2 } from 'lucide-angular';
 import { AuthService } from '../services/auth.service';
 import { UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
@@ -31,14 +31,34 @@ import { ptBR } from 'date-fns/locale';
           <div class="px-6 pb-6">
             <div class="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12">
               <div class="relative">
-                <ui-avatar [name]="user.nome" [src]="user.avatar"
+                <ui-avatar [name]="user.nome" [src]="avatarPreview() ?? user.avatar"
                   class="h-24 w-24 border-4 border-background ring-2 ring-amber-500/20"
                   fallbackClass="bg-slate-700 text-slate-200 text-2xl font-semibold" />
-                <button type="button" (click)="alterarFoto()"
-                  class="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow hover:scale-105 transition-transform"
+                <button type="button" (click)="fileInput.click()" [disabled]="savingAvatar()"
+                  class="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow hover:scale-105 transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
                   title="Alterar foto">
-                  <lucide-angular [img]="Camera" size="14" />
+                  @if (savingAvatar()) {
+                    <lucide-angular [img]="Loader2" size="14" class="animate-spin" />
+                  } @else {
+                    <lucide-angular [img]="Camera" size="14" />
+                  }
                 </button>
+                <input #fileInput type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                  class="hidden" (change)="onFileSelected($event)" />
+                @if (avatarPreview()) {
+                  <div class="absolute -top-1 -right-1 flex gap-0.5">
+                    <button type="button" (click)="confirmAvatar()" [disabled]="savingAvatar()"
+                      class="h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow hover:bg-emerald-600 transition-colors"
+                      title="Confirmar">
+                      <lucide-angular [img]="CheckIcon" size="11" />
+                    </button>
+                    <button type="button" (click)="cancelAvatar()"
+                      class="h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600 transition-colors"
+                      title="Cancelar">
+                      <lucide-angular [img]="XIcon" size="11" />
+                    </button>
+                  </div>
+                }
               </div>
               <div class="flex-1 min-w-0 sm:pb-2">
                 <h2 class="text-2xl font-bold text-foreground truncate">{{ user.nome }}</h2>
@@ -208,12 +228,17 @@ export class PerfilPageComponent {
   readonly UserIcon = UserIcon; readonly Mail = Mail; readonly Shield = Shield;
   readonly Building2 = Building2; readonly Calendar = Calendar;
   readonly KeyRound = KeyRound; readonly Save = Save; readonly Camera = Camera;
+  readonly CheckIcon = CheckIcon; readonly XIcon = XIcon; readonly Loader2 = Loader2;
 
   readonly auth = inject(AuthService);
   private fb = inject(FormBuilder);
 
   savingPerfil = signal(false);
   savingSenha = signal(false);
+  savingAvatar = signal(false);
+  avatarPreview = signal<string | null>(null);
+
+  private _pendingAvatarDataUrl: string | null = null;
 
   perfilForm = this.fb.nonNullable.group({
     nome: [this.auth.user()?.nome ?? '', [Validators.required, Validators.minLength(3)]],
@@ -276,8 +301,56 @@ export class PerfilPageComponent {
     }
   }
 
-  alterarFoto() {
-    toast.info('Em breve', 'Upload de avatar será habilitado em uma próxima versão.');
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Reset input so the same file can be selected again if cancelled
+    input.value = '';
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Arquivo muito grande', 'Tamanho máximo: 5 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 256;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const resized = canvas.toDataURL('image/jpeg', 0.85);
+        this._pendingAvatarDataUrl = resized;
+        this.avatarPreview.set(resized);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  cancelAvatar() {
+    this.avatarPreview.set(null);
+    this._pendingAvatarDataUrl = null;
+  }
+
+  async confirmAvatar() {
+    const dataUrl = this._pendingAvatarDataUrl;
+    if (!dataUrl) return;
+    this.savingAvatar.set(true);
+    try {
+      await this.auth.atualizarMeuPerfil({ avatar: dataUrl });
+      this.avatarPreview.set(null);
+      this._pendingAvatarDataUrl = null;
+      toast.success('Foto atualizada');
+    } catch (e: any) {
+      toast.error('Erro ao salvar foto', e?.message || 'Tente novamente');
+    } finally {
+      this.savingAvatar.set(false);
+    }
   }
 }
 
