@@ -13,6 +13,13 @@ export interface AiConfig {
     embedder_model: string;
     kb_top_k: number;
     supabase_configured?: boolean;
+    // Flags de API keys — nunca o valor real
+    openai_api_key_configured?: boolean;
+    anthropic_api_key_configured?: boolean;
+    google_api_key_configured?: boolean;
+    groq_api_key_configured?: boolean;
+    xai_api_key_configured?: boolean;
+    mistral_api_key_configured?: boolean;
 }
 
 export interface AiConfigPatch {
@@ -22,6 +29,13 @@ export interface AiConfigPatch {
     embedder_provider?: string;
     embedder_model?: string;
     kb_top_k?: number;
+    // API keys — write-only, nunca lidas de volta
+    openai_api_key?: string;
+    anthropic_api_key?: string;
+    google_api_key?: string;
+    groq_api_key?: string;
+    xai_api_key?: string;
+    mistral_api_key?: string;
 }
 
 export interface AiMetricsDay { day: string; runs: number; tokens: number; cost: number; }

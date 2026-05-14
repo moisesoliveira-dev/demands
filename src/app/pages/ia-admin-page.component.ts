@@ -1,15 +1,16 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Brain, BarChart3, BookOpen, Upload, Trash2, RefreshCw, AlertTriangle, CheckCircle2, UserCircle, Eraser } from 'lucide-angular';
+import { LucideAngularModule, Brain, BarChart3, BookOpen, Upload, Trash2, RefreshCw, AlertTriangle, CheckCircle2, UserCircle, Eraser, Key, Eye, EyeOff } from 'lucide-angular';
 
 import { UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
 import { UiLabel } from '../components/ui/form-elements.component';
 import { AiAdminService, KnowledgeDocument, MemoryItem } from '../services/ai-admin.service';
 import { toast } from '../lib/toast';
+import { SettingsTreeNavComponent, SettingsTreeGroup } from '../components/ui/settings-tree-nav.component';
 
-type TabId = 'ia-config' | 'ia-metricas' | 'ia-conhecimento' | 'ia-perfil';
+type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia-perfil';
 
 @Component({
     selector: 'app-ia-admin',
@@ -18,25 +19,23 @@ type TabId = 'ia-config' | 'ia-metricas' | 'ia-conhecimento' | 'ia-perfil';
         CommonModule, FormsModule, DecimalPipe, LucideAngularModule,
         UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription,
         UiButton, UiLabel,
+        SettingsTreeNavComponent,
     ],
     template: `
-    <div class="space-y-4 max-w-5xl">
-      <div class="flex flex-wrap gap-1 border-b border-slate-200">
-        @for (t of tabs; track t.id) {
-          <button type="button" (click)="active.set(t.id)"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px"
-            [class.border-primary]="active() === t.id"
-            [class.text-primary]="active() === t.id"
-            [class.border-transparent]="active() !== t.id"
-            [class.text-slate-600]="active() !== t.id"
-            [class.hover:text-slate-900]="active() !== t.id">
-            <lucide-angular [img]="t.icon" size="16" />
-            {{ t.label }}
-          </button>
-        }
-      </div>
+    <div class="flex gap-6 max-w-5xl min-h-[520px]">
 
-      @if (active() === 'ia-config') {
+      <!-- Tree nav -->
+      <aside class="w-44 shrink-0 border-r border-slate-200 pr-2 pt-1">
+        <app-settings-tree-nav
+          [groups]="treeGroups"
+          [active]="active()"
+          (activeChange)="active.set($event)" />
+      </aside>
+
+      <!-- Content panel -->
+      <div class="flex-1 min-w-0 space-y-4">
+
+      @if (active() === 'ia-modelo') {
         <ui-card>
           <ui-card-header>
             <ui-card-title class="flex items-center gap-2"><lucide-angular [img]="Brain" size="18" /> Configuração da IA</ui-card-title>
@@ -117,6 +116,45 @@ type TabId = 'ia-config' | 'ia-metricas' | 'ia-conhecimento' | 'ia-perfil';
                 </div>
               </div>
             }
+          </ui-card-content>
+        </ui-card>
+
+      }
+
+      @if (active() === 'ia-chaves') {
+        <!-- Chaves de API -->
+        <ui-card>
+          <ui-card-header>
+            <ui-card-title class="flex items-center gap-2"><lucide-angular [img]="Key" size="18" /> Chaves de API</ui-card-title>
+            <ui-card-description>Sobrescrevem o <code>.env</code> em runtime. O valor nunca é retornado — apenas se está configurado.</ui-card-description>
+          </ui-card-header>
+          <ui-card-content class="space-y-3">
+            @for (p of apiProviders; track p.key) {
+              <div class="grid sm:grid-cols-[160px_1fr_auto] items-center gap-3">
+                <ui-label class="text-sm">{{ p.label }}</ui-label>
+                <input [type]="showKey[p.key] ? 'text' : 'password'" [class]="inputCls"
+                  [(ngModel)]="apiKeysForm[p.key]"
+                  [placeholder]="cfg()?.[p.configuredField] ? '••••••••••••••••' : 'Cole a chave aqui'" />
+                <div class="flex items-center gap-2">
+                  <button type="button" (click)="showKey[p.key] = !showKey[p.key]"
+                    class="h-8 w-8 inline-flex items-center justify-center rounded-md border border-input text-slate-500 hover:text-slate-900 transition-colors">
+                    <lucide-angular [img]="showKey[p.key] ? EyeOff : Eye" size="14" />
+                  </button>
+                  @if (cfg()?.[p.configuredField]) {
+                    <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 whitespace-nowrap">
+                      <lucide-angular [img]="CheckCircle2" size="12" /> OK
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-500 whitespace-nowrap">Não set</span>
+                  }
+                </div>
+              </div>
+            }
+            <div class="flex justify-end pt-2 border-t border-slate-200">
+              <ui-button (click)="saveApiKeys()" [disabled]="savingKeys()">
+                {{ savingKeys() ? 'Salvando...' : 'Salvar chaves' }}
+              </ui-button>
+            </div>
           </ui-card-content>
         </ui-card>
       }
@@ -459,6 +497,8 @@ type TabId = 'ia-config' | 'ia-metricas' | 'ia-conhecimento' | 'ia-perfil';
           </ui-card-content>
         </ui-card>
       }
+
+      </div>
     </div>
   `,
 })
@@ -473,18 +513,39 @@ export class IaAdminPageComponent implements OnInit {
     readonly CheckCircle2 = CheckCircle2;
     readonly UserCircle = UserCircle;
     readonly Eraser = Eraser;
+    readonly Key = Key;
+    readonly Eye = Eye;
+    readonly EyeOff = EyeOff;
 
     readonly inputCls = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
     readonly textareaCls = 'flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
-    tabs: { id: TabId; label: string; icon: typeof Brain }[] = [
-        { id: 'ia-config', label: 'Configuração', icon: Brain },
-        { id: 'ia-metricas', label: 'Métricas', icon: BarChart3 },
-        { id: 'ia-conhecimento', label: 'Conhecimento', icon: BookOpen },
-        { id: 'ia-perfil', label: 'Perfil & Memórias', icon: UserCircle },
+    tabs: { id: TabId; label: string; icon: typeof Brain }[] = [];
+
+    readonly treeGroups: SettingsTreeGroup[] = [
+        {
+            label: 'Configuração',
+            items: [
+                { id: 'ia-modelo', label: 'Modelo & Comportamento', icon: Brain },
+                { id: 'ia-chaves', label: 'Chaves de API', icon: Key },
+            ],
+        },
+        {
+            label: 'Dados',
+            items: [
+                { id: 'ia-metricas', label: 'Métricas', icon: BarChart3 },
+                { id: 'ia-conhecimento', label: 'Conhecimento', icon: BookOpen },
+            ],
+        },
+        {
+            label: 'Usuário',
+            items: [
+                { id: 'ia-perfil', label: 'Perfil & Memórias', icon: UserCircle },
+            ],
+        },
     ];
 
-    active = signal<TabId>('ia-config');
+    active = signal<string>('ia-modelo');
 
     private aiAdmin = inject(AiAdminService);
     cfg = this.aiAdmin.config;
@@ -498,6 +559,27 @@ export class IaAdminPageComponent implements OnInit {
     uploading = signal(false);
     uploadSetor = '';
     savingProfile = signal(false);
+
+    savingKeys = signal(false);
+
+    apiProviders: { key: string; label: string; configuredField: keyof import('../services/ai-admin.service').AiConfig }[] = [
+        { key: 'openai_api_key', label: 'OpenAI', configuredField: 'openai_api_key_configured' },
+        { key: 'anthropic_api_key', label: 'Anthropic', configuredField: 'anthropic_api_key_configured' },
+        { key: 'google_api_key', label: 'Google', configuredField: 'google_api_key_configured' },
+        { key: 'groq_api_key', label: 'Groq', configuredField: 'groq_api_key_configured' },
+        { key: 'xai_api_key', label: 'xAI', configuredField: 'xai_api_key_configured' },
+        { key: 'mistral_api_key', label: 'Mistral', configuredField: 'mistral_api_key_configured' },
+    ];
+
+    apiKeysForm: Record<string, string> = {
+        openai_api_key: '', anthropic_api_key: '', google_api_key: '',
+        groq_api_key: '', xai_api_key: '', mistral_api_key: '',
+    };
+
+    showKey: Record<string, boolean> = {
+        openai_api_key: false, anthropic_api_key: false, google_api_key: false,
+        groq_api_key: false, xai_api_key: false, mistral_api_key: false,
+    };
 
     profileForm = { display_name: '', role_text: '', default_setor: '', notes: '' };
 
@@ -549,6 +631,29 @@ export class IaAdminPageComponent implements OnInit {
             toast.error('Falha ao salvar', e?.message || '');
         } finally {
             this.saving.set(false);
+        }
+    }
+
+    async saveApiKeys() {
+        const patch: Record<string, string> = {};
+        for (const [k, v] of Object.entries(this.apiKeysForm)) {
+            if (v.trim()) patch[k] = v.trim();
+        }
+        if (!Object.keys(patch).length) {
+            toast.error('Nenhuma chave preenchida', 'Preencha ao menos uma chave para salvar.');
+            return;
+        }
+        this.savingKeys.set(true);
+        try {
+            await this.aiAdmin.updateConfig(patch);
+            // Limpa os inputs após salvar e recarrega as flags
+            for (const k of Object.keys(this.apiKeysForm)) this.apiKeysForm[k] = '';
+            await this.aiAdmin.loadConfig();
+            toast.success('Chaves salvas');
+        } catch (e: any) {
+            toast.error('Falha ao salvar chaves', e?.message || '');
+        } finally {
+            this.savingKeys.set(false);
         }
     }
 
