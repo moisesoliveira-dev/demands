@@ -52,6 +52,7 @@ interface NavItem { label: string; icon: any; path: string; badge?: () => number
             <a
               [routerLink]="item.path"
               routerLinkActive #rla="routerLinkActive"
+              [routerLinkActiveOptions]="{exact: item.path === '/dashboard'}"
               (click)="ui.setSidebarMobileOpen(false)"
               [class]="navItemClass(item, rla.isActive)"
             >
@@ -114,7 +115,7 @@ export class AppSidebarComponent {
       const k = node.icon.toLowerCase().replace(/[^a-z0-9-]/g, '');
       if (this.iconMap[k]) return this.iconMap[k];
     }
-    const labelKey = node.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9-]/g, '');
+    const labelKey = node.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     return this.iconMap[labelKey] ?? HelpCircle;
   }
 
@@ -128,6 +129,8 @@ export class AppSidebarComponent {
       // relative path already
       if (!path.startsWith('/')) path = '/' + path;
     }
+    // pathname '/' (bare domain) should route to /dashboard to avoid routerLinkActive matching everything
+    if (path === '/') path = '/dashboard';
     const item: NavItem = { label: node.label, icon: this.resolveIcon(node), path };
     if (path === '/demandas') item.badge = () => this.pendingCount();
     return item;
