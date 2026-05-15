@@ -44,6 +44,14 @@ interface SessionGroup {
               <div class="h-8 mb-1 rounded-lg bg-white/10 animate-pulse"></div>
             }
           } @else {
+            @if (pendingNew()) {
+              <div class="mb-3 px-2">
+                <div class="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/15 text-white mb-0.5">
+                  <lucide-angular [img]="Plus" size="14" class="shrink-0 opacity-60" />
+                  <span class="flex-1 text-xs truncate italic text-white/70">Nova triagem…</span>
+                </div>
+              </div>
+            }
             @for (group of sessionGroups(); track group.label) {
               <div class="mb-4">
                 <p class="text-[10px] font-semibold text-white/30 uppercase tracking-wider px-2 mb-1">{{ group.label }}</p>
@@ -398,6 +406,9 @@ export class NovaDemandaPageComponent {
     this.sessionService.sessions().find(s => s.id === this.activeId()) ?? null
   );
 
+  /** Mostra placeholder "Nova triagem…" no sidebar apenas quando há sessões existentes */
+  pendingNew = computed(() => this.activeId() === null && this.sessionService.sessions().length > 0);
+
   draft = computed<DraftDemanda>(() => this.activeSession()?.draft ?? {});
 
   hasDraft = computed(() => {
@@ -524,6 +535,8 @@ export class NovaDemandaPageComponent {
   }
 
   async newSession() {
+    // Se já está em nova triagem (sem sessão ativa), não faz nada
+    if (this.activeId() === null) return;
     if (this.chatRef?.typing()) {
       this._pendingSwitchFn = async () => { this.activeId.set(null); };
       this.cancelConfirmOpen.set(true);

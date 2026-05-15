@@ -1,7 +1,7 @@
-import { AfterViewChecked, ChangeDetectorRef, Component, DestroyRef, ElementRef, EventEmitter, Output, ViewChild, effect, inject, input, signal, untracked } from '@angular/core';
+import { AfterViewChecked, ChangeDetectorRef, Component, DestroyRef, ElementRef, EventEmitter, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil } from 'lucide-angular';
+import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil, Square, ArrowDown } from 'lucide-angular';
 import { UiButton } from '../ui/button.component';
 import { UiAvatar } from '../ui/avatar.component';
 import { AuthService } from '../../services/auth.service';
@@ -34,7 +34,7 @@ const STARTER_SUGGESTIONS = [
     <div class="flex flex-col h-full bg-white">
 
       <!-- ── Messages / Empty state ── -->
-      <div #scrollArea class="flex-1 overflow-y-auto">
+      <div #scrollArea (scroll)="onScroll()" class="flex-1 overflow-y-auto relative scroll-smooth">
 
         @if (loadingSession()) {
           <!-- Loading skeleton -->
@@ -194,7 +194,15 @@ const STARTER_SUGGESTIONS = [
       </div>
 
       <!-- ── Input area ── -->
-      <div class="shrink-0 px-6 pb-5 pt-3 bg-white">
+      <div class="shrink-0 px-6 pb-5 pt-3 bg-white relative">
+        <!-- Floating scroll-to-bottom button (ChatGPT-style) -->
+        @if (showScrollButton()) {
+          <button type="button" (click)="scrollToBottom(true)"
+            class="absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors z-10"
+            title="Ir para o final">
+            <lucide-angular [img]="ArrowDown" size="16" />
+          </button>
+        }
         <div class="max-w-3xl mx-auto">
           <div class="relative bg-slate-100 rounded-2xl border border-transparent focus-within:border-slate-300 focus-within:bg-white focus-within:shadow-md transition-all">
             <textarea
@@ -202,18 +210,26 @@ const STARTER_SUGGESTIONS = [
               [(ngModel)]="draftInput"
               name="message"
               rows="1"
-              [disabled]="typing() || step() === 'criada'"
+              [disabled]="step() === 'criada'"
               [placeholder]="placeholder()"
               (keydown)="onKeydown($event)"
               (input)="autoGrow($event)"
-              class="w-full bg-transparent resize-none px-4 pt-3.5 pb-12 text-sm focus:outline-none disabled:cursor-not-allowed leading-relaxed max-h-48"
+              class="w-full bg-transparent resize-none px-4 pt-3.5 pb-12 text-sm focus:outline-none disabled:cursor-not-allowed leading-relaxed max-h-48 overflow-y-auto"
             ></textarea>
             <div class="absolute bottom-3 right-3">
-              <button type="button" (click)="onSubmit()"
-                [disabled]="!draftInput.trim() || typing() || step() === 'criada'"
-                class="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-slate-900 hover:bg-slate-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white shadow-sm">
-                <lucide-angular [img]="ArrowUp" size="16" />
-              </button>
+              @if (typing()) {
+                <button type="button" (click)="stop()"
+                  title="Parar geração"
+                  class="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-slate-900 hover:bg-slate-700 text-white shadow-sm">
+                  <lucide-angular [img]="Square" size="12" class="fill-white" />
+                </button>
+              } @else {
+                <button type="button" (click)="onSubmit()"
+                  [disabled]="!draftInput.trim() || step() === 'criada'"
+                  class="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-slate-900 hover:bg-slate-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white shadow-sm">
+                  <lucide-angular [img]="ArrowUp" size="16" />
+                </button>
+              }
             </div>
           </div>
           <p class="text-center text-[11px] text-slate-400 mt-2">
@@ -236,6 +252,7 @@ export class TriagemChatComponent implements AfterViewChecked {
   readonly Bot = Bot; readonly UserIcon = UserIcon; readonly ArrowUp = ArrowUp;
   readonly Loader2 = Loader2; readonly CheckCircle2 = CheckCircle2;
   readonly Copy = Copy; readonly Check = Check; readonly Pencil = Pencil;
+  readonly Square = Square; readonly ArrowDown = ArrowDown;
 
   sessionId = input<string | null>(null);
   readonly starterSuggestions = STARTER_SUGGESTIONS;
@@ -253,6 +270,10 @@ export class TriagemChatComponent implements AfterViewChecked {
   loadingSession = signal(false);
   copiedId = signal<string | null>(null);
   draftInput = '';
+
+  /** Auto-scroll only when user is already near bottom (ChatGPT-style). */
+  private nearBottom = signal(true);
+  showScrollButton = computed(() => !this.nearBottom() && this.messages().length > 0);
 
   /** Snapshot do draft retornado pelo agente (somente leitura aqui — a edição
    *  manual ocorre no painel de prévia da página pai). */
@@ -280,9 +301,37 @@ export class TriagemChatComponent implements AfterViewChecked {
 
   ngAfterViewChecked() {
     if (this.shouldScroll && this.scrollArea) {
-      this.scrollArea.nativeElement.scrollTop = this.scrollArea.nativeElement.scrollHeight;
+      const el = this.scrollArea.nativeElement;
+      el.scrollTop = el.scrollHeight;
       this.shouldScroll = false;
+      this.nearBottom.set(true);
     }
+  }
+
+  /** User scrolled — track whether they're near the bottom. */
+  onScroll(): void {
+    const el = this.scrollArea?.nativeElement;
+    if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    this.nearBottom.set(distance < 80);
+  }
+
+  scrollToBottom(force = false): void {
+    const el = this.scrollArea?.nativeElement;
+    if (!el) return;
+    if (force || this.nearBottom()) {
+      el.scrollTop = el.scrollHeight;
+      this.nearBottom.set(true);
+    }
+  }
+
+  /** Stop the in-flight AI request (ChatGPT-style stop button). */
+  async stop(): Promise<void> {
+    if (!this.typing()) return;
+    const sid = this.currentSessionId;
+    this.sessionService.cancelCurrentRequest();
+    this.typing.set(false);
+    if (sid) void this.sessionService.rollbackLastMessage(sid);
   }
 
   private async _loadSession(id: string | null): Promise<void> {
@@ -328,7 +377,7 @@ export class TriagemChatComponent implements AfterViewChecked {
 
   placeholder() {
     if (this.step() === 'criada') return 'Triagem concluída. Inicie uma nova ou selecione outra sessão.';
-    if (this.typing()) return '';
+    if (this.typing()) return 'Aguardando resposta… (você pode preparar a próxima mensagem)';
     return 'Descreva sua demanda ou responda ao agente...';
   }
 
@@ -390,13 +439,18 @@ export class TriagemChatComponent implements AfterViewChecked {
   onSubmit() {
     const text = this.draftInput.trim();
     if (!text || this.typing() || this.step() === 'criada') return;
-    this.sendUser(text);
     this.draftInput = '';
     if (this.inputEl) this.inputEl.nativeElement.style.height = 'auto';
+    void this.sendUser(text);
   }
 
   /** Envia a mensagem ao backend e processa a resposta do agente. */
   async sendUser(text: string): Promise<void> {
+    // 1) Renderiza imediatamente a mensagem do usuário (otimista) — antes mesmo de criar a sessão.
+    this._appendMessage({ role: 'user', content: text });
+    this.typing.set(true);
+    this.scrollToBottom(true);
+
     let sid = this.currentSessionId;
 
     // Criação lazy: a sessão só é criada no primeiro envio de mensagem.
@@ -407,6 +461,7 @@ export class TriagemChatComponent implements AfterViewChecked {
         sid = newSession.id;
         this.sessionCreated.emit(sid);
       } catch (e: any) {
+        this.typing.set(false);
         this._appendMessage({
           role: 'agent',
           content: `Não consegui iniciar a sessão: ${e?.message ?? 'erro de comunicação'}.`,
@@ -417,9 +472,8 @@ export class TriagemChatComponent implements AfterViewChecked {
     }
 
     // 1) Renderiza imediatamente a mensagem do usuário (otimista)
-    this._appendMessage({ role: 'user', content: text });
+    // (já foi feito acima, antes do createNew)
 
-    this.typing.set(true);
     this.shouldScroll = true;
 
     try {
@@ -517,7 +571,8 @@ export class TriagemChatComponent implements AfterViewChecked {
       ...m,
       { ...partial, id: crypto.randomUUID(), timestamp: new Date() },
     ]);
-    this.shouldScroll = true;
+    // Auto-scroll só se o usuário já estiver perto do fim (ChatGPT-style)
+    if (this.nearBottom()) this.shouldScroll = true;
   }
 
   /**
