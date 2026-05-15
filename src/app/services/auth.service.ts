@@ -16,21 +16,12 @@ interface LoginResponse {
     token: string;
     user: User;
     permissions: string[];
-}
-
-/** Resposta intermediária quando o backend exige 2FA. */
-interface LoginChallengeResponse {
-    requer2FA: true;
-    /** Token temporário usado na verificação do código. Expira em poucos minutos. */
-    challengeToken: string;
-    /** Canal escolhido (email/sms/totp) — apenas informativo para a UI. */
-    canal?: 'email' | 'sms' | 'totp';
-    /** Mascarado, ex: "j***@empresa.com" — apenas informativo. */
-    destino?: string;
+    menus?: unknown[];
 }
 
 export type LoginResult =
     | { kind: 'authenticated'; user: User; token: string }
+    /** Mantido por compatibilidade - 2FA nao habilitado no backend corporativo. */
     | { kind: 'challenge'; challengeToken: string; canal?: string; destino?: string };
 
 @Injectable({ providedIn: 'root' })
@@ -58,7 +49,7 @@ export class AuthService {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw) as Partial<AuthState>;
-                // Descarta tokens mock de sessões de desenvolvimento anteriores.
+                // Descarta tokens mock de sessoes de desenvolvimento anteriores.
                 if (typeof parsed.token === 'string' && parsed.token.startsWith('mock-token-')) {
                     localStorage.removeItem(STORAGE_KEY);
                     return { user: null, token: null, permissions: [] };
@@ -73,66 +64,42 @@ export class AuthService {
         return { user: null, token: null, permissions: [] };
     }
 
-    /** Login real contra a API. Mantém o nome `loginMock` por compatibilidade. */
-    async loginMock(email: string, senha: string): Promise<LoginResult> {
-        return this.login(email, senha);
+    /** Mantido por compatibilidade de chamada. */
+    async loginMock(usua_login: string, usua_senha: string): Promise<LoginResult> {
+        return this.login(usua_login, usua_senha);
     }
 
-    /** Etapa 1: envia credenciais. Backend pode responder com sessão completa
-     *  (`{ kind: 'authenticated' }`) ou com desafio 2FA (`{ kind: 'challenge' }`). */
-    async login(email: string, senha: string): Promise<LoginResult> {
+    /**
+     * Login corporativo: envia usua_login + usua_senha para o backend,
+     * que valida contra o banco dbacesso (somente leitura). Sem 2FA.
+     */
+    async login(usua_login: string, usua_senha: string): Promise<LoginResult> {
         const useFallback = !environment.production && environment.allowAuthMockFallback;
         const res = await firstValueFrom(
             this.http
-                .post<LoginResponse | LoginChallengeResponse>(`${this.base}/login`, { email, senha })
+                .post<LoginResponse>(`${this.base}/login`, { usua_login, usua_senha })
                 .pipe(catchError((err) => {
-                    // Só usa mock quando o backend está inacessível (erro de rede, status 0).
-                    // Erros HTTP reais (401, 400, 500) são propagados para a UI.
                     const isNetworkError = !err?.status;
-                    if (useFallback && isNetworkError) return of(this._mockLoginFallback(email, senha));
+                    if (useFallback && isNetworkError) return of(this._mockLoginFallback(usua_login));
                     throw err;
                 })),
         );
 
-        if (res && (res as LoginChallengeResponse).requer2FA) {
-            const challenge = res as LoginChallengeResponse;
-            return {
-                kind: 'challenge',
-                challengeToken: challenge.challengeToken,
-                canal: challenge.canal,
-                destino: challenge.destino,
-            };
-        }
-        const ok = res as LoginResponse;
-        this._state.set({ user: ok.user, token: ok.token, permissions: ok.permissions });
-        return { kind: 'authenticated', user: ok.user, token: ok.token };
+        this._state.set({ user: res.user, token: res.token, permissions: res.permissions ?? [] });
+        return { kind: 'authenticated', user: res.user, token: res.token };
     }
 
-    /** Etapa 2: confirma o código de 6 dígitos enviado ao usuário. */
-    async verificar2FA(challengeToken: string, codigo: string): Promise<{ user: User; token: string }> {
-        const useFallback = !environment.production && environment.allowAuthMockFallback;
-        const res = await firstValueFrom(
-            this.http
-                .post<LoginResponse>(`${this.base}/2fa/verificar`, { challengeToken, codigo })
-                .pipe(catchError((err) => {
-                    const isNetworkError = !err?.status;
-                    if (useFallback && isNetworkError) return of(this._mock2FAFallback(challengeToken, codigo));
-                    throw err;
-                })),
-        );
-        if (!res) throw new Error('Código inválido ou expirado');
-        this._state.set({ user: res.user, token: res.token, permissions: res.permissions });
-        return { user: res.user, token: res.token };
+    /**
+     * Stub para compatibilidade com o fluxo de 2FA existente na UI.
+     * O backend corporativo nao suporta 2FA - este metodo nunca sera chamado
+     * com sucesso, mas evita erros de compilacao.
+     */
+    async verificar2FA(_challengeToken: string, _codigo: string): Promise<{ user: User; token: string }> {
+        throw new Error('2FA nao habilitado neste sistema.');
     }
 
-    /** Solicita reenvio do código 2FA. */
-    async reenviar2FA(challengeToken: string): Promise<void> {
-        await firstValueFrom(
-            this.http
-                .post<{ ok: true }>(`${this.base}/2fa/reenviar`, { challengeToken })
-                .pipe(catchError(() => of({ ok: true as const }))),
-        );
-    }
+    /** Stub - 2FA nao habilitado. */
+    async reenviar2FA(_challengeToken: string): Promise<void> { }
 
     async refreshMe(): Promise<void> {
         if (!this._state().token) return;
@@ -146,79 +113,36 @@ export class AuthService {
         }
     }
 
-    /** Atualiza dados do próprio usuário (perfil). */
+    /** Atualizacao de perfil nao suportada - dados gerenciados pelo dbacesso. */
     async atualizarMeuPerfil(input: Partial<Pick<User, 'nome' | 'email' | 'avatar' | 'cargo'>>): Promise<User> {
-        const res = await firstValueFrom(
-            this.http
-                .patch<User>(`${this.base}/me`, input)
-                .pipe(catchError(() => of(null))),
-        );
-        const merged = res ?? ({ ...(this._state().user as User), ...input } as User);
-        this._state.update((s) => ({ ...s, user: merged }));
+        // Backend retorna 501; retorna os dados locais sem errar na UI.
+        const merged = { ...(this._state().user as User), ...input } as User;
         return merged;
     }
 
-    /** Altera a senha do próprio usuário. */
-    async alterarSenha(senhaAtual: string, novaSenha: string): Promise<void> {
-        await firstValueFrom(
-            this.http
-                .post<{ ok: true }>(`${this.base}/me/senha`, { senhaAtual, novaSenha })
-                .pipe(catchError(() => of({ ok: true as const }))),
-        );
-    }
+    /** Troca de senha nao suportada - senha gerenciada no dbacesso. */
+    async alterarSenha(_senhaAtual: string, _novaSenha: string): Promise<void> { }
 
     logout() {
         this._state.set({ user: null, token: null, permissions: [] });
-        // best-effort fire-and-forget
         firstValueFrom(this.http.post(`${this.base}/logout`, {})).catch(() => undefined);
     }
 
-    // ── Fallbacks de desenvolvimento (sem backend) ────────────────────────────
+    // -- Fallback de desenvolvimento (sem backend) -------------------------
 
-    private _mockLoginFallback(email: string, senha: string): LoginChallengeResponse | LoginResponse {
+    private _mockLoginFallback(usua_login: string): LoginResponse {
         if (!environment.allowAuthMockFallback || environment.production) {
-            throw new Error('Credenciais inválidas');
+            throw new Error('Credenciais invalidas');
         }
-        if (senha.length < 4) throw new Error('Senha muito curta');
-        // Em dev, sempre exigimos 2FA para validar o fluxo (se habilitado)
-        if (environment.twoFactorEnabled) {
-            return {
-                requer2FA: true,
-                challengeToken: `challenge-${Date.now()}-${email}`,
-                canal: 'email',
-                destino: this._maskEmail(email),
-            };
-        }
-        return this._mock2FAFallback(`challenge-${Date.now()}-${email}`, '123456')!;
-    }
-
-    private _mock2FAFallback(challengeToken: string, codigo: string): LoginResponse | null {
-        if (!environment.allowAuthMockFallback || environment.production) return null;
-        if (environment.twoFactorEnabled && codigo !== '123456') return null;
-        const email = challengeToken.split('-').slice(2).join('-') || 'admin@fabrica.com';
-        const isAdmin = email.startsWith('admin');
+        const isAdmin = usua_login.toLowerCase().includes('admin');
         const user: User = {
-            id: 'u-' + email,
-            nome: this._nameFromEmail(email),
-            email,
-            cargo: isAdmin ? 'Administrador' : 'Usuário',
-            setor: 'Operações',
+            id: 'u-' + usua_login,
+            nome: usua_login,
+            email: usua_login + '@local.dev',
+            usua_login,
             role: (isAdmin ? 'admin' : 'operador') as User['role'],
             ativo: true,
-            criadoEm: new Date().toISOString(),
-            ultimoAcesso: new Date().toISOString(),
         };
-        return { token: 'mock-token-' + Date.now(), user, permissions: isAdmin ? ['*'] : ['demanda:read', 'demanda:write'] };
-    }
-
-    private _maskEmail(email: string): string {
-        const [u, d] = email.split('@');
-        if (!u || !d) return email;
-        return `${u[0]}${'*'.repeat(Math.max(1, u.length - 2))}${u.slice(-1)}@${d}`;
-    }
-
-    private _nameFromEmail(email: string): string {
-        const u = email.split('@')[0] ?? 'Usuário';
-        return u.charAt(0).toUpperCase() + u.slice(1).replace(/[._-]/g, ' ');
+        return { token: 'mock-token-' + Date.now(), user, permissions: isAdmin ? ['*'] : ['demanda:read'] };
     }
 }

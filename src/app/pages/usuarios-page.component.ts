@@ -433,7 +433,7 @@ export class UsuariosPageComponent implements OnInit {
     const role = this.filterRole();
     const status = this.filterStatus();
     return this.allUsers().filter(u => {
-      if (q && !u.nome.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q) && !u.cargo.toLowerCase().includes(q)) return false;
+      if (q && !u.nome.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q) && !(u.cargo ?? '').toLowerCase().includes(q)) return false;
       if (role && u.role !== role) return false;
       if (status === 'ativo' && !u.ativo) return false;
       if (status === 'inativo' && u.ativo) return false;
@@ -468,7 +468,7 @@ export class UsuariosPageComponent implements OnInit {
 
   openEdit(u: User) {
     this.editTarget.set(u);
-    this.form = { nome: u.nome, email: u.email, senha: '', cargo: u.cargo, setor: u.setor, role: u.role, ativo: u.ativo };
+    this.form = { nome: u.nome, email: u.email, senha: '', cargo: u.cargo ?? '', setor: u.setor ?? '', role: u.role, ativo: u.ativo };
     this.formErrors = {};
     this.formDialogOpen.set(true);
   }
