@@ -1,23 +1,23 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, LayoutDashboard, ClipboardList, PlusCircle, BarChart3, Settings, LogOut, Menu, X, Users, Building2, Brain } from 'lucide-angular';
+import { LucideAngularModule, LayoutDashboard, ClipboardList, PlusCircle, BarChart3, Settings, LogOut, Menu, X, Users, Building2, Brain, HelpCircle } from 'lucide-angular';
 import { UIService } from '../services/ui.service';
 import { AuthService } from '../services/auth.service';
 import { DemandasService } from '../services/demandas.service';
 import { DemandStatus } from '../types';
-import { UiAvatar } from './ui/avatar.component';
+import type { MenuTreeNode } from '../types/menu';
 import { UiBadge } from './ui/badge.component';
 import { UiButton } from './ui/button.component';
 import { UiSeparator } from './ui/form-elements.component';
 import { cn } from '../lib/utils';
 
-interface NavItem { label: string; icon: any; path: string; badge?: () => number; highlight?: boolean; adminOnly?: boolean; }
+interface NavItem { label: string; icon: any; path: string; badge?: () => number; highlight?: boolean; }
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, LucideAngularModule, UiAvatar, UiBadge, UiButton, UiSeparator],
+  imports: [CommonModule, RouterLink, RouterLinkActive, LucideAngularModule, UiBadge, UiButton, UiSeparator],
   template: `
     <aside [class]="asideClass()">
       <ng-container [ngTemplateOutlet]="content"></ng-container>
@@ -96,20 +96,48 @@ export class AppSidebarComponent {
 
   pendingCount = computed(() => this.demandasService.demandas().filter((d) => d.status === DemandStatus.PENDENTE).length);
 
-  navItems: NavItem[] = [
-    { label: 'Nova Demanda', icon: PlusCircle, path: '/nova-demanda', highlight: true },
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'Demandas', icon: ClipboardList, path: '/demandas', badge: () => this.pendingCount() },
-    { label: 'Relatórios', icon: BarChart3, path: '/relatorios' },
-    { label: 'Usuários', icon: Users, path: '/usuarios', adminOnly: true },
-    { label: 'Setores', icon: Building2, path: '/setores', adminOnly: true },
-    { label: 'IA', icon: Brain, path: '/ia-admin', adminOnly: true },
-    { label: 'Configurações', icon: Settings, path: '/configuracoes', adminOnly: true },
-  ];
+  /** Icon map: normalizes CASCI label/icon to Lucide icon object */
+  private readonly iconMap: Record<string, any> = {
+    dashboard: LayoutDashboard,
+    demandas: ClipboardList,
+    'nova-demanda': PlusCircle,
+    relatorios: BarChart3,
+    usuarios: Users,
+    setores: Building2,
+    ia: Brain,
+    'ia-admin': Brain,
+    configuracoes: Settings,
+  };
 
-  visibleItems = computed(() => {
-    const u = this.auth.user();
-    return this.navItems.filter((i) => !i.adminOnly || u?.role === 'admin');
+  private resolveIcon(node: MenuTreeNode): any {
+    if (node.icon) {
+      const k = node.icon.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (this.iconMap[k]) return this.iconMap[k];
+    }
+    const labelKey = node.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9-]/g, '');
+    return this.iconMap[labelKey] ?? HelpCircle;
+  }
+
+  private nodeToNavItem(node: MenuTreeNode): NavItem {
+    // routerLink from CASCI may be a full URL like http://host/dashboard — extract path
+    let path = node.routerLink ?? '/';
+    try {
+      const url = new URL(path);
+      path = url.pathname || '/';
+    } catch {
+      // relative path already
+      if (!path.startsWith('/')) path = '/' + path;
+    }
+    const item: NavItem = { label: node.label, icon: this.resolveIcon(node), path };
+    if (path === '/demandas') item.badge = () => this.pendingCount();
+    return item;
+  }
+
+  visibleItems = computed((): NavItem[] => {
+    const menus = this.auth.menus();
+    if (!menus || menus.length === 0) return [];
+    // Flatten top-level nodes (ignore sub-items for now — sidebar is single-level)
+    return menus.map((n) => this.nodeToNavItem(n));
   });
 
   asideClass = computed(() =>

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, catchError, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { User } from '../types';
+import type { MenuTreeNode } from '../types/menu';
 
 const STORAGE_KEY = environment.authStorageKey;
 
@@ -10,13 +11,14 @@ interface AuthState {
     user: User | null;
     token: string | null;
     permissions: string[];
+    menus: MenuTreeNode[];
 }
 
 interface LoginResponse {
     token: string;
     user: User;
     permissions: string[];
-    menus?: unknown[];
+    menus?: MenuTreeNode[];
 }
 
 export type LoginResult =
@@ -34,6 +36,7 @@ export class AuthService {
     readonly user = computed(() => this._state().user);
     readonly token = computed(() => this._state().token);
     readonly permissions = computed(() => this._state().permissions);
+    readonly menus = computed(() => this._state().menus);
     readonly isAuthenticated = computed(() => !!this._state().token);
 
     constructor() {
@@ -52,16 +55,17 @@ export class AuthService {
                 // Descarta tokens mock de sessoes de desenvolvimento anteriores.
                 if (typeof parsed.token === 'string' && parsed.token.startsWith('mock-token-')) {
                     localStorage.removeItem(STORAGE_KEY);
-                    return { user: null, token: null, permissions: [] };
+                    return { user: null, token: null, permissions: [], menus: [] };
                 }
                 return {
                     user: parsed.user ?? null,
                     token: parsed.token ?? null,
                     permissions: parsed.permissions ?? [],
+                    menus: parsed.menus ?? [],
                 };
             }
         } catch { }
-        return { user: null, token: null, permissions: [] };
+        return { user: null, token: null, permissions: [], menus: [] };
     }
 
     /** Mantido por compatibilidade de chamada. */
@@ -85,7 +89,12 @@ export class AuthService {
                 })),
         );
 
-        this._state.set({ user: res.user, token: res.token, permissions: res.permissions ?? [] });
+        this._state.set({
+            user: res.user,
+            token: res.token,
+            permissions: res.permissions ?? [],
+            menus: res.menus ?? [],
+        });
         return { kind: 'authenticated', user: res.user, token: res.token };
     }
 
@@ -105,9 +114,14 @@ export class AuthService {
         if (!this._state().token) return;
         try {
             const res = await firstValueFrom(
-                this.http.get<{ user: User; permissions: string[] }>(`${this.base}/me`),
+                this.http.get<{ user: User; permissions: string[]; menus?: MenuTreeNode[] }>(`${this.base}/me`),
             );
-            this._state.update((s) => ({ ...s, user: res.user, permissions: res.permissions }));
+            this._state.update((s) => ({
+                ...s,
+                user: res.user,
+                permissions: res.permissions,
+                menus: res.menus ?? s.menus,
+            }));
         } catch {
             // 401 already handled by interceptor
         }
@@ -124,7 +138,7 @@ export class AuthService {
     async alterarSenha(_senhaAtual: string, _novaSenha: string): Promise<void> { }
 
     logout() {
-        this._state.set({ user: null, token: null, permissions: [] });
+        this._state.set({ user: null, token: null, permissions: [], menus: [] });
         firstValueFrom(this.http.post(`${this.base}/logout`, {})).catch(() => undefined);
     }
 
@@ -143,6 +157,6 @@ export class AuthService {
             role: (isAdmin ? 'admin' : 'operador') as User['role'],
             ativo: true,
         };
-        return { token: 'mock-token-' + Date.now(), user, permissions: isAdmin ? ['*'] : ['demanda:read'] };
+        return { token: 'mock-token-' + Date.now(), user, permissions: isAdmin ? ['*'] : ['demanda:read'], menus: [] };
     }
 }
