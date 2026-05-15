@@ -335,6 +335,13 @@ export class TriagemChatComponent implements AfterViewChecked {
   }
 
   private async _loadSession(id: string | null): Promise<void> {
+    // Guard: if sendUser() is running (typing=true) and already set currentSessionId
+    // to this same id (via sessionCreated.emit), the effect fired from the parent
+    // setting activeId. We must NOT wipe the optimistic messages already on screen.
+    if (id && id === this.currentSessionId && this.typing()) {
+      return;
+    }
+
     this.currentSessionId = id;
     this.typing.set(false);
     this.saving.set(false);
