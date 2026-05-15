@@ -5,7 +5,7 @@ import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Demanda, Prioridade } from '../types';
 
-export type Step = 'descricao' | 'setor' | 'responsavel' | 'prioridade' | 'confirmacao' | 'criada';
+export type Step = 'tipo' | 'descricao' | 'setor' | 'responsavel' | 'prioridade' | 'confirmacao' | 'criada';
 
 export interface DraftDemanda {
     titulo?: string;
