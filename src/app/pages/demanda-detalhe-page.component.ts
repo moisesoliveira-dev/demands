@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeft, Pencil, Archive, Calendar, Clock, AlertCircle, ShieldAlert } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Pencil, Archive, Calendar, Clock, AlertCircle, ShieldAlert, MessageCircle } from 'lucide-angular';
 import { DemandasService } from '../services/demandas.service';
 import { DemandStatus } from '../types';
 import { UiCard, UiCardContent, UiCardHeader, UiCardTitle } from '../components/ui/card.component';
@@ -36,6 +36,11 @@ import { toast } from '../lib/toast';
             <lucide-angular [img]="ArrowLeft" size="16" class="mr-1" /> Voltar
           </ui-button>
           <div class="flex gap-2">
+            <ui-button variant="outline" size="sm"
+              class="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+              (click)="router.navigate(['/conversas'], { queryParams: { demandaId: id() } })">
+              <lucide-angular [img]="MessageCircle" size="16" class="mr-1" /> Abrir conversa
+            </ui-button>
             <ui-button variant="outline" size="sm" (click)="editOpen.set(true)">
               <lucide-angular [img]="Pencil" size="16" class="mr-1" /> Editar
             </ui-button>
@@ -82,11 +87,9 @@ import { toast } from '../lib/toast';
             }
           </div>
 
+          <!-- Sidebar de metadados -->
           <ui-card>
-            <ui-card-header>
-              <ui-card-title class="text-base">Metadados</ui-card-title>
-            </ui-card-header>
-            <ui-card-content class="space-y-3 text-sm">
+            <ui-card-content class="space-y-3 text-sm pt-4">
               <div>
                 <p class="text-xs text-slate-500 uppercase font-medium">Setor</p>
                 <p class="text-slate-900">{{ d.setor }}</p>
@@ -170,6 +173,7 @@ export class DemandaDetalhePageComponent {
   readonly ArrowLeft = ArrowLeft; readonly Pencil = Pencil; readonly Archive = Archive;
   readonly Calendar = Calendar; readonly Clock = Clock;
   readonly AlertCircle = AlertCircle; readonly ShieldAlert = ShieldAlert;
+  readonly MessageCircle = MessageCircle;
   readonly Bloqueado = DemandStatus.BLOQUEADO;
 
   editOpen = signal(false);

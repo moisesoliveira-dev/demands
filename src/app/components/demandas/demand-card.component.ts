@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LucideAngularModule, Factory, User, Clock, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, Factory, User, Clock, AlertCircle, MessageCircle } from 'lucide-angular';
 import { Demanda, DemandStatus, Prioridade } from '../../types';
 import { UiCard } from '../ui/card.component';
 import { UiBadge } from '../ui/badge.component';
@@ -49,6 +49,14 @@ export const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: strin
       <!-- Linha sempre visível: título + badge prioridade -->
       <div class="flex items-center justify-between gap-2">
         <h4 class="text-sm font-semibold text-foreground truncate flex-1">{{ demanda().titulo }}</h4>
+        <button
+          type="button"
+          class="shrink-0 p-1 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+          title="Abrir conversa"
+          (click)="openConversa($event)"
+        >
+          <lucide-angular [img]="MessageCircle" size="14" />
+        </button>
         <ui-badge variant="outline" [class]="'shrink-0 text-xs ' + prioridade().bg + ' ' + prioridade().color">
           {{ prioridade().label }}
         </ui-badge>
@@ -83,10 +91,16 @@ export class DemandCardComponent {
   private router = inject(Router);
 
   readonly Factory = Factory; readonly User = User; readonly Clock = Clock; readonly AlertCircle = AlertCircle;
+  readonly MessageCircle = MessageCircle;
   readonly Bloqueado = DemandStatus.BLOQUEADO;
 
   prioridade = computed(() => PRIORIDADE_CONFIG[this.demanda().prioridade]);
   tempo = computed(() => formatDistanceToNow(new Date(this.demanda().criadoEm), { addSuffix: true, locale: ptBR }));
 
   open() { this.router.navigate(['/demanda-detalhe', this.demanda().id]); }
+
+  openConversa(ev: Event) {
+    ev.stopPropagation();
+    this.router.navigate(['/conversas'], { queryParams: { demandaId: this.demanda().id } });
+  }
 }

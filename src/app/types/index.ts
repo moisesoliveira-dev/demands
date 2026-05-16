@@ -20,6 +20,8 @@ export interface Demanda {
     ordem?: number;
     motivoBloqueio?: string;
     arquivado?: boolean;
+    criadorId?: string;
+    criadorNome?: string;
 }
 
 export interface HistoricoAuditoria {

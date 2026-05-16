@@ -33,6 +33,11 @@ export const routes: Routes = [
                 data: { pageTitle: 'Detalhes da Demanda', breadcrumbs: [{ label: 'Demandas' }, { label: 'Detalhes' }] },
             },
             {
+                path: 'conversas',
+                loadComponent: () => import('./pages/conversas-page.component').then((m) => m.ConversasPageComponent),
+                data: { pageTitle: 'Conversas', breadcrumbs: [{ label: 'Conversas' }] },
+            },
+            {
                 path: 'relatorios',
                 loadComponent: () => import('./pages/relatorios-page.component').then((m) => m.RelatoriosPageComponent),
                 data: { pageTitle: 'Relatórios', breadcrumbs: [{ label: 'Relatórios' }] },

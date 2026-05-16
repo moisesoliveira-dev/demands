@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, LayoutDashboard, ClipboardList, PlusCircle, BarChart3, Settings, LogOut, Menu, X, Users, Building2, Brain, HelpCircle } from 'lucide-angular';
+import { LucideAngularModule, LayoutDashboard, ClipboardList, PlusCircle, BarChart3, Settings, LogOut, Menu, X, Users, Building2, Brain, MessageCircle, HelpCircle } from 'lucide-angular';
 import { UIService } from '../services/ui.service';
 import { AuthService } from '../services/auth.service';
 import { DemandasService } from '../services/demandas.service';
@@ -102,6 +102,7 @@ export class AppSidebarComponent {
     dashboard: LayoutDashboard,
     demandas: ClipboardList,
     'nova-demanda': PlusCircle,
+    conversas: MessageCircle,
     relatorios: BarChart3,
     usuarios: Users,
     setores: Building2,
