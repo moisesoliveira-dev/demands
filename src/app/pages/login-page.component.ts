@@ -25,7 +25,7 @@ import { toast } from '../lib/toast';
         </ui-card-header>
 
         <ui-card-content>
-          <form [formGroup]="loginForm" (ngSubmit)="submitCredenciais()" class="space-y-4">
+          <form [formGroup]="loginForm" (ngSubmit)="submitCredenciais()" class="space-y-4" autocomplete="off">
             <div class="space-y-2">
               <ui-label for="usua_login">Login</ui-label>
               <input id="usua_login" type="text" formControlName="usua_login"
@@ -35,7 +35,7 @@ import { toast } from '../lib/toast';
             <div class="space-y-2">
               <ui-label for="usua_senha">Senha</ui-label>
               <input id="usua_senha" type="password" formControlName="usua_senha"
-                autocomplete="current-password" placeholder="••••••"
+                autocomplete="off" placeholder="••••••"
                 class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
             </div>
 
