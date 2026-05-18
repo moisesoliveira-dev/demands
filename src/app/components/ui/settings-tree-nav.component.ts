@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -23,7 +23,7 @@ export interface SettingsTreeGroup {
             @for (group of groups; track $index) {
                 <div class="mb-4">
                     @if (group.label) {
-                        <p class="px-3 mb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                        <p class="px-3 mb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                             {{ group.label }}
                         </p>
                     }
@@ -53,6 +53,6 @@ export class SettingsTreeNavComponent {
         if (this.active === id) {
             return `${base} pl-2 border-l-2 border-primary bg-primary/10 text-primary font-medium`;
         }
-        return `${base} pl-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900`;
+        return `${base} pl-3 text-muted-foreground hover:bg-muted hover:text-foreground`;
     }
 }

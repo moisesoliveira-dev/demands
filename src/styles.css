@@ -120,32 +120,108 @@ html.dark .hover\:text-slate-900:hover { color: var(--foreground) !important; }
 html.dark .hover\:text-slate-700:hover { color: oklch(0.82 0.01 250) !important; }
 html.dark .hover\:text-slate-600:hover { color: oklch(0.72 0.01 250) !important; }
 
-/* Soft colored backgrounds (badges, callouts) */
-html.dark .bg-amber-50  { background-color: oklch(0.30 0.10 80 / 0.35) !important; }
-html.dark .bg-amber-100 { background-color: oklch(0.35 0.12 80 / 0.40) !important; }
-html.dark .bg-blue-50   { background-color: oklch(0.30 0.10 250 / 0.35) !important; }
-html.dark .bg-blue-100  { background-color: oklch(0.35 0.12 250 / 0.40) !important; }
-html.dark .bg-green-50  { background-color: oklch(0.30 0.10 145 / 0.35) !important; }
-html.dark .bg-green-100 { background-color: oklch(0.35 0.12 145 / 0.40) !important; }
-html.dark .bg-red-50    { background-color: oklch(0.30 0.10 27 / 0.35) !important; }
-html.dark .bg-red-100   { background-color: oklch(0.35 0.12 27 / 0.40) !important; }
-html.dark .bg-rose-100  { background-color: oklch(0.35 0.12 15 / 0.40) !important; }
+/* Soft colored backgrounds (badges, callouts) — dark variants
+ * Mantém a "cor" (hue) mas escurece a luminosidade para casar com o tema escuro. */
+html.dark .bg-amber-50    { background-color: oklch(0.30 0.10 80  / 0.35) !important; }
+html.dark .bg-amber-100   { background-color: oklch(0.35 0.12 80  / 0.40) !important; }
+html.dark .bg-yellow-50   { background-color: oklch(0.30 0.10 95  / 0.35) !important; }
+html.dark .bg-yellow-100  { background-color: oklch(0.35 0.12 95  / 0.40) !important; }
+html.dark .bg-orange-50   { background-color: oklch(0.30 0.10 55  / 0.35) !important; }
+html.dark .bg-orange-100  { background-color: oklch(0.35 0.12 55  / 0.40) !important; }
+html.dark .bg-red-50      { background-color: oklch(0.30 0.10 27  / 0.35) !important; }
+html.dark .bg-red-100     { background-color: oklch(0.35 0.12 27  / 0.40) !important; }
+html.dark .bg-rose-50     { background-color: oklch(0.30 0.10 15  / 0.35) !important; }
+html.dark .bg-rose-100    { background-color: oklch(0.35 0.12 15  / 0.40) !important; }
+html.dark .bg-pink-50     { background-color: oklch(0.30 0.10 0   / 0.35) !important; }
+html.dark .bg-pink-100    { background-color: oklch(0.35 0.12 0   / 0.40) !important; }
+html.dark .bg-green-50    { background-color: oklch(0.30 0.10 145 / 0.35) !important; }
+html.dark .bg-green-100   { background-color: oklch(0.35 0.12 145 / 0.40) !important; }
+html.dark .bg-emerald-50  { background-color: oklch(0.30 0.10 160 / 0.35) !important; }
+html.dark .bg-emerald-100 { background-color: oklch(0.35 0.12 160 / 0.40) !important; }
+html.dark .bg-teal-50     { background-color: oklch(0.30 0.10 180 / 0.35) !important; }
+html.dark .bg-teal-100    { background-color: oklch(0.35 0.12 180 / 0.40) !important; }
+html.dark .bg-cyan-50     { background-color: oklch(0.30 0.10 210 / 0.35) !important; }
+html.dark .bg-cyan-100    { background-color: oklch(0.35 0.12 210 / 0.40) !important; }
+html.dark .bg-sky-50      { background-color: oklch(0.30 0.10 235 / 0.35) !important; }
+html.dark .bg-sky-100     { background-color: oklch(0.35 0.12 235 / 0.40) !important; }
+html.dark .bg-blue-50     { background-color: oklch(0.30 0.10 250 / 0.35) !important; }
+html.dark .bg-blue-100    { background-color: oklch(0.35 0.12 250 / 0.40) !important; }
+html.dark .bg-indigo-50   { background-color: oklch(0.30 0.10 270 / 0.35) !important; }
+html.dark .bg-indigo-100  { background-color: oklch(0.35 0.12 270 / 0.40) !important; }
+html.dark .bg-violet-50   { background-color: oklch(0.30 0.10 290 / 0.35) !important; }
+html.dark .bg-violet-100  { background-color: oklch(0.35 0.12 290 / 0.40) !important; }
+html.dark .bg-purple-50   { background-color: oklch(0.30 0.10 310 / 0.35) !important; }
+html.dark .bg-purple-100  { background-color: oklch(0.35 0.12 310 / 0.40) !important; }
+html.dark .bg-fuchsia-50  { background-color: oklch(0.30 0.10 330 / 0.35) !important; }
+html.dark .bg-fuchsia-100 { background-color: oklch(0.35 0.12 330 / 0.40) !important; }
 
-/* Their borders */
-html.dark .border-amber-100 { border-color: oklch(0.40 0.10 80 / 0.40) !important; }
-html.dark .border-amber-200 { border-color: oklch(0.45 0.12 80 / 0.50) !important; }
-html.dark .border-blue-200  { border-color: oklch(0.45 0.12 250 / 0.50) !important; }
-html.dark .border-green-200 { border-color: oklch(0.45 0.12 145 / 0.50) !important; }
-html.dark .border-red-200   { border-color: oklch(0.45 0.12 27 / 0.50) !important; }
-html.dark .border-rose-200  { border-color: oklch(0.45 0.12 15 / 0.50) !important; }
+/* Hover variantes coloridas */
+html.dark .hover\:bg-amber-50:hover    { background-color: oklch(0.32 0.10 80  / 0.45) !important; }
+html.dark .hover\:bg-amber-100:hover   { background-color: oklch(0.37 0.12 80  / 0.50) !important; }
+html.dark .hover\:bg-orange-50:hover   { background-color: oklch(0.32 0.10 55  / 0.45) !important; }
+html.dark .hover\:bg-red-50:hover      { background-color: oklch(0.32 0.10 27  / 0.45) !important; }
+html.dark .hover\:bg-green-50:hover    { background-color: oklch(0.32 0.10 145 / 0.45) !important; }
+html.dark .hover\:bg-emerald-50:hover  { background-color: oklch(0.32 0.10 160 / 0.45) !important; }
+html.dark .hover\:bg-emerald-100:hover { background-color: oklch(0.37 0.12 160 / 0.50) !important; }
+html.dark .hover\:bg-blue-50:hover     { background-color: oklch(0.32 0.10 250 / 0.45) !important; }
+html.dark .hover\:bg-indigo-50:hover   { background-color: oklch(0.32 0.10 270 / 0.45) !important; }
 
-/* Text on soft backgrounds — slightly brighter in dark mode */
-html.dark .text-amber-700   { color: oklch(0.82 0.14 80) !important; }
-html.dark .text-blue-700    { color: oklch(0.78 0.14 250) !important; }
+/* Borders coloridas */
+html.dark .border-amber-100   { border-color: oklch(0.40 0.10 80  / 0.40) !important; }
+html.dark .border-amber-200   { border-color: oklch(0.45 0.12 80  / 0.50) !important; }
+html.dark .border-amber-300   { border-color: oklch(0.50 0.14 80  / 0.60) !important; }
+html.dark .border-yellow-200  { border-color: oklch(0.45 0.12 95  / 0.50) !important; }
+html.dark .border-yellow-300  { border-color: oklch(0.50 0.14 95  / 0.60) !important; }
+html.dark .border-orange-200  { border-color: oklch(0.45 0.12 55  / 0.50) !important; }
+html.dark .border-orange-300  { border-color: oklch(0.50 0.14 55  / 0.60) !important; }
+html.dark .border-red-200     { border-color: oklch(0.45 0.12 27  / 0.50) !important; }
+html.dark .border-red-300     { border-color: oklch(0.50 0.14 27  / 0.60) !important; }
+html.dark .border-rose-200    { border-color: oklch(0.45 0.12 15  / 0.50) !important; }
+html.dark .border-green-200   { border-color: oklch(0.45 0.12 145 / 0.50) !important; }
+html.dark .border-emerald-100 { border-color: oklch(0.40 0.10 160 / 0.40) !important; }
+html.dark .border-emerald-200 { border-color: oklch(0.45 0.12 160 / 0.50) !important; }
+html.dark .border-emerald-300 { border-color: oklch(0.50 0.14 160 / 0.60) !important; }
+html.dark .border-blue-200    { border-color: oklch(0.45 0.12 250 / 0.50) !important; }
+html.dark .border-indigo-100  { border-color: oklch(0.40 0.10 270 / 0.40) !important; }
+html.dark .border-indigo-200  { border-color: oklch(0.45 0.12 270 / 0.50) !important; }
+
+/* Textos coloridos — brilho calibrado para dark mode */
+html.dark .text-amber-600   { color: oklch(0.82 0.14 80)  !important; }
+html.dark .text-amber-700   { color: oklch(0.82 0.14 80)  !important; }
+html.dark .text-amber-800   { color: oklch(0.85 0.15 80)  !important; }
+html.dark .text-yellow-700  { color: oklch(0.82 0.14 95)  !important; }
+html.dark .text-yellow-800  { color: oklch(0.85 0.15 95)  !important; }
+html.dark .text-orange-600  { color: oklch(0.78 0.16 55)  !important; }
+html.dark .text-orange-700  { color: oklch(0.78 0.16 55)  !important; }
+html.dark .text-orange-800  { color: oklch(0.82 0.18 55)  !important; }
+html.dark .text-red-600     { color: oklch(0.75 0.18 27)  !important; }
+html.dark .text-red-700     { color: oklch(0.75 0.18 27)  !important; }
+html.dark .text-red-800     { color: oklch(0.78 0.20 27)  !important; }
+html.dark .text-rose-700    { color: oklch(0.75 0.18 15)  !important; }
+html.dark .text-pink-700    { color: oklch(0.75 0.18 0)   !important; }
+html.dark .text-green-600   { color: oklch(0.78 0.14 145) !important; }
 html.dark .text-green-700   { color: oklch(0.78 0.14 145) !important; }
-html.dark .text-red-700     { color: oklch(0.75 0.18 27) !important; }
-html.dark .text-rose-700    { color: oklch(0.75 0.18 15) !important; }
-html.dark .text-amber-600   { color: oklch(0.78 0.14 80) !important; }
+html.dark .text-green-800   { color: oklch(0.82 0.15 145) !important; }
+html.dark .text-emerald-500 { color: oklch(0.75 0.14 160) !important; }
+html.dark .text-emerald-600 { color: oklch(0.78 0.14 160) !important; }
+html.dark .text-emerald-700 { color: oklch(0.78 0.14 160) !important; }
+html.dark .text-emerald-800 { color: oklch(0.82 0.15 160) !important; }
+html.dark .text-teal-700    { color: oklch(0.78 0.14 180) !important; }
+html.dark .text-cyan-700    { color: oklch(0.78 0.14 210) !important; }
+html.dark .text-sky-700     { color: oklch(0.78 0.14 235) !important; }
+html.dark .text-blue-600    { color: oklch(0.78 0.14 250) !important; }
+html.dark .text-blue-700    { color: oklch(0.78 0.14 250) !important; }
+html.dark .text-blue-800    { color: oklch(0.82 0.15 250) !important; }
+html.dark .text-indigo-600  { color: oklch(0.78 0.14 270) !important; }
+html.dark .text-indigo-700  { color: oklch(0.78 0.14 270) !important; }
+html.dark .text-violet-700  { color: oklch(0.78 0.14 290) !important; }
+html.dark .text-purple-600  { color: oklch(0.78 0.14 310) !important; }
+html.dark .text-purple-700  { color: oklch(0.78 0.14 310) !important; }
+
+/* Hover em textos coloridos — preserva contraste em dark mode */
+html.dark .hover\:text-emerald-600:hover { color: oklch(0.78 0.14 160) !important; }
+html.dark .hover\:text-red-600:hover     { color: oklch(0.78 0.18 27)  !important; }
+html.dark .hover\:text-amber-500:hover   { color: oklch(0.82 0.14 80)  !important; }
 
 /* Inputs / selects */
 html.dark input,
@@ -226,7 +302,7 @@ html, body {
 .cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
 .cdk-drop-list-dragging .cdk-drag { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
 
-/* -- Markdown rendering for IA responses (Pergunte � IA) ----------------- */
+/* -- Markdown rendering for IA responses (Pergunte � IA) ----------------- */
 .prose-ia { line-height: 1.55; }
 .prose-ia > *:first-child { margin-top: 0; }
 .prose-ia > *:last-child  { margin-bottom: 0; }

@@ -1,4 +1,4 @@
-import { AfterViewChecked, ChangeDetectorRef, Component, DestroyRef, ElementRef, EventEmitter, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
+﻿import { AfterViewChecked, ChangeDetectorRef, Component, DestroyRef, ElementRef, EventEmitter, Output, ViewChild, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Bot, User as UserIcon, ArrowUp, Loader2, CheckCircle2, Copy, Check, Pencil, Square, ArrowDown } from 'lucide-angular';
@@ -31,7 +31,7 @@ const STARTER_SUGGESTIONS = [
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule, UiButton, UiAvatar],
   template: `
-    <div class="flex flex-col h-full bg-white">
+    <div class="flex flex-col h-full bg-card">
 
       <!-- ── Messages / Empty state ── -->
       <div #scrollArea (scroll)="onScroll()" class="flex-1 overflow-y-auto relative scroll-smooth">
@@ -41,10 +41,10 @@ const STARTER_SUGGESTIONS = [
           <div class="max-w-3xl mx-auto px-6 pt-8 pb-4 space-y-8">
             @for (_ of [1,2,3]; track $index) {
               <div class="flex gap-4">
-                <div class="w-7 h-7 rounded-full bg-slate-200 animate-pulse shrink-0 mt-0.5"></div>
+                <div class="w-7 h-7 rounded-full bg-muted animate-pulse shrink-0 mt-0.5"></div>
                 <div class="flex-1 space-y-2 pt-1">
-                  <div class="h-4 bg-slate-200 animate-pulse rounded-md w-3/4"></div>
-                  <div class="h-4 bg-slate-200 animate-pulse rounded-md w-1/2"></div>
+                  <div class="h-4 bg-muted animate-pulse rounded-md w-3/4"></div>
+                  <div class="h-4 bg-muted animate-pulse rounded-md w-1/2"></div>
                 </div>
               </div>
             }
@@ -56,17 +56,17 @@ const STARTER_SUGGESTIONS = [
               <div class="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white mx-auto shadow-lg">
                 <lucide-angular [img]="Bot" size="28" />
               </div>
-              <h2 class="text-2xl font-semibold text-slate-900">Como posso ajudar?</h2>
-              <p class="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
+              <h2 class="text-2xl font-semibold text-foreground">Como posso ajudar?</h2>
+              <p class="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
                 Descreva sua demanda industrial e vou conduzir a triagem automaticamente.
               </p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
               @for (s of starterSuggestions; track s.label) {
                 <button type="button" (click)="useSuggestion(s.prompt)"
-                  class="text-left p-4 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm transition-all">
-                  <p class="text-sm font-semibold text-slate-800">{{ s.label }}</p>
-                  <p class="text-xs text-slate-400 mt-0.5 line-clamp-2">{{ s.prompt }}</p>
+                  class="text-left p-4 border border-border rounded-xl hover:bg-muted/40 hover:border-input hover:shadow-sm transition-all">
+                  <p class="text-sm font-semibold text-foreground">{{ s.label }}</p>
+                  <p class="text-xs text-muted-foreground mt-0.5 line-clamp-2">{{ s.prompt }}</p>
                 </button>
               }
             </div>
@@ -85,18 +85,18 @@ const STARTER_SUGGESTIONS = [
                     <lucide-angular [img]="Bot" size="14" />
                   </div>
                   <div class="flex-1 min-w-0 space-y-3">
-                    <p class="text-sm text-slate-900 leading-relaxed whitespace-pre-wrap">{{ msg.content }}</p>
+                    <p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{{ msg.content }}</p>
 
                     @if (msg.summary) {
-                      <div class="border border-slate-200 rounded-xl px-4 py-3 bg-slate-50">
+                      <div class="border border-border rounded-xl px-4 py-3 bg-muted/40">
                         <div class="grid grid-cols-[96px_1fr] gap-y-2 text-xs">
-                          <span class="text-slate-500 font-medium">Título</span>
-                          <span class="text-slate-900 font-semibold">{{ msg.summary.titulo }}</span>
-                          <span class="text-slate-500 font-medium">Setor</span>
-                          <span class="text-slate-900">{{ msg.summary.setor }}</span>
-                          <span class="text-slate-500 font-medium">Responsável</span>
-                          <span class="text-slate-900">{{ msg.summary.responsavel }}</span>
-                          <span class="text-slate-500 font-medium">Prioridade</span>
+                          <span class="text-muted-foreground font-medium">Título</span>
+                          <span class="text-foreground font-semibold">{{ msg.summary.titulo }}</span>
+                          <span class="text-muted-foreground font-medium">Setor</span>
+                          <span class="text-foreground">{{ msg.summary.setor }}</span>
+                          <span class="text-muted-foreground font-medium">Responsável</span>
+                          <span class="text-foreground">{{ msg.summary.responsavel }}</span>
+                          <span class="text-muted-foreground font-medium">Prioridade</span>
                           <span [class]="'inline-flex items-center w-fit px-2 py-0.5 rounded-full text-xs font-semibold border ' + prioridadeStyle(msg.summary.prioridade)">
                             {{ prioridadeLabel(msg.summary.prioridade) }}
                           </span>
@@ -108,7 +108,7 @@ const STARTER_SUGGESTIONS = [
                       <div class="flex flex-wrap gap-1.5">
                         @for (s of msg.suggestions; track s) {
                           <button type="button" (click)="useSuggestion(s)"
-                            class="text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700 transition-colors">
+                            class="text-xs px-3 py-1.5 rounded-full border border-border bg-card hover:bg-muted/40 hover:border-input text-foreground transition-colors">
                             {{ s }}
                           </button>
                         }
@@ -119,7 +119,7 @@ const STARTER_SUGGESTIONS = [
                     <div class="flex items-center gap-0.5 h-6 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button type="button" (click)="copyMsg(msg.id, msg.content)"
                         [title]="copiedId() === msg.id ? 'Copiado!' : 'Copiar mensagem'"
-                        class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                        class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors">
                         <lucide-angular [img]="copiedId() === msg.id ? Check : Copy" size="14" />
                       </button>
                     </div>
@@ -130,26 +130,26 @@ const STARTER_SUGGESTIONS = [
                 <!-- User bubble -->
                 <div class="group flex justify-end gap-3">
                   <div class="space-y-1.5 max-w-[78%]">
-                    <div class="bg-slate-100 rounded-2xl px-4 py-2.5">
-                      <p class="text-sm text-slate-900 leading-relaxed">{{ msg.content }}</p>
+                    <div class="bg-muted rounded-2xl px-4 py-2.5">
+                      <p class="text-sm text-foreground leading-relaxed">{{ msg.content }}</p>
                     </div>
                     <!-- Hover actions -->
                     <div class="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button type="button" (click)="copyMsg(msg.id, msg.content)"
                         [title]="copiedId() === msg.id ? 'Copiado!' : 'Copiar'"
-                        class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                        class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors">
                         <lucide-angular [img]="copiedId() === msg.id ? Check : Copy" size="14" />
                       </button>
                       <button type="button" (click)="editMsg(msg.content)"
                         title="Usar como entrada"
-                        class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                        class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors">
                         <lucide-angular [img]="Pencil" size="14" />
                       </button>
                     </div>
                   </div>
                   <ui-avatar [name]="auth.user()?.nome ?? ''" [src]="auth.user()?.avatar"
                     class="h-7 w-7 shrink-0 mt-0.5"
-                    fallbackClass="bg-slate-200 text-slate-600 text-xs font-medium" />
+                    fallbackClass="bg-muted text-muted-foreground text-xs font-medium" />
                 </div>
               }
             }
@@ -194,17 +194,17 @@ const STARTER_SUGGESTIONS = [
       </div>
 
       <!-- ── Input area ── -->
-      <div class="shrink-0 px-6 pb-5 pt-3 bg-white relative">
+      <div class="shrink-0 px-6 pb-5 pt-3 bg-card relative">
         <!-- Floating scroll-to-bottom button (ChatGPT-style) -->
         @if (showScrollButton()) {
           <button type="button" (click)="scrollToBottom(true)"
-            class="absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors z-10"
+            class="absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-card border border-border shadow-md flex items-center justify-center text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors z-10"
             title="Ir para o final">
             <lucide-angular [img]="ArrowDown" size="16" />
           </button>
         }
         <div class="max-w-3xl mx-auto">
-          <div class="relative bg-slate-100 rounded-2xl border border-transparent focus-within:border-slate-300 focus-within:bg-white focus-within:shadow-md transition-all">
+          <div class="relative bg-muted rounded-2xl border border-transparent focus-within:border-input focus-within:bg-card focus-within:shadow-md transition-all">
             <textarea
               #inputEl
               [(ngModel)]="draftInput"
@@ -220,21 +220,21 @@ const STARTER_SUGGESTIONS = [
               @if (typing()) {
                 <button type="button" (click)="stop()"
                   title="Parar geração"
-                  class="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-slate-900 hover:bg-slate-700 text-white shadow-sm">
+                  class="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
                   <lucide-angular [img]="Square" size="12" class="fill-white" />
                 </button>
               } @else {
                 <button type="button" (click)="onSubmit()"
                   [disabled]="!draftInput.trim() || step() === 'criada'"
-                  class="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-slate-900 hover:bg-slate-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white shadow-sm">
+                  class="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-primary-foreground shadow-sm">
                   <lucide-angular [img]="ArrowUp" size="16" />
                 </button>
               }
             </div>
           </div>
-          <p class="text-center text-[11px] text-slate-400 mt-2">
-            <kbd class="px-1 py-0.5 text-[10px] bg-white border border-slate-200 rounded shadow-sm">Enter</kbd> para enviar &nbsp;·&nbsp;
-            <kbd class="px-1 py-0.5 text-[10px] bg-white border border-slate-200 rounded shadow-sm">Shift+Enter</kbd> para nova linha
+          <p class="text-center text-[11px] text-muted-foreground mt-2">
+            <kbd class="px-1 py-0.5 text-[10px] bg-card border border-border rounded shadow-sm">Enter</kbd> para enviar &nbsp;·&nbsp;
+            <kbd class="px-1 py-0.5 text-[10px] bg-card border border-border rounded shadow-sm">Shift+Enter</kbd> para nova linha
           </p>
         </div>
       </div>
@@ -393,7 +393,7 @@ export class TriagemChatComponent implements AfterViewChecked {
   }
 
   prioridadeStyle(p?: Prioridade) {
-    if (!p) return 'bg-slate-100 text-slate-700 border-slate-300';
+    if (!p) return 'bg-muted text-foreground border-input';
     const c = PRIORIDADE_CONFIG[p];
     return `${c.bg} ${c.color}`;
   }

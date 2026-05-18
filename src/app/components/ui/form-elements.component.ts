@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+﻿import { Component, computed, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { cn } from '../../lib/utils';
 
@@ -53,5 +53,5 @@ export class UiSeparator {
 })
 export class UiSkeleton {
     class = input('');
-    classes = computed(() => cn('animate-pulse rounded-md bg-slate-200', this.class()));
+    classes = computed(() => cn('animate-pulse rounded-md bg-muted', this.class()));
 }

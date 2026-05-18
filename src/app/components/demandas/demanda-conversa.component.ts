@@ -1,4 +1,4 @@
-import {
+﻿import {
   AfterViewChecked, Component, DestroyRef, ElementRef, OnInit,
   ViewChild, computed, inject, input, signal,
 } from '@angular/core';
@@ -19,8 +19,8 @@ const ROLE_COLOR: Record<string, string> = {
   solicitante: 'text-blue-600 dark:text-blue-400',
   responsavel: 'text-emerald-600 dark:text-emerald-400',
   admin: 'text-purple-600 dark:text-purple-400',
-  participante: 'text-slate-500 dark:text-slate-400',
-  sistema: 'text-slate-500 dark:text-slate-400',
+  participante: 'text-muted-foreground dark:text-muted-foreground',
+  sistema: 'text-muted-foreground dark:text-muted-foreground',
   ia: 'text-amber-600 dark:text-amber-400',
 };
 

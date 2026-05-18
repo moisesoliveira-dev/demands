@@ -33,7 +33,7 @@ import { ptBR } from 'date-fns/locale';
               <div class="relative">
                 <ui-avatar [name]="user.nome" [src]="avatarPreview() ?? user.avatar"
                   class="h-24 w-24 border-4 border-background ring-2 ring-amber-500/20"
-                  fallbackClass="bg-slate-700 text-slate-200 text-2xl font-semibold" />
+                  fallbackClass="bg-muted text-muted-foreground text-2xl font-semibold" />
                 <button type="button" (click)="fileInput.click()" [disabled]="savingAvatar()"
                   class="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow hover:scale-105 transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
                   title="Alterar foto">

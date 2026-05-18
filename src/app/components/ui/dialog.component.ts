@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, input } from '@angular/core';
+﻿import { Component, EventEmitter, Output, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GsapScaleInDirective } from '../../lib/gsap.directives';
 
@@ -8,7 +8,7 @@ import { GsapScaleInDirective } from '../../lib/gsap.directives';
     template: `
     @if (open()) {
       <div class="fixed inset-0 z-50 bg-black/60 animate-fade-in" (click)="onBackdrop()"></div>
-      <div gsapScaleIn class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-slate-200 bg-background p-6 shadow-lg sm:rounded-lg"
+      <div gsapScaleIn class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-background p-6 shadow-lg sm:rounded-lg"
            [class]="contentClass()"
            (click)="$event.stopPropagation()">
         <ng-content />

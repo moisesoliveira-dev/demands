@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+﻿import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -52,13 +52,13 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
       <!-- Search -->
       <div class="relative w-full sm:w-72">
         <lucide-angular [img]="Search" size="15"
-          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <input type="text" [value]="searchQ()" (input)="searchQ.set($any($event.target).value); page.set(1)"
           placeholder="Buscar por nome, descrição ou responsável…"
           class="h-9 w-full rounded-md border border-input bg-transparent pl-8 pr-8 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
         @if (searchQ().length) {
           <button type="button" (click)="searchQ.set(''); page.set(1)"
-            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
             <lucide-angular [img]="X" size="13" />
           </button>
         }
@@ -80,35 +80,35 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
 
   <!-- ── Stats ── -->
   <div class="flex items-center gap-4 text-sm">
-    <span class="text-slate-500">
-      <strong class="text-slate-900">{{ filteredTotal() }}</strong> setor(es) encontrado(s)
+    <span class="text-muted-foreground">
+      <strong class="text-foreground">{{ filteredTotal() }}</strong> setor(es) encontrado(s)
     </span>
     <span class="text-green-600 font-medium">{{ activeCount() }} ativo(s)</span>
-    <span class="text-slate-400">{{ inactiveCount() }} inativo(s)</span>
+    <span class="text-muted-foreground">{{ inactiveCount() }} inativo(s)</span>
   </div>
 
   <!-- ── Empty state ── -->
   @if (loading()) {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (_ of [1,2,3,4,5,6]; track $index) {
-        <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+        <div class="rounded-lg border border-border bg-card p-5 space-y-3">
           <div class="flex items-start gap-3">
-            <div class="w-9 h-9 rounded-lg bg-slate-200 animate-pulse shrink-0"></div>
+            <div class="w-9 h-9 rounded-lg bg-muted animate-pulse shrink-0"></div>
             <div class="flex-1 space-y-2">
-              <div class="h-4 bg-slate-200 animate-pulse rounded w-2/3"></div>
-              <div class="h-3 bg-slate-200 animate-pulse rounded w-1/3"></div>
+              <div class="h-4 bg-muted animate-pulse rounded w-2/3"></div>
+              <div class="h-3 bg-muted animate-pulse rounded w-1/3"></div>
             </div>
           </div>
           <div class="space-y-2">
-            <div class="h-3 bg-slate-200 animate-pulse rounded"></div>
-            <div class="h-3 bg-slate-200 animate-pulse rounded w-2/3"></div>
+            <div class="h-3 bg-muted animate-pulse rounded"></div>
+            <div class="h-3 bg-muted animate-pulse rounded w-2/3"></div>
           </div>
-          <div class="h-3 bg-slate-200 animate-pulse rounded w-1/4"></div>
+          <div class="h-3 bg-muted animate-pulse rounded w-1/4"></div>
         </div>
       }
     </div>
   } @else if (filteredTotal() === 0) {
-    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+    <div class="flex flex-col items-center justify-center py-20 text-muted-foreground">
       <lucide-angular [img]="Building2" size="48" class="mb-3 opacity-30" />
       <p class="text-sm font-medium">Nenhum setor encontrado</p>
       @if (searchQ().length || filterStatus()) {
@@ -132,15 +132,15 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
                     <lucide-angular [img]="Building2" size="18" class="text-amber-600" />
                   </div>
                   <div class="min-w-0">
-                    <p class="font-semibold text-slate-900 leading-tight truncate">{{ s.nome }}</p>
-                    <p class="text-xs text-slate-400 mt-0.5">
+                    <p class="font-semibold text-foreground leading-tight truncate">{{ s.nome }}</p>
+                    <p class="text-xs text-muted-foreground mt-0.5">
                       Criado em {{ s.criadoEm | date:'dd/MM/yyyy' }}
                     </p>
                   </div>
                 </div>
                 <span [class]="s.ativo
                   ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-slate-50 text-slate-500 border-slate-200'"
+                  : 'bg-muted/40 text-muted-foreground border-border'"
                   class="shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
                   {{ s.ativo ? 'Ativo' : 'Inativo' }}
                 </span>
@@ -149,14 +149,14 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
 
             <ui-card-content class="pt-0 pb-3 space-y-3">
               @if (s.descricao) {
-                <p class="text-sm text-slate-600 line-clamp-2">{{ s.descricao }}</p>
+                <p class="text-sm text-muted-foreground line-clamp-2">{{ s.descricao }}</p>
               }
               <div class="text-xs">
-                <p class="text-slate-400 uppercase tracking-wide text-[10px] font-semibold mb-0.5">Responsável</p>
-                <p class="text-slate-700">{{ s.responsavel || '—' }}</p>
+                <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold mb-0.5">Responsável</p>
+                <p class="text-foreground">{{ s.responsavel || '—' }}</p>
               </div>
 
-              <div class="flex items-center justify-end gap-0.5 pt-1 border-t border-slate-100">
+              <div class="flex items-center justify-end gap-0.5 pt-1 border-t border-border">
                 <ui-button variant="ghost" size="sm" (click)="openEdit(s)" title="Editar setor">
                   <lucide-angular [img]="Pencil" size="14" />
                 </ui-button>
@@ -178,8 +178,8 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
 
     <!-- ── Pagination ── -->
     @if (totalPages() > 1) {
-      <div class="flex items-center justify-between border-t border-slate-100 pt-4">
-        <p class="text-sm text-slate-500">
+      <div class="flex items-center justify-between border-t border-border pt-4">
+        <p class="text-sm text-muted-foreground">
           Exibindo <strong>{{ pageStart() }}–{{ pageEnd() }}</strong> de {{ filteredTotal() }}
         </p>
         <div class="flex items-center gap-2">
@@ -187,7 +187,7 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
             [disabled]="page() === 1" (click)="page.set(page() - 1)">
             ‹ Anterior
           </ui-button>
-          <span class="min-w-22 text-center text-sm font-medium text-slate-700">
+          <span class="min-w-22 text-center text-sm font-medium text-foreground">
             Página {{ page() }} de {{ totalPages() }}
           </span>
           <ui-button variant="outline" size="sm"
@@ -232,7 +232,7 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
       <div class="space-y-1.5">
         <ui-label for="s-resp">Responsável *</ui-label>
         @if (loadingUsers()) {
-          <p class="text-xs text-slate-400">Carregando usuários…</p>
+          <p class="text-xs text-muted-foreground">Carregando usuários…</p>
         } @else if (activeUsers().length === 0) {
           <p class="text-xs text-amber-600">Nenhum usuário ativo encontrado. Cadastre um usuário antes de criar um setor.</p>
         } @else {
@@ -253,8 +253,8 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
       @if (editTarget()) {
         <div class="flex items-center gap-2">
           <input id="s-ativo" name="ativo" type="checkbox" [(ngModel)]="form.ativo"
-            class="h-4 w-4 rounded border-slate-300 accent-primary cursor-pointer" />
-          <label for="s-ativo" class="text-sm font-medium text-slate-700 cursor-pointer select-none">
+            class="h-4 w-4 rounded border-input accent-primary cursor-pointer" />
+          <label for="s-ativo" class="text-sm font-medium text-foreground cursor-pointer select-none">
             Setor ativo
           </label>
         </div>

@@ -1,4 +1,4 @@
-import {
+﻿import {
     Component, computed, inject, signal,
     ViewChild, ElementRef, TemplateRef, ViewContainerRef, OnDestroy,
 } from '@angular/core';
@@ -219,7 +219,7 @@ export class NotificacoesBellComponent implements OnDestroy {
             demanda_bloqueada: 'bg-red-500/10 text-red-600',
             demanda_concluida: 'bg-green-500/10 text-green-600',
             demanda_atribuida: 'bg-purple-500/10 text-purple-600',
-            sistema: 'bg-slate-500/10 text-slate-500',
+            sistema: 'bg-slate-500/10 text-muted-foreground',
             alerta: 'bg-orange-500/10 text-orange-600',
         };
         return `${base} ${map[n.tipo] ?? map.sistema}`;

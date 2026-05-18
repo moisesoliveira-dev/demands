@@ -24,7 +24,7 @@ import { SettingsTreeNavComponent, SettingsTreeGroup } from '../components/ui/se
     <div class="flex gap-6 max-w-5xl min-h-[520px]">
 
       <!-- Tree nav -->
-      <aside class="w-44 shrink-0 border-r border-slate-200 pr-2 pt-1">
+      <aside class="w-44 shrink-0 border-r border-border pr-2 pt-1">
         <app-settings-tree-nav
           [groups]="treeGroups"
           [active]="active()"
@@ -46,21 +46,21 @@ import { SettingsTreeNavComponent, SettingsTreeGroup } from '../components/ui/se
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium">Email</p>
-                  <p class="text-xs text-slate-500">Receber notificações por email</p>
+                  <p class="text-xs text-muted-foreground">Receber notificações por email</p>
                 </div>
                 <ui-switch [checked]="notifEmail()" (checkedChange)="notifEmail.set($event)" />
               </div>
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium">Push</p>
-                  <p class="text-xs text-slate-500">Notificações no navegador</p>
+                  <p class="text-xs text-muted-foreground">Notificações no navegador</p>
                 </div>
                 <ui-switch [checked]="notifPush()" (checkedChange)="notifPush.set($event)" />
               </div>
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium">Apenas críticas</p>
-                  <p class="text-xs text-slate-500">Somente prioridade urgente/crítica</p>
+                  <p class="text-xs text-muted-foreground">Somente prioridade urgente/crítica</p>
                 </div>
                 <ui-switch [checked]="apenasCriticas()" (checkedChange)="apenasCriticas.set($event)" />
               </div>
@@ -80,7 +80,7 @@ import { SettingsTreeNavComponent, SettingsTreeGroup } from '../components/ui/se
               @if (svc.loading()) {
                 <div class="space-y-3">
                   @for (_ of [1,2,3]; track $index) {
-                    <div class="h-9 bg-slate-100 animate-pulse rounded"></div>
+                    <div class="h-9 bg-muted animate-pulse rounded"></div>
                   }
                 </div>
               } @else {
@@ -98,7 +98,7 @@ import { SettingsTreeNavComponent, SettingsTreeGroup } from '../components/ui/se
                   <ui-label for="cctx">Contexto para a IA</ui-label>
                   <textarea id="cctx" rows="4" [class]="textareaCls" [(ngModel)]="companyForm.company_context"
                     placeholder="Ex.: Somos uma fábrica de peças automotivas. Nossos processos críticos incluem..."></textarea>
-                  <p class="text-xs text-slate-500">Descrição livre usada pelos agentes para personalizar respostas.</p>
+                  <p class="text-xs text-muted-foreground">Descrição livre usada pelos agentes para personalizar respostas.</p>
                 </div>
                 <div class="flex justify-end">
                   <ui-button (click)="saveCompany()" [disabled]="svc.saving()">
@@ -122,33 +122,33 @@ import { SettingsTreeNavComponent, SettingsTreeGroup } from '../components/ui/se
               @if (svc.loading()) {
                 <div class="grid sm:grid-cols-2 gap-3">
                   @for (_ of [1,2,3,4]; track $index) {
-                    <div class="h-12 bg-slate-100 animate-pulse rounded"></div>
+                    <div class="h-12 bg-muted animate-pulse rounded"></div>
                   }
                 </div>
               } @else if (svc.settings()?.db; as db) {
                 <div class="grid sm:grid-cols-2 gap-3 text-sm">
-                  <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p class="text-xs text-slate-500 mb-0.5">Host</p>
+                  <div class="rounded-md border border-border bg-muted/40 px-3 py-2">
+                    <p class="text-xs text-muted-foreground mb-0.5">Host</p>
                     <p class="font-mono font-medium">{{ db.host }}</p>
                   </div>
-                  <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p class="text-xs text-slate-500 mb-0.5">Porta</p>
+                  <div class="rounded-md border border-border bg-muted/40 px-3 py-2">
+                    <p class="text-xs text-muted-foreground mb-0.5">Porta</p>
                     <p class="font-mono font-medium">{{ db.port }}</p>
                   </div>
-                  <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p class="text-xs text-slate-500 mb-0.5">Database</p>
+                  <div class="rounded-md border border-border bg-muted/40 px-3 py-2">
+                    <p class="text-xs text-muted-foreground mb-0.5">Database</p>
                     <p class="font-mono font-medium">{{ db.database }}</p>
                   </div>
-                  <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p class="text-xs text-slate-500 mb-0.5">Usuário</p>
+                  <div class="rounded-md border border-border bg-muted/40 px-3 py-2">
+                    <p class="text-xs text-muted-foreground mb-0.5">Usuário</p>
                     <p class="font-mono font-medium">{{ db.user }}</p>
                   </div>
-                  <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 sm:col-span-2 flex items-center gap-2">
-                    <p class="text-xs text-slate-500">SSL</p>
+                  <div class="rounded-md border border-border bg-muted/40 px-3 py-2 sm:col-span-2 flex items-center gap-2">
+                    <p class="text-xs text-muted-foreground">SSL</p>
                     @if (db.ssl) {
                       <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800">Ativo</span>
                     } @else {
-                      <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-500">Desativado</span>
+                      <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-muted text-muted-foreground">Desativado</span>
                     }
                   </div>
                 </div>

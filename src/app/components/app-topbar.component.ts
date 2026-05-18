@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+﻿import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LucideAngularModule, Menu, User, Lock, LogOut, Sun, Moon } from 'lucide-angular';
@@ -48,13 +48,13 @@ import { cn } from '../lib/utils';
           @if (auth.user(); as user) {
             <ui-dropdown align="end" contentClass="w-56">
               <ui-button trigger variant="ghost" class="h-10 w-10 p-0">
-                <ui-avatar [name]="user.nome" [src]="user.avatar" class="h-8 w-8 border-2 border-amber-500/20" fallbackClass="bg-slate-700 text-slate-200 text-xs font-medium" />
+                <ui-avatar [name]="user.nome" [src]="user.avatar" class="h-8 w-8 border-2 border-amber-500/20" fallbackClass="bg-muted text-muted-foreground text-xs font-medium" />
               </ui-button>
               <div menu>
                 <ui-dropdown-label>
                   <div class="flex flex-col space-y-1">
                     <p class="text-sm font-medium">{{ user.nome }}</p>
-                    <p class="text-xs text-slate-500">{{ user.email }}</p>
+                    <p class="text-xs text-muted-foreground">{{ user.email }}</p>
                     <p class="text-xs text-amber-600 font-medium">{{ user.cargo }}</p>
                   </div>
                 </ui-dropdown-label>

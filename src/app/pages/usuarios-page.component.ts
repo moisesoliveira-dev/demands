@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+﻿import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -34,7 +34,7 @@ const ROLE_BADGE: Record<Role, string> = {
   admin: 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-rose-100 text-rose-700 border-rose-200',
   supervisor: 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 border-amber-200',
   operador: 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700 border-blue-200',
-  visualizador: 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-600 border-slate-200',
+  visualizador: 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-muted text-muted-foreground border-border',
 };
 
 // ─── Form types ───────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
       <!-- Search -->
       <div class="relative w-full sm:w-72">
         <lucide-angular [img]="Search" size="15"
-          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           [value]="searchQ()"
@@ -87,7 +87,7 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
         />
         @if (searchQ().length) {
           <button type="button" (click)="searchQ.set(''); page.set(1)"
-            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
             <lucide-angular [img]="X" size="13" />
           </button>
         }
@@ -117,36 +117,36 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
 
   <!-- ── Stats ── -->
   <div class="flex items-center gap-4 text-sm">
-    <span class="text-slate-500">
-      <strong class="text-slate-900">{{ filteredTotal() }}</strong> usuário(s) encontrado(s)
+    <span class="text-muted-foreground">
+      <strong class="text-foreground">{{ filteredTotal() }}</strong> usuário(s) encontrado(s)
     </span>
     <span class="text-green-600 font-medium">{{ activeCount() }} ativo(s)</span>
-    <span class="text-slate-400">{{ inactiveCount() }} inativo(s)</span>
+    <span class="text-muted-foreground">{{ inactiveCount() }} inativo(s)</span>
   </div>
 
   <!-- ── Empty / Loading state ── -->
   @if (loading()) {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (_ of [1,2,3,4,5,6]; track $index) {
-        <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+        <div class="rounded-lg border border-border bg-card p-5 space-y-3">
           <div class="flex items-start gap-3">
-            <div class="w-11 h-11 rounded-full bg-slate-200 animate-pulse shrink-0"></div>
+            <div class="w-11 h-11 rounded-full bg-muted animate-pulse shrink-0"></div>
             <div class="flex-1 space-y-2">
-              <div class="h-4 bg-slate-200 animate-pulse rounded w-2/3"></div>
-              <div class="h-3 bg-slate-200 animate-pulse rounded w-1/2"></div>
+              <div class="h-4 bg-muted animate-pulse rounded w-2/3"></div>
+              <div class="h-3 bg-muted animate-pulse rounded w-1/2"></div>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <div class="h-3 bg-slate-200 animate-pulse rounded"></div>
-            <div class="h-3 bg-slate-200 animate-pulse rounded"></div>
+            <div class="h-3 bg-muted animate-pulse rounded"></div>
+            <div class="h-3 bg-muted animate-pulse rounded"></div>
           </div>
-          <div class="h-px bg-slate-100"></div>
-          <div class="h-5 bg-slate-200 animate-pulse rounded w-16"></div>
+          <div class="h-px bg-muted"></div>
+          <div class="h-5 bg-muted animate-pulse rounded w-16"></div>
         </div>
       }
     </div>
   } @else if (filteredTotal() === 0) {
-    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+    <div class="flex flex-col items-center justify-center py-20 text-muted-foreground">
       <lucide-angular [img]="Users" size="48" class="mb-3 opacity-30" />
       <p class="text-sm font-medium">Nenhum usuário encontrado</p>
       @if (searchQ().length || filterRole() || filterStatus()) {
@@ -167,37 +167,37 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
               <div class="flex items-start gap-3">
                 <ui-avatar [name]="u.nome" [src]="u.avatar"
                   class="h-11 w-11 shrink-0"
-                  fallbackClass="bg-amber-500 text-slate-900 text-sm font-semibold" />
+                  fallbackClass="bg-amber-500 text-foreground text-sm font-semibold" />
                 <div class="flex-1 min-w-0">
                   <div class="flex items-start justify-between gap-2">
-                    <p class="font-semibold text-slate-900 leading-tight truncate">{{ u.nome }}</p>
+                    <p class="font-semibold text-foreground leading-tight truncate">{{ u.nome }}</p>
                     <span [class]="ROLE_BADGE[u.role]" class="shrink-0">{{ ROLE_LABELS[u.role] }}</span>
                   </div>
-                  <p class="text-xs text-slate-500 truncate mt-0.5">{{ u.email }}</p>
+                  <p class="text-xs text-muted-foreground truncate mt-0.5">{{ u.email }}</p>
                 </div>
               </div>
             </ui-card-header>
             <ui-card-content class="pt-0 pb-3 space-y-3">
               <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                 <div>
-                  <p class="text-slate-400 uppercase tracking-wide text-[10px] font-semibold">Cargo</p>
-                  <p class="text-slate-700 truncate">{{ u.cargo }}</p>
+                  <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold">Cargo</p>
+                  <p class="text-foreground truncate">{{ u.cargo }}</p>
                 </div>
                 <div>
-                  <p class="text-slate-400 uppercase tracking-wide text-[10px] font-semibold">Setor</p>
-                  <p class="text-slate-700 truncate">{{ u.setor }}</p>
+                  <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold">Setor</p>
+                  <p class="text-foreground truncate">{{ u.setor }}</p>
                 </div>
                 @if (u.ultimoAcesso) {
                   <div class="col-span-2">
-                    <p class="text-slate-400 uppercase tracking-wide text-[10px] font-semibold">Último acesso</p>
-                    <p class="text-slate-500">{{ u.ultimoAcesso | date:'dd/MM/yyyy HH:mm' }}</p>
+                    <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold">Último acesso</p>
+                    <p class="text-muted-foreground">{{ u.ultimoAcesso | date:'dd/MM/yyyy HH:mm' }}</p>
                   </div>
                 }
               </div>
-              <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+              <div class="flex items-center justify-between pt-1 border-t border-border">
                 <span [class]="u.ativo
                   ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-slate-50 text-slate-500 border-slate-200'"
+                  : 'bg-muted/40 text-muted-foreground border-border'"
                   class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
                   {{ u.ativo ? 'Ativo' : 'Inativo' }}
                 </span>
@@ -224,8 +224,8 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
 
     <!-- ── Pagination ── -->
     @if (totalPages() > 1) {
-      <div class="flex items-center justify-between border-t border-slate-100 pt-4">
-        <p class="text-sm text-slate-500">
+      <div class="flex items-center justify-between border-t border-border pt-4">
+        <p class="text-sm text-muted-foreground">
           Exibindo <strong>{{ pageStart() }}–{{ pageEnd() }}</strong> de {{ filteredTotal() }}
         </p>
         <div class="flex items-center gap-2">
@@ -233,7 +233,7 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
             [disabled]="page() === 1" (click)="page.set(page() - 1)">
             ‹ Anterior
           </ui-button>
-          <span class="min-w-22 text-center text-sm font-medium text-slate-700">
+          <span class="min-w-22 text-center text-sm font-medium text-foreground">
             Página {{ page() }} de {{ totalPages() }}
           </span>
           <ui-button variant="outline" size="sm"
@@ -327,8 +327,8 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
         @if (editTarget()) {
           <div class="flex items-center gap-2 pt-5">
             <input id="f-ativo" name="ativo" type="checkbox" [(ngModel)]="form.ativo"
-              class="h-4 w-4 rounded border-slate-300 accent-primary cursor-pointer" />
-            <label for="f-ativo" class="text-sm font-medium text-slate-700 cursor-pointer select-none">
+              class="h-4 w-4 rounded border-input accent-primary cursor-pointer" />
+            <label for="f-ativo" class="text-sm font-medium text-foreground cursor-pointer select-none">
               Usuário ativo
             </label>
           </div>

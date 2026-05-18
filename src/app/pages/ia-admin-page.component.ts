@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+﻿import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Brain, BarChart3, BookOpen, Upload, Trash2, RefreshCw, AlertTriangle, CheckCircle2, UserCircle, Eraser, Key, Eye, EyeOff } from 'lucide-angular';
@@ -25,7 +25,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
     <div class="flex gap-6 max-w-5xl min-h-[520px]">
 
       <!-- Tree nav -->
-      <aside class="w-44 shrink-0 border-r border-slate-200 pr-2 pt-1">
+      <aside class="w-44 shrink-0 border-r border-border pr-2 pt-1">
         <app-settings-tree-nav
           [groups]="treeGroups"
           [active]="active()"
@@ -47,7 +47,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                 <div class="space-y-2">
                   <ui-label for="model">Modelo padrão (provider:model_id)</ui-label>
                   <input id="model" type="text" [class]="inputCls" [(ngModel)]="form.default_model" placeholder="groq:llama-3.3-70b-versatile" />
-                  <p class="text-xs text-slate-500">Ex.: <code>groq:llama-3.3-70b-versatile</code>, <code>openai:gpt-4o-mini</code>, <code>anthropic:claude-3-5-sonnet-20241022</code>, <code>google:gemini-2.0-flash</code></p>
+                  <p class="text-xs text-muted-foreground">Ex.: <code>groq:llama-3.3-70b-versatile</code>, <code>openai:gpt-4o-mini</code>, <code>anthropic:claude-3-5-sonnet-20241022</code>, <code>google:gemini-2.0-flash</code></p>
                 </div>
                 <div class="space-y-2">
                   <ui-label for="temp">Temperature ({{ form.temperature }})</ui-label>
@@ -55,7 +55,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                     [value]="form.temperature"
                     (input)="form.temperature = +$any($event.target).value"
                     class="w-full" />
-                  <p class="text-xs text-slate-500">0 = determinístico • 2 = muito criativo</p>
+                  <p class="text-xs text-muted-foreground">0 = determinístico • 2 = muito criativo</p>
                 </div>
                 <div class="space-y-2">
                   <ui-label for="emb_p">Embedder provider</ui-label>
@@ -73,11 +73,11 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                   <ui-label for="sysp">System prompt extra (mentalidade da empresa)</ui-label>
                   <textarea id="sysp" rows="6" [class]="textareaCls" [(ngModel)]="form.system_prompt_extra"
                     placeholder="Ex.: 'Você atua na Indústria X, fabricante de Y. Nossos clientes principais são... Nossos processos críticos são... Use o jargão da empresa: ...'"></textarea>
-                  <p class="text-xs text-slate-500">Concatenado às instruções base de todos os agentes. Para conhecimento extenso (manuais, normas), use a aba <strong>Conhecimento</strong>.</p>
+                  <p class="text-xs text-muted-foreground">Concatenado às instruções base de todos os agentes. Para conhecimento extenso (manuais, normas), use a aba <strong>Conhecimento</strong>.</p>
                 </div>
               </div>
 
-              <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+              <div class="flex items-center justify-between pt-2 border-t border-border">
                 <div class="flex items-center gap-2 text-xs">
                   @if (c.supabase_configured) {
                     <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800">
@@ -104,15 +104,15 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                   <div class="grid sm:grid-cols-2 gap-4">
                     @for (__ of [1,2]; track $index) {
                       <div class="space-y-2">
-                        <div class="h-3 bg-slate-200 animate-pulse rounded w-24"></div>
-                        <div class="h-9 bg-slate-200 animate-pulse rounded"></div>
+                        <div class="h-3 bg-muted animate-pulse rounded w-24"></div>
+                        <div class="h-9 bg-muted animate-pulse rounded"></div>
                       </div>
                     }
                   </div>
                 }
                 <div class="space-y-2">
-                  <div class="h-3 bg-slate-200 animate-pulse rounded w-32"></div>
-                  <div class="h-28 bg-slate-200 animate-pulse rounded"></div>
+                  <div class="h-3 bg-muted animate-pulse rounded w-32"></div>
+                  <div class="h-28 bg-muted animate-pulse rounded"></div>
                 </div>
               </div>
             }
@@ -137,7 +137,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                   [placeholder]="cfg()?.[p.configuredField] ? '••••••••••••••••' : 'Cole a chave aqui'" />
                 <div class="flex items-center gap-2">
                   <button type="button" (click)="showKey[p.key] = !showKey[p.key]"
-                    class="h-8 w-8 inline-flex items-center justify-center rounded-md border border-input text-slate-500 hover:text-slate-900 transition-colors">
+                    class="h-8 w-8 inline-flex items-center justify-center rounded-md border border-input text-muted-foreground hover:text-foreground transition-colors">
                     <lucide-angular [img]="showKey[p.key] ? EyeOff : Eye" size="14" />
                   </button>
                   @if (cfg()?.[p.configuredField]) {
@@ -145,12 +145,12 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                       <lucide-angular [img]="CheckCircle2" size="12" /> OK
                     </span>
                   } @else {
-                    <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-500 whitespace-nowrap">Não set</span>
+                    <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold bg-muted text-muted-foreground whitespace-nowrap">Não set</span>
                   }
                 </div>
               </div>
             }
-            <div class="flex justify-end pt-2 border-t border-slate-200">
+            <div class="flex justify-end pt-2 border-t border-border">
               <ui-button (click)="saveApiKeys()" [disabled]="savingKeys()">
                 {{ savingKeys() ? 'Salvando...' : 'Salvar chaves' }}
               </ui-button>
@@ -176,23 +176,23 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
 
           @if (metrics(); as m) {
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div class="rounded-lg border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">Runs</p>
+              <div class="rounded-lg border border-border bg-card p-4">
+                <p class="text-xs text-muted-foreground uppercase">Runs</p>
                 <p class="text-2xl font-bold mt-1">{{ m.totals.runs | number }}</p>
-                <p class="text-xs text-slate-400 mt-1">Sucesso: {{ m.totals.success_rate }}%</p>
+                <p class="text-xs text-muted-foreground mt-1">Sucesso: {{ m.totals.success_rate }}%</p>
               </div>
-              <div class="rounded-lg border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">Tokens totais</p>
+              <div class="rounded-lg border border-border bg-card p-4">
+                <p class="text-xs text-muted-foreground uppercase">Tokens totais</p>
                 <p class="text-2xl font-bold mt-1">{{ m.totals.total_tokens | number }}</p>
-                <p class="text-xs text-slate-400 mt-1">in {{ m.totals.input_tokens | number }} • out {{ m.totals.output_tokens | number }}</p>
+                <p class="text-xs text-muted-foreground mt-1">in {{ m.totals.input_tokens | number }} • out {{ m.totals.output_tokens | number }}</p>
               </div>
-              <div class="rounded-lg border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">Custo estimado</p>
+              <div class="rounded-lg border border-border bg-card p-4">
+                <p class="text-xs text-muted-foreground uppercase">Custo estimado</p>
                 <p class="text-2xl font-bold mt-1">$ {{ m.totals.cost_usd | number:'1.2-4' }}</p>
-                <p class="text-xs text-slate-400 mt-1">USD</p>
+                <p class="text-xs text-muted-foreground mt-1">USD</p>
               </div>
-              <div class="rounded-lg border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">Latência média</p>
+              <div class="rounded-lg border border-border bg-card p-4">
+                <p class="text-xs text-muted-foreground uppercase">Latência média</p>
                 <p class="text-2xl font-bold mt-1">{{ m.totals.avg_latency_ms | number }} ms</p>
               </div>
             </div>
@@ -203,12 +203,12 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                 <ui-card-content>
                   @if (m.per_model.length) {
                     <table class="w-full text-sm">
-                      <thead class="text-xs text-slate-500 border-b">
+                      <thead class="text-xs text-muted-foreground border-b">
                         <tr><th class="text-left py-2">Modelo</th><th class="text-right">Runs</th><th class="text-right">Tokens</th><th class="text-right">Custo</th></tr>
                       </thead>
                       <tbody>
                         @for (r of m.per_model; track r.model_spec) {
-                          <tr class="border-b border-slate-100">
+                          <tr class="border-b border-border">
                             <td class="py-2 font-mono text-xs">{{ r.model_spec }}</td>
                             <td class="text-right">{{ r.runs | number }}</td>
                             <td class="text-right">{{ r.tokens | number }}</td>
@@ -218,7 +218,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                       </tbody>
                     </table>
                   } @else {
-                    <p class="text-sm text-slate-500">Nenhum uso registrado neste período.</p>
+                    <p class="text-sm text-muted-foreground">Nenhum uso registrado neste período.</p>
                   }
                 </ui-card-content>
               </ui-card>
@@ -228,12 +228,12 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                 <ui-card-content>
                   @if (m.per_user.length) {
                     <table class="w-full text-sm">
-                      <thead class="text-xs text-slate-500 border-b">
+                      <thead class="text-xs text-muted-foreground border-b">
                         <tr><th class="text-left py-2">Usuário</th><th class="text-right">Runs</th><th class="text-right">Tokens</th><th class="text-right">Custo</th></tr>
                       </thead>
                       <tbody>
                         @for (r of m.per_user; track r.user_id) {
-                          <tr class="border-b border-slate-100">
+                          <tr class="border-b border-border">
                             <td class="py-2 truncate max-w-[200px]">{{ r.user_id }}</td>
                             <td class="text-right">{{ r.runs | number }}</td>
                             <td class="text-right">{{ r.tokens | number }}</td>
@@ -243,7 +243,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                       </tbody>
                     </table>
                   } @else {
-                    <p class="text-sm text-slate-500">Sem dados de usuários.</p>
+                    <p class="text-sm text-muted-foreground">Sem dados de usuários.</p>
                   }
                 </ui-card-content>
               </ui-card>
@@ -256,28 +256,28 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                   <div class="space-y-1">
                     @for (d of m.per_day; track d.day) {
                       <div class="flex items-center gap-2 text-xs">
-                        <span class="w-24 text-slate-600 font-mono">{{ d.day }}</span>
-                        <div class="flex-1 bg-slate-100 rounded h-4 relative overflow-hidden">
+                        <span class="w-24 text-muted-foreground font-mono">{{ d.day }}</span>
+                        <div class="flex-1 bg-muted rounded h-4 relative overflow-hidden">
                           <div class="absolute inset-y-0 left-0 bg-primary/70"
                             [style.width.%]="barPct(d.tokens, maxDayTokens())"></div>
                         </div>
                         <span class="w-20 text-right">{{ d.tokens | number }} tk</span>
-                        <span class="w-20 text-right text-slate-500">$ {{ d.cost | number:'1.2-4' }}</span>
+                        <span class="w-20 text-right text-muted-foreground">$ {{ d.cost | number:'1.2-4' }}</span>
                       </div>
                     }
                   </div>
                 } @else {
-                  <p class="text-sm text-slate-500">Sem dados.</p>
+                  <p class="text-sm text-muted-foreground">Sem dados.</p>
                 }
               </ui-card-content>
             </ui-card>
           } @else {
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               @for (_ of [1,2,3,4]; track $index) {
-                <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
-                  <div class="h-3 bg-slate-200 animate-pulse rounded w-20"></div>
-                  <div class="h-8 bg-slate-200 animate-pulse rounded w-16"></div>
-                  <div class="h-3 bg-slate-200 animate-pulse rounded w-24"></div>
+                <div class="rounded-lg border border-border bg-card p-4 space-y-2">
+                  <div class="h-3 bg-muted animate-pulse rounded w-20"></div>
+                  <div class="h-8 bg-muted animate-pulse rounded w-16"></div>
+                  <div class="h-3 bg-muted animate-pulse rounded w-24"></div>
                 </div>
               }
             </div>
@@ -318,13 +318,13 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
               <ui-button variant="outline" (click)="loadKnowledge()" [disabled]="uploading()">
                 <lucide-angular [img]="RefreshCw" size="14" /> Atualizar
               </ui-button>
-              <span class="text-xs text-slate-500">.txt, .md, .pdf — até 10 MB. Setor amarra o documento ao filtro RAG do usuário.</span>
+              <span class="text-xs text-muted-foreground">.txt, .md, .pdf — até 10 MB. Setor amarra o documento ao filtro RAG do usuário.</span>
             </div>
 
             @if (knowledge().documents.length) {
-              <div class="rounded-md border border-slate-200 overflow-hidden">
+              <div class="rounded-md border border-border overflow-hidden">
                 <table class="w-full text-sm">
-                  <thead class="text-xs text-slate-500 bg-slate-50">
+                  <thead class="text-xs text-muted-foreground bg-muted/40">
                     <tr>
                       <th class="text-left px-3 py-2">Arquivo</th>
                       <th class="text-left px-3 py-2">Setor</th>
@@ -337,16 +337,16 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                   </thead>
                   <tbody>
                     @for (d of knowledge().documents; track d.id) {
-                      <tr class="border-t border-slate-100">
+                      <tr class="border-t border-border">
                         <td class="px-3 py-2 truncate max-w-[280px]">{{ d.filename }}</td>
                         <td class="px-3 py-2 text-xs">
                           @if (d.setor) {
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">{{ d.setor }}</span>
                           } @else {
-                            <span class="text-slate-400">—</span>
+                            <span class="text-muted-foreground">—</span>
                           }
                         </td>
-                        <td class="px-3 py-2 text-xs text-slate-500">{{ d.content_type || '-' }}</td>
+                        <td class="px-3 py-2 text-xs text-muted-foreground">{{ d.content_type || '-' }}</td>
                         <td class="px-3 py-2 text-right">{{ formatBytes(d.size_bytes) }}</td>
                         <td class="px-3 py-2 text-right">{{ chunksOf(d) }}</td>
                         <td class="px-3 py-2 text-xs">{{ d.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -362,7 +362,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                 </table>
               </div>
             } @else if (knowledge().configured) {
-              <p class="text-sm text-slate-500">Nenhum documento ainda. Comece adicionando manuais, procedimentos ou tickets antigos.</p>
+              <p class="text-sm text-muted-foreground">Nenhum documento ainda. Comece adicionando manuais, procedimentos ou tickets antigos.</p>
             }
           </ui-card-content>
         </ui-card>
@@ -396,7 +396,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                 <textarea id="pno" rows="4" [class]="textareaCls" [(ngModel)]="profileForm.notes"
                   placeholder="Ex.: 'Trabalho turno noite', 'Costumo abrir demandas relativas a compressores', 'Prefiro respostas em tom técnico'..."></textarea>
               </div>
-              <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+              <div class="flex justify-end gap-2 pt-2 border-t border-border">
                 <ui-button variant="outline" (click)="loadProfile()" [disabled]="savingProfile()">
                   <lucide-angular [img]="RefreshCw" size="14" /> Recarregar
                 </ui-button>
@@ -415,36 +415,36 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
             <ui-card-content class="space-y-3">
               @if (profile(); as p) {
                 <div class="grid grid-cols-2 gap-3">
-                  <div class="rounded-lg border border-slate-200 p-3">
-                    <p class="text-xs text-slate-500 uppercase">Total de demandas</p>
+                  <div class="rounded-lg border border-border p-3">
+                    <p class="text-xs text-muted-foreground uppercase">Total de demandas</p>
                     <p class="text-2xl font-bold mt-1">{{ p.stats.total_demandas ?? 0 }}</p>
                   </div>
-                  <div class="rounded-lg border border-slate-200 p-3">
-                    <p class="text-xs text-slate-500 uppercase">Prioridade média</p>
+                  <div class="rounded-lg border border-border p-3">
+                    <p class="text-xs text-muted-foreground uppercase">Prioridade média</p>
                     <p class="text-2xl font-bold mt-1">{{ p.stats.prio_avg ?? '—' }}</p>
                   </div>
                 </div>
                 @if (topSetores().length) {
                   <div>
-                    <p class="text-xs text-slate-500 uppercase mb-2">Setores mais frequentes</p>
+                    <p class="text-xs text-muted-foreground uppercase mb-2">Setores mais frequentes</p>
                     <div class="space-y-1">
                       @for (s of topSetores(); track s.name) {
                         <div class="flex items-center justify-between text-sm">
                           <span>{{ s.name }}</span>
-                          <span class="text-slate-500">{{ s.count }}</span>
+                          <span class="text-muted-foreground">{{ s.count }}</span>
                         </div>
                       }
                     </div>
                   </div>
                 } @else {
-                  <p class="text-xs text-slate-500">Confirme algumas demandas para começar a alimentar as estatísticas.</p>
+                  <p class="text-xs text-muted-foreground">Confirme algumas demandas para começar a alimentar as estatísticas.</p>
                 }
               } @else {
                 <div class="grid grid-cols-2 gap-3">
                   @for (_ of [1,2]; track $index) {
-                    <div class="rounded-lg border border-slate-200 p-3 space-y-2">
-                      <div class="h-3 bg-slate-200 animate-pulse rounded w-24"></div>
-                      <div class="h-8 bg-slate-200 animate-pulse rounded w-12"></div>
+                    <div class="rounded-lg border border-border p-3 space-y-2">
+                      <div class="h-3 bg-muted animate-pulse rounded w-24"></div>
+                      <div class="h-8 bg-muted animate-pulse rounded w-12"></div>
                     </div>
                   }
                 </div>
@@ -477,7 +477,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                   <li class="py-2 flex items-start justify-between gap-3">
                     <div class="min-w-0 flex-1">
                       <p class="text-sm">{{ m.summary }}</p>
-                      <p class="text-xs text-slate-500 mt-0.5">
+                      <p class="text-xs text-muted-foreground mt-0.5">
                         {{ m.created_at | date:'dd/MM/yyyy HH:mm' }}
                         @if (m.setor) { · {{ m.setor }} }
                         @if (m.prioridade !== null) { · P{{ m.prioridade }} }
@@ -492,7 +492,7 @@ type TabId = 'ia-modelo' | 'ia-chaves' | 'ia-metricas' | 'ia-conhecimento' | 'ia
                 }
               </ul>
             } @else {
-              <p class="text-sm text-slate-500">Sem memórias ainda. Cada demanda confirmada gera uma entrada aqui.</p>
+              <p class="text-sm text-muted-foreground">Sem memórias ainda. Cada demanda confirmada gera uma entrada aqui.</p>
             }
           </ui-card-content>
         </ui-card>

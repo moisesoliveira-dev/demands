@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+﻿import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LucideAngularModule, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-angular';
@@ -22,18 +22,18 @@ const STATUS_LABEL: Record<DemandStatus, { label: string; class: string }> = {
   standalone: true,
   imports: [CommonModule, LucideAngularModule, UiPagination, GsapStaggerDirective],
   template: `
-    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+    <div class="bg-card rounded-lg border border-border overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          <thead class="border-b bg-slate-50">
+          <thead class="border-b bg-muted/40">
             <tr>
               <th class="w-10 px-3 py-3 text-left">
                 <input type="checkbox" [checked]="allSelected()" (change)="toggleAll($any($event.target).checked)"
-                  class="h-4 w-4 rounded border-slate-300 cursor-pointer" />
+                  class="h-4 w-4 rounded border-input cursor-pointer" />
               </th>
               @for (col of cols; track col.key) {
-                <th class="px-3 py-3 text-left font-medium text-slate-500 whitespace-nowrap">
-                  <button class="flex items-center gap-1 hover:text-slate-900 transition-colors" (click)="sort(col.key)">
+                <th class="px-3 py-3 text-left font-medium text-muted-foreground whitespace-nowrap">
+                  <button class="flex items-center gap-1 hover:text-foreground transition-colors" (click)="sort(col.key)">
                     {{ col.label }}
                     @if (sortKey() === col.key) {
                       <lucide-angular [img]="sortAsc() ? ArrowUp : ArrowDown" size="12" />
@@ -46,19 +46,19 @@ const STATUS_LABEL: Record<DemandStatus, { label: string; class: string }> = {
           </thead>
           <tbody [gsapStagger]="0.03">
             @for (d of pageItems(); track d.id) {
-              <tr class="border-b last:border-0 hover:bg-slate-50 transition-colors cursor-pointer">
+              <tr class="border-b last:border-0 hover:bg-muted/40 transition-colors cursor-pointer">
                 <td class="px-3 py-3" (click)="$event.stopPropagation()">
                   <input type="checkbox" [checked]="selected().has(d.id)" (change)="toggle(d.id)"
-                    class="h-4 w-4 rounded border-slate-300 cursor-pointer" />
+                    class="h-4 w-4 rounded border-input cursor-pointer" />
                 </td>
-                <td class="px-3 py-3 font-mono text-xs text-slate-400 whitespace-nowrap" (click)="open(d)">
+                <td class="px-3 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap" (click)="open(d)">
                   {{ d.id.slice(0, 8) }}
                 </td>
-                <td class="px-3 py-3 font-medium text-slate-900 max-w-64" (click)="open(d)">
+                <td class="px-3 py-3 font-medium text-foreground max-w-64" (click)="open(d)">
                   <span class="block truncate">{{ d.titulo }}</span>
                 </td>
-                <td class="px-3 py-3 text-slate-600 whitespace-nowrap" (click)="open(d)">{{ d.setor }}</td>
-                <td class="px-3 py-3 text-slate-600 whitespace-nowrap" (click)="open(d)">{{ d.responsavel }}</td>
+                <td class="px-3 py-3 text-muted-foreground whitespace-nowrap" (click)="open(d)">{{ d.setor }}</td>
+                <td class="px-3 py-3 text-muted-foreground whitespace-nowrap" (click)="open(d)">{{ d.responsavel }}</td>
                 <td class="px-3 py-3 whitespace-nowrap" (click)="open(d)">
                   <span [class]="'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold border ' + prio(d).bg + ' ' + prio(d).color">
                     {{ prio(d).label }}
@@ -69,9 +69,9 @@ const STATUS_LABEL: Record<DemandStatus, { label: string; class: string }> = {
                     {{ status(d).label }}
                   </span>
                 </td>
-                <td class="px-3 py-3 text-xs text-slate-500 whitespace-nowrap" (click)="open(d)">{{ formatDate(d.criadoEm) }}</td>
+                <td class="px-3 py-3 text-xs text-muted-foreground whitespace-nowrap" (click)="open(d)">{{ formatDate(d.criadoEm) }}</td>
                 <td class="px-3 py-3">
-                  <button class="h-8 w-8 rounded-md hover:bg-slate-100 flex items-center justify-center transition-colors" (click)="open(d)">
+                  <button class="h-8 w-8 rounded-md hover:bg-muted flex items-center justify-center transition-colors" (click)="open(d)">
                     <lucide-angular [img]="MoreHorizontal" size="16" />
                   </button>
                 </td>
@@ -79,13 +79,13 @@ const STATUS_LABEL: Record<DemandStatus, { label: string; class: string }> = {
             }
             @if (pageItems().length === 0) {
               <tr>
-                <td colspan="9" class="text-center text-slate-500 py-12">Nenhuma demanda encontrada</td>
+                <td colspan="9" class="text-center text-muted-foreground py-12">Nenhuma demanda encontrada</td>
               </tr>
             }
           </tbody>
         </table>
       </div>
-      <div class="p-4 border-t border-slate-200">
+      <div class="p-4 border-t border-border">
         <ui-pagination
           [currentPage]="page()"
           [totalPages]="totalPages()"

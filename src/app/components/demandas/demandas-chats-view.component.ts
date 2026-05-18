@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+﻿import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Search, MessageCircle, ArrowLeft, ExternalLink } from 'lucide-angular';
@@ -16,7 +16,7 @@ const PRIO_LABEL: Record<number, string> = {
 };
 
 const PRIO_COLOR: Record<number, string> = {
-  1: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  1: 'bg-muted text-muted-foreground',
   2: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   3: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   4: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
@@ -248,6 +248,6 @@ export class DemandasChatsViewComponent {
   }
 
   prioLabel(p: Prioridade | number) { return PRIO_LABEL[p as number] ?? String(p); }
-  prioColor(p: Prioridade | number) { return PRIO_COLOR[p as number] ?? 'bg-slate-100 text-slate-600'; }
+  prioColor(p: Prioridade | number) { return PRIO_COLOR[p as number] ?? 'bg-muted text-muted-foreground'; }
   statusLabel(s: string) { return STATUS_LABEL[s] ?? s; }
 }

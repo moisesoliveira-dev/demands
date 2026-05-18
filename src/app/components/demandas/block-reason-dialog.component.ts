@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, signal } from '@angular/core';
+﻿import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule, AlertCircle } from 'lucide-angular';
@@ -26,7 +26,7 @@ import { UiLabel } from '../ui/form-elements.component';
         <textarea id="motivo" formControlName="motivo" maxlength="500" rows="4"
           class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           placeholder="Ex: Aguardando peça do fornecedor..."></textarea>
-        <p class="text-xs text-slate-500">{{ form.value.motivo?.length || 0 }}/500</p>
+        <p class="text-xs text-muted-foreground">{{ form.value.motivo?.length || 0 }}/500</p>
         <ui-dialog-footer>
           <ui-button variant="outline" type="button" (click)="cancel()">Cancelar</ui-button>
           <ui-button variant="destructive" type="submit" [disabled]="form.invalid">Bloquear</ui-button>

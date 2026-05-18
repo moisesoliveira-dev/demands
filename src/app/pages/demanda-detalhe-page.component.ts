@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+﻿import { Component, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LucideAngularModule, ArrowLeft, Pencil, Archive, Calendar, Clock, AlertCircle, ShieldAlert, MessageCircle } from 'lucide-angular';
@@ -59,7 +59,7 @@ import { toast } from '../lib/toast';
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex-1 min-w-0">
                     <ui-card-title class="text-2xl">{{ d.titulo }}</ui-card-title>
-                    <p class="text-xs font-mono text-slate-500 mt-1">{{ d.id }}</p>
+                    <p class="text-xs font-mono text-muted-foreground mt-1">{{ d.id }}</p>
                   </div>
                   <div class="flex flex-col gap-2 items-end">
                     <ui-badge variant="outline" [class]="prio().bg + ' ' + prio().color">{{ prio().label }}</ui-badge>
@@ -68,7 +68,7 @@ import { toast } from '../lib/toast';
                 </div>
               </ui-card-header>
               <ui-card-content>
-                <p class="text-slate-700 whitespace-pre-line">{{ d.descricao }}</p>
+                <p class="text-foreground whitespace-pre-line">{{ d.descricao }}</p>
               </ui-card-content>
             </ui-card>
 
@@ -91,27 +91,27 @@ import { toast } from '../lib/toast';
           <ui-card>
             <ui-card-content class="space-y-3 text-sm pt-4">
               <div>
-                <p class="text-xs text-slate-500 uppercase font-medium">Setor</p>
-                <p class="text-slate-900">{{ d.setor }}</p>
+                <p class="text-xs text-muted-foreground uppercase font-medium">Setor</p>
+                <p class="text-foreground">{{ d.setor }}</p>
               </div>
               <ui-separator />
               <div>
-                <p class="text-xs text-slate-500 uppercase font-medium">Responsável</p>
-                <p class="text-slate-900">{{ d.responsavel }}</p>
+                <p class="text-xs text-muted-foreground uppercase font-medium">Responsável</p>
+                <p class="text-foreground">{{ d.responsavel }}</p>
               </div>
               <ui-separator />
               <div class="flex items-center gap-2">
-                <lucide-angular [img]="Calendar" size="14" class="text-slate-400" />
+                <lucide-angular [img]="Calendar" size="14" class="text-muted-foreground" />
                 <div>
-                  <p class="text-xs text-slate-500">Criado em</p>
-                  <p class="text-slate-900 text-xs">{{ formatDate(d.criadoEm) }}</p>
+                  <p class="text-xs text-muted-foreground">Criado em</p>
+                  <p class="text-foreground text-xs">{{ formatDate(d.criadoEm) }}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <lucide-angular [img]="Clock" size="14" class="text-slate-400" />
+                <lucide-angular [img]="Clock" size="14" class="text-muted-foreground" />
                 <div>
-                  <p class="text-xs text-slate-500">Atualizado em</p>
-                  <p class="text-slate-900 text-xs">{{ formatDate(d.atualizadoEm) }}</p>
+                  <p class="text-xs text-muted-foreground">Atualizado em</p>
+                  <p class="text-foreground text-xs">{{ formatDate(d.atualizadoEm) }}</p>
                 </div>
               </div>
             </ui-card-content>
@@ -161,7 +161,7 @@ import { toast } from '../lib/toast';
       </ui-dialog>
 
     } @else {
-      <p class="text-center text-slate-500 py-12">Demanda não encontrada</p>
+      <p class="text-center text-muted-foreground py-12">Demanda não encontrada</p>
     }
   `,
 })

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+﻿import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LucideAngularModule, KanbanSquare, Table, Filter, FileText, Printer, PlusCircle, X } from 'lucide-angular';
@@ -55,7 +55,7 @@ import { exportarDemandasCSV } from '../lib/export';
       @if (demandasService.loading()) {
         <div class="space-y-3">
           @for (_ of [1,2,3,4]; track $index) {
-            <div class="h-20 rounded-lg border border-slate-200 bg-slate-200 animate-pulse"></div>
+            <div class="h-20 rounded-lg border border-border bg-muted animate-pulse"></div>
           }
         </div>
       } @else if (view() === 'kanban') {
@@ -117,7 +117,7 @@ export class DemandasPageComponent implements OnInit {
   });
 
   tabClass(v: string) {
-    return `flex items-center gap-1.5 px-3 py-1.5 text-sm rounded transition-colors ${this.view() === v ? 'bg-slate-900 text-white' : 'text-muted-foreground hover:bg-muted'}`;
+    return `flex items-center gap-1.5 px-3 py-1.5 text-sm rounded transition-colors ${this.view() === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`;
   }
 
   exportar() { exportarDemandasCSV(this.demandasService.demandasFiltradas()); }

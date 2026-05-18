@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, signal } from '@angular/core';
+﻿import { Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -34,19 +34,19 @@ interface SessionGroup {
         </div>
         <div class="px-3 pb-3">
           <button type="button" (click)="newSession()"
-            class="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/80 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+            class="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/80 rounded-lg border border-white/10 hover:bg-card/10 transition-colors">
             <lucide-angular [img]="Plus" size="15" /> Nova triagem
           </button>
         </div>
         <div class="flex-1 overflow-y-auto px-2 pb-4">
           @if (sessionService.loading()) {
             @for (_ of [1,2,3,4,5]; track $index) {
-              <div class="h-8 mb-1 rounded-lg bg-white/10 animate-pulse"></div>
+              <div class="h-8 mb-1 rounded-lg bg-card/10 animate-pulse"></div>
             }
           } @else {
             @if (pendingNew()) {
               <div class="mb-3 px-2">
-                <div class="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/15 text-white mb-0.5">
+                <div class="flex items-center gap-2 px-2 py-2 rounded-lg bg-card/15 text-white mb-0.5">
                   <lucide-angular [img]="Plus" size="14" class="shrink-0 opacity-60" />
                   <span class="flex-1 text-xs truncate italic text-white/70">Nova triagem…</span>
                 </div>
@@ -76,32 +76,32 @@ interface SessionGroup {
       </div>
 
       <!-- ── Main area (chat) ─────────────────────────────────────────────── -->
-      <div class="flex-1 min-w-0 flex flex-col bg-white overflow-hidden">
+      <div class="flex-1 min-w-0 flex flex-col bg-card overflow-hidden">
         <!-- Topbar -->
-        <div class="flex items-center gap-3 px-4 h-14 border-b bg-white shrink-0">
+        <div class="flex items-center gap-3 px-4 h-14 border-b bg-card shrink-0">
           <button type="button" (click)="sidebarOpen.set(!sidebarOpen())"
-            class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+            class="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <lucide-angular [img]="PanelLeft" size="18" />
           </button>
           @if (activeSession(); as session) {
             <div class="flex-1 min-w-0 flex items-center gap-2">
-              <span class="text-sm font-medium text-slate-800 truncate">{{ session.titulo }}</span>
+              <span class="text-sm font-medium text-foreground truncate">{{ session.titulo }}</span>
               @if (session.status === 'criada') {
                 <span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                   <lucide-angular [img]="CheckCircle2" size="11" /> Criada
                 </span>
               } @else {
-                <span class="shrink-0 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                <span class="shrink-0 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                   Em andamento
                 </span>
               }
             </div>
           } @else {
-            <span class="flex-1 text-sm text-slate-400">Nova triagem</span>
+            <span class="flex-1 text-sm text-muted-foreground">Nova triagem</span>
           }
           <!-- Toggle preview panel -->
           <button type="button" (click)="previewOpen.set(!previewOpen())"
-            [class]="'p-1.5 rounded-lg transition-colors ' + (previewOpen() ? 'text-emerald-600 bg-emerald-50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100')"
+            [class]="'p-1.5 rounded-lg transition-colors ' + (previewOpen() ? 'text-emerald-600 bg-emerald-50' : 'text-muted-foreground hover:text-foreground hover:bg-muted')"
             title="Painel de prévia">
             <lucide-angular [img]="PanelRight" size="18" />
           </button>
@@ -113,7 +113,7 @@ interface SessionGroup {
       </div>
 
       <!-- ── Right panel (live preview) ──────────────────────────────────── -->
-      <div [class]="'flex flex-col shrink-0 bg-slate-50 border-l border-slate-200 transition-all duration-200 overflow-hidden ' + (previewOpen() ? 'w-80' : 'w-0')">
+      <div [class]="'flex flex-col shrink-0 bg-muted/40 border-l border-border transition-all duration-200 overflow-hidden ' + (previewOpen() ? 'w-80' : 'w-0')">
         <div class="flex-1 overflow-y-auto">
           <div class="p-4 space-y-4">
 
@@ -122,7 +122,7 @@ interface SessionGroup {
               <div class="w-6 h-6 rounded-md bg-emerald-100 flex items-center justify-center">
                 <lucide-angular [img]="Sparkles" size="13" class="text-emerald-600" />
               </div>
-              <p class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Prévia da Demanda</p>
+              <p class="text-xs font-semibold text-foreground uppercase tracking-wide">Prévia da Demanda</p>
             </div>
 
             <!-- Progress steps -->
@@ -137,7 +137,7 @@ interface SessionGroup {
                         {{ step.num }}
                       }
                     </div>
-                    <span class="text-[9px] text-slate-400 text-center leading-tight">{{ step.label }}</span>
+                    <span class="text-[9px] text-muted-foreground text-center leading-tight">{{ step.label }}</span>
                   </div>
                   @if (!$last) {
                     <div class="w-3 h-px bg-slate-300 mb-4 shrink-0"></div>
@@ -149,10 +149,10 @@ interface SessionGroup {
             <!-- Empty state -->
             @if (!hasDraft()) {
               <div class="flex flex-col items-center justify-center text-center py-12 gap-3">
-                <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                  <lucide-angular [img]="Sparkles" size="18" class="text-slate-400" />
+                <div class="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <lucide-angular [img]="Sparkles" size="18" class="text-muted-foreground" />
                 </div>
-                <p class="text-xs text-slate-400 leading-relaxed max-w-[180px]">
+                <p class="text-xs text-muted-foreground leading-relaxed max-w-[180px]">
                   A prévia aparecerá conforme a triagem avança.
                 </p>
               </div>
@@ -160,26 +160,26 @@ interface SessionGroup {
 
             <!-- Fields card -->
             @if (hasDraft()) {
-              <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100 shadow-sm overflow-hidden">
+              <div class="bg-card rounded-xl border border-border divide-y divide-slate-100 shadow-sm overflow-hidden">
 
                 <!-- Título -->
                 <div class="px-3 py-3">
-                  <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Título</p>
+                  <p class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Título</p>
                   @if (editingField() === 'titulo') {
                     <div class="flex gap-1">
                       <input type="text" [(ngModel)]="editValue" (keydown.enter)="saveField('titulo')" (keydown.escape)="cancelEdit()"
-                        class="flex-1 text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-white" autofocus />
+                        class="flex-1 text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-card" autofocus />
                       <button type="button" (click)="saveField('titulo')" class="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors">
                         <lucide-angular [img]="Check" size="13" />
                       </button>
                     </div>
                   } @else {
                     <div class="flex items-start justify-between gap-1 group/field">
-                      <p class="text-sm font-semibold text-slate-900 leading-snug flex-1">
+                      <p class="text-sm font-semibold text-foreground leading-snug flex-1">
                         {{ draft().titulo || '—' }}
                       </p>
                       <button type="button" (click)="startEdit('titulo', draft().titulo || '')"
-                        class="shrink-0 p-0.5 opacity-0 group-hover/field:opacity-100 text-slate-400 hover:text-slate-700 transition-all rounded">
+                        class="shrink-0 p-0.5 opacity-0 group-hover/field:opacity-100 text-muted-foreground hover:text-foreground transition-all rounded">
                         <lucide-angular [img]="Pencil" size="12" />
                       </button>
                     </div>
@@ -188,23 +188,23 @@ interface SessionGroup {
 
                 <!-- Descrição -->
                 <div class="px-3 py-3">
-                  <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Descrição</p>
+                  <p class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Descrição</p>
                   @if (editingField() === 'descricao') {
                     <div class="space-y-1">
                       <textarea [(ngModel)]="editValue" rows="3" (keydown.escape)="cancelEdit()"
-                        class="w-full text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-white resize-none"></textarea>
+                        class="w-full text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-card resize-none"></textarea>
                       <div class="flex justify-end gap-1">
-                        <button type="button" (click)="cancelEdit()" class="text-[11px] text-slate-400 hover:text-slate-600 px-2 py-0.5 rounded transition-colors">Cancelar</button>
+                        <button type="button" (click)="cancelEdit()" class="text-[11px] text-muted-foreground hover:text-muted-foreground px-2 py-0.5 rounded transition-colors">Cancelar</button>
                         <button type="button" (click)="saveField('descricao')" class="text-[11px] text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors">Salvar</button>
                       </div>
                     </div>
                   } @else {
                     <div class="flex items-start justify-between gap-1 group/field">
-                      <p class="text-xs text-slate-600 leading-relaxed line-clamp-4 flex-1">
+                      <p class="text-xs text-muted-foreground leading-relaxed line-clamp-4 flex-1">
                         {{ draft().descricao || '—' }}
                       </p>
                       <button type="button" (click)="startEdit('descricao', draft().descricao || '')"
-                        class="shrink-0 p-0.5 opacity-0 group-hover/field:opacity-100 text-slate-400 hover:text-slate-700 transition-all rounded">
+                        class="shrink-0 p-0.5 opacity-0 group-hover/field:opacity-100 text-muted-foreground hover:text-foreground transition-all rounded">
                         <lucide-angular [img]="Pencil" size="12" />
                       </button>
                     </div>
@@ -213,11 +213,11 @@ interface SessionGroup {
 
                 <!-- Setor -->
                 <div class="px-3 py-3">
-                  <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Setor</p>
+                  <p class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Setor</p>
                   @if (editingField() === 'setor') {
                     <div class="flex gap-1">
                       <select [(ngModel)]="editValue"
-                        class="flex-1 text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-white">
+                        class="flex-1 text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-card">
                         <option value="">Selecione…</option>
                         @for (s of setores(); track s) {
                           <option [value]="s">{{ s }}</option>
@@ -229,11 +229,11 @@ interface SessionGroup {
                     </div>
                   } @else {
                     <div class="flex items-center justify-between group/field">
-                      <p [class]="'text-sm flex-1 ' + (draft().setor ? 'text-slate-900 font-medium' : 'text-slate-400 italic')">
+                      <p [class]="'text-sm flex-1 ' + (draft().setor ? 'text-foreground font-medium' : 'text-muted-foreground italic')">
                         {{ draft().setor || 'Aguardando…' }}
                       </p>
                       <button type="button" (click)="startEdit('setor', draft().setor || '')"
-                        class="p-0.5 opacity-0 group-hover/field:opacity-100 text-slate-400 hover:text-slate-700 transition-all rounded">
+                        class="p-0.5 opacity-0 group-hover/field:opacity-100 text-muted-foreground hover:text-foreground transition-all rounded">
                         <lucide-angular [img]="Pencil" size="12" />
                       </button>
                     </div>
@@ -242,11 +242,11 @@ interface SessionGroup {
 
                 <!-- Responsável -->
                 <div class="px-3 py-3">
-                  <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Responsável</p>
+                  <p class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Responsável</p>
                   @if (editingField() === 'responsavel') {
                     <div class="flex gap-1">
                       <select [(ngModel)]="editValue"
-                        class="flex-1 text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-white">
+                        class="flex-1 text-xs border border-emerald-400 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400 bg-card">
                         <option value="">Selecione…</option>
                         @for (r of responsaveis(); track r) {
                           <option [value]="r">{{ r }}</option>
@@ -258,11 +258,11 @@ interface SessionGroup {
                     </div>
                   } @else {
                     <div class="flex items-center justify-between group/field">
-                      <p [class]="'text-sm flex-1 ' + (draft().responsavel ? 'text-slate-900 font-medium' : 'text-slate-400 italic')">
+                      <p [class]="'text-sm flex-1 ' + (draft().responsavel ? 'text-foreground font-medium' : 'text-muted-foreground italic')">
                         {{ draft().responsavel || 'Aguardando…' }}
                       </p>
                       <button type="button" (click)="startEdit('responsavel', draft().responsavel || '')"
-                        class="p-0.5 opacity-0 group-hover/field:opacity-100 text-slate-400 hover:text-slate-700 transition-all rounded">
+                        class="p-0.5 opacity-0 group-hover/field:opacity-100 text-muted-foreground hover:text-foreground transition-all rounded">
                         <lucide-angular [img]="Pencil" size="12" />
                       </button>
                     </div>
@@ -271,19 +271,19 @@ interface SessionGroup {
 
                 <!-- Prioridade -->
                 <div class="px-3 py-3">
-                  <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Prioridade</p>
+                  <p class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Prioridade</p>
                   @if (editingField() === 'prioridade') {
                     <div class="space-y-1.5">
                       <div class="grid grid-cols-5 gap-1">
                         @for (p of prioridades; track p.value) {
                           <button type="button" (click)="saveFieldPrio(p.value)"
-                            [class]="'text-[10px] font-semibold py-1 rounded border text-center transition-colors ' + (p.value === selectedPrio ? p.cfg.bg + ' ' + p.cfg.color : 'border-slate-200 text-slate-500 hover:bg-slate-50')"
+                            [class]="'text-[10px] font-semibold py-1 rounded border text-center transition-colors ' + (p.value === selectedPrio ? p.cfg.bg + ' ' + p.cfg.color : 'border-border text-muted-foreground hover:bg-muted/40')"
                             (mouseenter)="selectedPrio = p.value">
                             {{ p.cfg.label }}
                           </button>
                         }
                       </div>
-                      <button type="button" (click)="cancelEdit()" class="text-[11px] text-slate-400 hover:text-slate-600 transition-colors">Cancelar</button>
+                      <button type="button" (click)="cancelEdit()" class="text-[11px] text-muted-foreground hover:text-muted-foreground transition-colors">Cancelar</button>
                     </div>
                   } @else {
                     <div class="flex items-center justify-between group/field">
@@ -292,10 +292,10 @@ interface SessionGroup {
                           {{ prioLabel(draft().prioridade) }}
                         </span>
                       } @else {
-                        <span class="text-sm text-slate-400 italic">Aguardando…</span>
+                        <span class="text-sm text-muted-foreground italic">Aguardando…</span>
                       }
                       <button type="button" (click)="startEditPrio(draft().prioridade)"
-                        class="p-0.5 opacity-0 group-hover/field:opacity-100 text-slate-400 hover:text-slate-700 transition-all rounded">
+                        class="p-0.5 opacity-0 group-hover/field:opacity-100 text-muted-foreground hover:text-foreground transition-all rounded">
                         <lucide-angular [img]="Pencil" size="12" />
                       </button>
                     </div>
@@ -470,8 +470,8 @@ export class NovaDemandaPageComponent {
 
   sessionItemClass(id: string) {
     return this.activeId() === id
-      ? 'bg-white/15 text-white'
-      : 'hover:bg-white/10 text-white/70';
+      ? 'bg-card/15 text-white'
+      : 'hover:bg-card/10 text-white/70';
   }
 
   isStepDone(key: string): boolean {
@@ -489,7 +489,7 @@ export class NovaDemandaPageComponent {
   stepClass(key: string): string {
     return this.isStepDone(key)
       ? 'bg-emerald-500 text-white'
-      : 'bg-slate-200 text-slate-500';
+      : 'bg-muted text-muted-foreground';
   }
 
   startEdit(field: string, current: string) {
@@ -529,9 +529,9 @@ export class NovaDemandaPageComponent {
   }
 
   prioStyle(p?: Prioridade): string {
-    if (!p) return 'border-slate-200 text-slate-500';
+    if (!p) return 'border-border text-muted-foreground';
     const c = PRIORIDADE_CONFIG[p];
-    return c ? `${c.bg} ${c.color}` : 'border-slate-200 text-slate-500';
+    return c ? `${c.bg} ${c.color}` : 'border-border text-muted-foreground';
   }
 
   async newSession() {

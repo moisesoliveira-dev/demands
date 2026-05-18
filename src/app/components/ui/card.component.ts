@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+﻿import { Component, computed, input } from '@angular/core';
 import { cn } from '../../lib/utils';
 
 @Component({
@@ -8,7 +8,7 @@ import { cn } from '../../lib/utils';
 })
 export class UiCard {
     class = input('');
-    classes = computed(() => cn('rounded-lg border border-slate-200 bg-card text-card-foreground shadow-sm', this.class()));
+    classes = computed(() => cn('rounded-lg border border-border bg-card text-card-foreground shadow-sm', this.class()));
 }
 
 @Component({

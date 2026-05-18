@@ -1,4 +1,4 @@
-import { Component, inject, signal, AfterViewInit } from '@angular/core';
+﻿import { Component, inject, signal, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -14,7 +14,7 @@ import { toast } from '../lib/toast';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UiCard, UiCardContent, UiCardDescription, UiCardHeader, UiCardTitle, UiLabel, UiButton],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div class="min-h-screen flex items-center justify-center bg-muted/40 p-4">
       <ui-card class="w-full max-w-md shadow-xl">
         <ui-card-header class="text-center space-y-3">
           <div class="mx-auto h-14 w-14 rounded-lg bg-primary flex items-center justify-center">

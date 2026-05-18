@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+﻿import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LucideAngularModule, Factory, User, Clock, AlertCircle, MessageCircle } from 'lucide-angular';
@@ -51,7 +51,7 @@ export const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: strin
         <h4 class="text-sm font-semibold text-foreground truncate flex-1">{{ demanda().titulo }}</h4>
         <button
           type="button"
-          class="shrink-0 p-1 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+          class="shrink-0 p-1 rounded text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
           title="Abrir conversa"
           (click)="openConversa($event)"
         >
