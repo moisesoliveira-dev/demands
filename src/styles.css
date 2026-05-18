@@ -225,3 +225,66 @@ html, body {
 .cdk-drag-placeholder { opacity: 0.3; }
 .cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
 .cdk-drop-list-dragging .cdk-drag { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
+
+/* -- Markdown rendering for IA responses (Pergunte à IA) ----------------- */
+.prose-ia { line-height: 1.55; }
+.prose-ia > *:first-child { margin-top: 0; }
+.prose-ia > *:last-child  { margin-bottom: 0; }
+.prose-ia h1, .prose-ia h2, .prose-ia h3, .prose-ia h4 {
+  font-weight: 600; color: var(--foreground);
+  margin: 1em 0 0.4em;
+}
+.prose-ia h1 { font-size: 1.15rem; }
+.prose-ia h2 { font-size: 1.05rem; }
+.prose-ia h3 { font-size: 0.95rem; }
+.prose-ia h4 { font-size: 0.9rem; color: var(--muted-foreground); }
+.prose-ia p  { margin: 0.5em 0; }
+.prose-ia ul, .prose-ia ol { margin: 0.5em 0; padding-left: 1.25rem; }
+.prose-ia ul { list-style: disc; }
+.prose-ia ol { list-style: decimal; }
+.prose-ia li { margin: 0.2em 0; }
+.prose-ia strong { font-weight: 600; color: var(--foreground); }
+.prose-ia em { font-style: italic; }
+.prose-ia code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+}
+.prose-ia pre {
+  background: var(--muted);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+.prose-ia pre code { background: transparent; padding: 0; }
+.prose-ia blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 0.75rem;
+  color: var(--muted-foreground);
+  margin: 0.6em 0;
+  font-style: italic;
+}
+.prose-ia a { color: var(--primary); text-decoration: underline; }
+.prose-ia table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+  font-size: 0.85em;
+}
+.prose-ia th, .prose-ia td {
+  border: 1px solid var(--border);
+  padding: 0.4em 0.6em;
+  text-align: left;
+}
+.prose-ia th {
+  background: var(--muted);
+  font-weight: 600;
+}
+.prose-ia hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}

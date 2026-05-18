@@ -1,6 +1,8 @@
 ﻿import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
 import {
   LucideAngularModule,
   Sparkles, Download, Plus, ChevronDown, ChevronUp,
@@ -89,8 +91,9 @@ interface RelatorioGerado {
           </ui-button>
         </div>
         @if (respostaIA()) {
-          <div class="rounded-lg border border-border bg-muted/30 p-3 text-sm whitespace-pre-wrap text-foreground">
-            {{ respostaIA() }}
+          <div
+            class="prose-ia rounded-lg border border-border bg-muted/30 p-4 text-sm text-foreground max-h-120 overflow-y-auto"
+            [innerHTML]="respostaIAHtml()">
           </div>
         }
       </div>
@@ -211,11 +214,18 @@ export class RelatoriosPageComponent implements OnInit {
 
   private demandasService = inject(DemandasService);
   readonly ia = inject(IaService);
+  private sanitizer = inject(DomSanitizer);
   private all = computed(() => this.demandasService.demandas());
 
   readonly iaHabilitada = environment.aiEnabled === true;
   readonly perguntaIA = signal('');
   readonly respostaIA = signal('');
+  readonly respostaIAHtml = computed<SafeHtml>(() => {
+    const md = this.respostaIA();
+    if (!md) return '';
+    const html = marked.parse(md, { async: false, breaks: true, gfm: true }) as string;
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  });
   private readonly sessionId = `relatorios-${Date.now()}`;
 
   historico = signal<RelatorioGerado[]>([]);
