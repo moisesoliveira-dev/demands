@@ -5,7 +5,6 @@ import {
   LucideAngularModule, Building2, PlusCircle, Pencil, Trash2,
   Search, X, ShieldAlert, ToggleLeft, ToggleRight,
 } from 'lucide-angular';
-import { UiCard, UiCardContent, UiCardHeader } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
 import {
   UiDialog, UiDialogHeader, UiDialogTitle,
@@ -13,7 +12,6 @@ import {
 } from '../components/ui/dialog.component';
 import { UiLabel } from '../components/ui/form-elements.component';
 import { toast } from '../lib/toast';
-import { MotionInViewDirective } from '../lib/motion.directives';
 import { SetoresService, Setor } from '../services/setores.service';
 import { UsersService } from '../services/users.service';
 
@@ -36,11 +34,9 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
   standalone: true,
   imports: [
     CommonModule, FormsModule, LucideAngularModule,
-    UiCard, UiCardContent, UiCardHeader,
     UiButton,
     UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter,
     UiLabel,
-    MotionInViewDirective,
   ],
   template: `
 <div class="space-y-5">
@@ -88,115 +84,125 @@ const emptyForm = (): SetorForm => ({ nome: '', descricao: '', responsavel: '', 
   </div>
 
   <!-- ── Empty state ── -->
-  @if (loading()) {
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (_ of [1,2,3,4,5,6]; track $index) {
-        <div class="rounded-lg border border-border bg-card p-5 space-y-3">
-          <div class="flex items-start gap-3">
-            <div class="w-9 h-9 rounded-lg bg-muted animate-pulse shrink-0"></div>
-            <div class="flex-1 space-y-2">
-              <div class="h-4 bg-muted animate-pulse rounded w-2/3"></div>
-              <div class="h-3 bg-muted animate-pulse rounded w-1/3"></div>
-            </div>
-          </div>
-          <div class="space-y-2">
-            <div class="h-3 bg-muted animate-pulse rounded"></div>
-            <div class="h-3 bg-muted animate-pulse rounded w-2/3"></div>
-          </div>
-          <div class="h-3 bg-muted animate-pulse rounded w-1/4"></div>
-        </div>
-      }
-    </div>
-  } @else if (filteredTotal() === 0) {
-    <div class="flex flex-col items-center justify-center py-20 text-muted-foreground">
-      <lucide-angular [img]="Building2" size="48" class="mb-3 opacity-30" />
-      <p class="text-sm font-medium">Nenhum setor encontrado</p>
-      @if (searchQ().length || filterStatus()) {
-        <button type="button" (click)="clearFilters()"
-          class="mt-3 text-xs text-primary underline-offset-2 hover:underline">
-          Limpar filtros
-        </button>
-      }
-    </div>
-  } @else {
-
-    <!-- ── Card grid ── -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (s of pagedSetores(); track s.id) {
-        <div motionInView [class.opacity-60]="!s.ativo" class="transition-opacity">
-          <ui-card class="h-full">
-            <ui-card-header class="pb-3">
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0">
-                  <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 border border-amber-100">
-                    <lucide-angular [img]="Building2" size="18" class="text-amber-600" />
-                  </div>
-                  <div class="min-w-0">
-                    <p class="font-semibold text-foreground leading-tight truncate">{{ s.nome }}</p>
-                    <p class="text-xs text-muted-foreground mt-0.5">
-                      Criado em {{ s.criadoEm | date:'dd/MM/yyyy' }}
-                    </p>
-                  </div>
+  <!-- ── Table / Loading / Empty ── -->
+  <div class="rounded-lg border border-border bg-card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border bg-muted/40">
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Setor</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Descrição</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Responsável</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Criado em</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          @for (_ of [1,2,3,4,5,6]; track $index) {
+            <tr class="border-b border-border last:border-0">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-muted animate-pulse shrink-0"></div>
+                  <div class="h-3.5 bg-muted animate-pulse rounded w-28"></div>
                 </div>
+              </td>
+              <td class="px-4 py-3 hidden md:table-cell"><div class="h-3 bg-muted animate-pulse rounded w-40"></div></td>
+              <td class="px-4 py-3 hidden sm:table-cell"><div class="h-3 bg-muted animate-pulse rounded w-24"></div></td>
+              <td class="px-4 py-3 hidden lg:table-cell"><div class="h-3 bg-muted animate-pulse rounded w-20"></div></td>
+              <td class="px-4 py-3"><div class="h-5 bg-muted animate-pulse rounded w-12"></div></td>
+              <td class="px-4 py-3"></td>
+            </tr>
+          }
+        } @else if (filteredTotal() === 0) {
+          <tr>
+            <td colspan="6" class="px-4 py-16 text-center text-muted-foreground">
+              <lucide-angular [img]="Building2" size="36" class="mx-auto mb-3 opacity-30" />
+              <p class="text-sm font-medium">Nenhum setor encontrado</p>
+              @if (searchQ().length || filterStatus()) {
+                <button type="button" (click)="clearFilters()"
+                  class="mt-2 text-xs text-primary underline-offset-2 hover:underline">
+                  Limpar filtros
+                </button>
+              }
+            </td>
+          </tr>
+        } @else {
+          @for (s of pagedSetores(); track s.id) {
+            <tr [class.opacity-50]="!s.ativo"
+              class="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+              <!-- Setor -->
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 border border-amber-100">
+                    <lucide-angular [img]="Building2" size="16" class="text-amber-600" />
+                  </div>
+                  <p class="font-medium text-foreground truncate">{{ s.nome }}</p>
+                </div>
+              </td>
+              <!-- Descrição -->
+              <td class="px-4 py-3 text-muted-foreground max-w-xs hidden md:table-cell">
+                <p class="truncate">{{ s.descricao || '—' }}</p>
+              </td>
+              <!-- Responsável -->
+              <td class="px-4 py-3 text-foreground hidden sm:table-cell">{{ s.responsavel || '—' }}</td>
+              <!-- Criado em -->
+              <td class="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                {{ s.criadoEm | date:'dd/MM/yyyy' }}
+              </td>
+              <!-- Status -->
+              <td class="px-4 py-3">
                 <span [class]="s.ativo
-                  ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-muted/40 text-muted-foreground border-border'"
-                  class="shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-muted/40 text-muted-foreground border-border'"
+                  class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
                   {{ s.ativo ? 'Ativo' : 'Inativo' }}
                 </span>
-              </div>
-            </ui-card-header>
+              </td>
+              <!-- Ações -->
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-0.5">
+                  <ui-button variant="ghost" size="sm" (click)="openEdit(s)" title="Editar setor">
+                    <lucide-angular [img]="Pencil" size="14" />
+                  </ui-button>
+                  <ui-button variant="ghost" size="sm" (click)="askToggleAtivo(s)"
+                    [title]="s.ativo ? 'Desativar setor' : 'Reativar setor'"
+                    [class]="s.ativo ? 'text-amber-600 hover:text-amber-700' : 'text-green-600 hover:text-green-700'">
+                    <lucide-angular [img]="s.ativo ? ToggleRight : ToggleLeft" size="16" />
+                  </ui-button>
+                  <ui-button variant="ghost" size="sm" (click)="askDelete(s)"
+                    title="Excluir setor" class="text-red-500 hover:text-red-700">
+                    <lucide-angular [img]="Trash2" size="14" />
+                  </ui-button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
 
-            <ui-card-content class="pt-0 pb-3 space-y-3">
-              @if (s.descricao) {
-                <p class="text-sm text-muted-foreground line-clamp-2">{{ s.descricao }}</p>
-              }
-              <div class="text-xs">
-                <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold mb-0.5">Responsável</p>
-                <p class="text-foreground">{{ s.responsavel || '—' }}</p>
-              </div>
-
-              <div class="flex items-center justify-end gap-0.5 pt-1 border-t border-border">
-                <ui-button variant="ghost" size="sm" (click)="openEdit(s)" title="Editar setor">
-                  <lucide-angular [img]="Pencil" size="14" />
-                </ui-button>
-                <ui-button variant="ghost" size="sm" (click)="askToggleAtivo(s)"
-                  [title]="s.ativo ? 'Desativar setor' : 'Reativar setor'"
-                  [class]="s.ativo ? 'text-amber-600 hover:text-amber-700' : 'text-green-600 hover:text-green-700'">
-                  <lucide-angular [img]="s.ativo ? ToggleRight : ToggleLeft" size="16" />
-                </ui-button>
-                <ui-button variant="ghost" size="sm" (click)="askDelete(s)"
-                  title="Excluir setor" class="text-red-500 hover:text-red-700">
-                  <lucide-angular [img]="Trash2" size="14" />
-                </ui-button>
-              </div>
-            </ui-card-content>
-          </ui-card>
-        </div>
-      }
-    </div>
-
-    <!-- ── Pagination ── -->
-    @if (totalPages() > 1) {
-      <div class="flex items-center justify-between border-t border-border pt-4">
-        <p class="text-sm text-muted-foreground">
-          Exibindo <strong>{{ pageStart() }}–{{ pageEnd() }}</strong> de {{ filteredTotal() }}
-        </p>
-        <div class="flex items-center gap-2">
-          <ui-button variant="outline" size="sm"
-            [disabled]="page() === 1" (click)="page.set(page() - 1)">
-            ‹ Anterior
-          </ui-button>
-          <span class="min-w-22 text-center text-sm font-medium text-foreground">
-            Página {{ page() }} de {{ totalPages() }}
-          </span>
-          <ui-button variant="outline" size="sm"
-            [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
-            Próximo ›
-          </ui-button>
-        </div>
+  <!-- ── Pagination ── -->
+  @if (!loading() && totalPages() > 1) {
+    <div class="flex items-center justify-between border-t border-border pt-4">
+      <p class="text-sm text-muted-foreground">
+        Exibindo <strong>{{ pageStart() }}–{{ pageEnd() }}</strong> de {{ filteredTotal() }}
+      </p>
+      <div class="flex items-center gap-2">
+        <ui-button variant="outline" size="sm"
+          [disabled]="page() === 1" (click)="page.set(page() - 1)">
+          ‹ Anterior
+        </ui-button>
+        <span class="min-w-22 text-center text-sm font-medium text-foreground">
+          Página {{ page() }} de {{ totalPages() }}
+        </span>
+        <ui-button variant="outline" size="sm"
+          [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
+          Próximo ›
+        </ui-button>
       </div>
-    }
+    </div>
   }
 
   <!-- ── Form Dialog ── -->

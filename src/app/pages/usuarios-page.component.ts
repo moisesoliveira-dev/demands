@@ -10,7 +10,6 @@ import { UsersService } from '../services/users.service';
 import { SetoresService } from '../services/setores.service';
 import { User } from '../types';
 import { Role } from '../types/permissions';
-import { UiCard, UiCardContent, UiCardHeader } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
 import { UiAvatar } from '../components/ui/avatar.component';
 import {
@@ -20,7 +19,6 @@ import {
 import { UiLabel } from '../components/ui/form-elements.component';
 import { UiSelect } from '../components/ui/select.component';
 import { toast } from '../lib/toast';
-import { MotionInViewDirective } from '../lib/motion.directives';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -61,11 +59,9 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
   standalone: true,
   imports: [
     CommonModule, FormsModule, LucideAngularModule,
-    UiCard, UiCardContent, UiCardHeader,
     UiButton, UiAvatar,
     UiDialog, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter,
     UiLabel, UiSelect,
-    MotionInViewDirective,
   ],
   template: `
 <div class="space-y-5">
@@ -124,84 +120,93 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
     <span class="text-muted-foreground">{{ inactiveCount() }} inativo(s)</span>
   </div>
 
-  <!-- ── Empty / Loading state ── -->
-  @if (loading()) {
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (_ of [1,2,3,4,5,6]; track $index) {
-        <div class="rounded-lg border border-border bg-card p-5 space-y-3">
-          <div class="flex items-start gap-3">
-            <div class="w-11 h-11 rounded-full bg-muted animate-pulse shrink-0"></div>
-            <div class="flex-1 space-y-2">
-              <div class="h-4 bg-muted animate-pulse rounded w-2/3"></div>
-              <div class="h-3 bg-muted animate-pulse rounded w-1/2"></div>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div class="h-3 bg-muted animate-pulse rounded"></div>
-            <div class="h-3 bg-muted animate-pulse rounded"></div>
-          </div>
-          <div class="h-px bg-muted"></div>
-          <div class="h-5 bg-muted animate-pulse rounded w-16"></div>
-        </div>
-      }
-    </div>
-  } @else if (filteredTotal() === 0) {
-    <div class="flex flex-col items-center justify-center py-20 text-muted-foreground">
-      <lucide-angular [img]="Users" size="48" class="mb-3 opacity-30" />
-      <p class="text-sm font-medium">Nenhum usuário encontrado</p>
-      @if (searchQ().length || filterRole() || filterStatus()) {
-        <button type="button" (click)="clearFilters()"
-          class="mt-3 text-xs text-primary underline-offset-2 hover:underline">
-          Limpar filtros
-        </button>
-      }
-    </div>
-  } @else {
-
-    <!-- ── Card grid ── -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (u of pagedUsers(); track u.id) {
-        <div motionInView [class.opacity-60]="!u.ativo" class="transition-opacity">
-          <ui-card class="h-full">
-            <ui-card-header class="pb-3">
-              <div class="flex items-start gap-3">
-                <ui-avatar [name]="u.nome" [src]="u.avatar"
-                  class="h-11 w-11 shrink-0"
-                  fallbackClass="bg-amber-500 text-foreground text-sm font-semibold" />
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-start justify-between gap-2">
-                    <p class="font-semibold text-foreground leading-tight truncate">{{ u.nome }}</p>
-                    <span [class]="ROLE_BADGE[u.role]" class="shrink-0">{{ ROLE_LABELS[u.role] }}</span>
+  <!-- ── Table / Loading / Empty ── -->
+  <div class="rounded-lg border border-border bg-card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border bg-muted/40">
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Usuário</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Cargo</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Setor</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Último acesso</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Perfil</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          @for (_ of [1,2,3,4,5,6]; track $index) {
+            <tr class="border-b border-border last:border-0">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-muted animate-pulse shrink-0"></div>
+                  <div class="space-y-1.5">
+                    <div class="h-3.5 bg-muted animate-pulse rounded w-28"></div>
+                    <div class="h-3 bg-muted animate-pulse rounded w-36"></div>
                   </div>
-                  <p class="text-xs text-muted-foreground truncate mt-0.5">{{ u.email }}</p>
                 </div>
-              </div>
-            </ui-card-header>
-            <ui-card-content class="pt-0 pb-3 space-y-3">
-              <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                <div>
-                  <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold">Cargo</p>
-                  <p class="text-foreground truncate">{{ u.cargo }}</p>
-                </div>
-                <div>
-                  <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold">Setor</p>
-                  <p class="text-foreground truncate">{{ u.setor }}</p>
-                </div>
-                @if (u.ultimoAcesso) {
-                  <div class="col-span-2">
-                    <p class="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold">Último acesso</p>
-                    <p class="text-muted-foreground">{{ u.ultimoAcesso | date:'dd/MM/yyyy HH:mm' }}</p>
+              </td>
+              <td class="px-4 py-3 hidden sm:table-cell"><div class="h-3 bg-muted animate-pulse rounded w-24"></div></td>
+              <td class="px-4 py-3 hidden md:table-cell"><div class="h-3 bg-muted animate-pulse rounded w-20"></div></td>
+              <td class="px-4 py-3 hidden lg:table-cell"><div class="h-3 bg-muted animate-pulse rounded w-28"></div></td>
+              <td class="px-4 py-3"><div class="h-5 bg-muted animate-pulse rounded w-16"></div></td>
+              <td class="px-4 py-3"><div class="h-5 bg-muted animate-pulse rounded w-12"></div></td>
+              <td class="px-4 py-3"></td>
+            </tr>
+          }
+        } @else if (filteredTotal() === 0) {
+          <tr>
+            <td colspan="7" class="px-4 py-16 text-center text-muted-foreground">
+              <lucide-angular [img]="Users" size="36" class="mx-auto mb-3 opacity-30" />
+              <p class="text-sm font-medium">Nenhum usuário encontrado</p>
+              @if (searchQ().length || filterRole() || filterStatus()) {
+                <button type="button" (click)="clearFilters()"
+                  class="mt-2 text-xs text-primary underline-offset-2 hover:underline">
+                  Limpar filtros
+                </button>
+              }
+            </td>
+          </tr>
+        } @else {
+          @for (u of pagedUsers(); track u.id) {
+            <tr [class.opacity-50]="!u.ativo"
+              class="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+              <!-- Usuário -->
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <ui-avatar [name]="u.nome" [src]="u.avatar" class="h-8 w-8 shrink-0"
+                    fallbackClass="bg-amber-500 text-foreground text-xs font-semibold" />
+                  <div class="min-w-0">
+                    <p class="font-medium text-foreground truncate leading-tight">{{ u.nome }}</p>
+                    <p class="text-xs text-muted-foreground truncate">{{ u.email }}</p>
                   </div>
-                }
-              </div>
-              <div class="flex items-center justify-between pt-1 border-t border-border">
+                </div>
+              </td>
+              <!-- Cargo -->
+              <td class="px-4 py-3 text-foreground hidden sm:table-cell">{{ u.cargo }}</td>
+              <!-- Setor -->
+              <td class="px-4 py-3 text-foreground hidden md:table-cell">{{ u.setor }}</td>
+              <!-- Último acesso -->
+              <td class="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                {{ u.ultimoAcesso ? (u.ultimoAcesso | date:'dd/MM/yyyy HH:mm') : '—' }}
+              </td>
+              <!-- Perfil -->
+              <td class="px-4 py-3">
+                <span [class]="ROLE_BADGE[u.role]">{{ ROLE_LABELS[u.role] }}</span>
+              </td>
+              <!-- Status -->
+              <td class="px-4 py-3">
                 <span [class]="u.ativo
-                  ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-muted/40 text-muted-foreground border-border'"
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-muted/40 text-muted-foreground border-border'"
                   class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
                   {{ u.ativo ? 'Ativo' : 'Inativo' }}
                 </span>
-                <div class="flex gap-0.5">
+              </td>
+              <!-- Ações -->
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-0.5">
                   <ui-button variant="ghost" size="sm" (click)="openEdit(u)" title="Editar usuário">
                     <lucide-angular [img]="Pencil" size="14" />
                   </ui-button>
@@ -215,34 +220,34 @@ const SELECT_CLS = INPUT_CLS + ' appearance-none cursor-pointer';
                     <lucide-angular [img]="Trash2" size="14" />
                   </ui-button>
                 </div>
-              </div>
-            </ui-card-content>
-          </ui-card>
-        </div>
-      }
-    </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
 
-    <!-- ── Pagination ── -->
-    @if (totalPages() > 1) {
-      <div class="flex items-center justify-between border-t border-border pt-4">
-        <p class="text-sm text-muted-foreground">
-          Exibindo <strong>{{ pageStart() }}–{{ pageEnd() }}</strong> de {{ filteredTotal() }}
-        </p>
-        <div class="flex items-center gap-2">
-          <ui-button variant="outline" size="sm"
-            [disabled]="page() === 1" (click)="page.set(page() - 1)">
-            ‹ Anterior
-          </ui-button>
-          <span class="min-w-22 text-center text-sm font-medium text-foreground">
-            Página {{ page() }} de {{ totalPages() }}
-          </span>
-          <ui-button variant="outline" size="sm"
-            [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
-            Próximo ›
-          </ui-button>
-        </div>
+  <!-- ── Pagination ── -->
+  @if (!loading() && totalPages() > 1) {
+    <div class="flex items-center justify-between border-t border-border pt-4">
+      <p class="text-sm text-muted-foreground">
+        Exibindo <strong>{{ pageStart() }}–{{ pageEnd() }}</strong> de {{ filteredTotal() }}
+      </p>
+      <div class="flex items-center gap-2">
+        <ui-button variant="outline" size="sm"
+          [disabled]="page() === 1" (click)="page.set(page() - 1)">
+          ‹ Anterior
+        </ui-button>
+        <span class="min-w-22 text-center text-sm font-medium text-foreground">
+          Página {{ page() }} de {{ totalPages() }}
+        </span>
+        <ui-button variant="outline" size="sm"
+          [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
+          Próximo ›
+        </ui-button>
       </div>
-    }
+    </div>
   }
 
   <!-- ── Form Dialog (create / edit) ── -->
