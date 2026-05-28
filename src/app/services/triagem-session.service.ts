@@ -165,6 +165,18 @@ export class TriagemSessionService {
         this.sessions.update((list) => list.filter((s) => s.id !== id));
     }
 
+    /** Busca a sessão de triagem vinculada a uma demanda (para exibir o histórico). */
+    async getByDemandaId(demandaId: string): Promise<ChatSession | null> {
+        try {
+            const raw = await firstValueFrom(
+                this.http.get<ServerSession>(`${this.base}/by-demanda/${demandaId}`)
+            );
+            return mapSession(raw);
+        } catch {
+            return null;
+        }
+    }
+
     /** Remove a sessão de triagem associada a uma demanda (ao finalizar). Best-effort. */
     async removeByDemandaId(demandaId: string): Promise<void> {
         try {

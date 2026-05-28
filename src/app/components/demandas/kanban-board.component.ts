@@ -170,13 +170,11 @@ export class KanbanBoardComponent {
 
   async confirmarFinalizar() {
     if (!this.pendingFinalizar || this.finalizando()) return;
-    const { id, demandaId } = this.pendingFinalizar;
+    const { id } = this.pendingFinalizar;
     this.finalizando.set(true);
     try {
       await this.demandasService.atualizarStatus(id, DemandStatus.CONCLUIDO);
-      // Best-effort: remove triagem session linked to this demanda
-      await this.triagemSessionService.removeByDemandaId(demandaId);
-      toast.success('Demanda finalizada', 'A conversa e a triagem foram encerradas.');
+      toast.success('Demanda finalizada', 'A demanda foi concluída com sucesso.');
     } catch (e: any) {
       toast.error('Erro ao finalizar', e?.message);
     } finally {
