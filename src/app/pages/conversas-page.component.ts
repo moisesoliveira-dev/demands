@@ -20,7 +20,6 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   Users,
-  Plus,
   MessageCircle,
   ArrowLeft,
   X,
@@ -123,11 +122,6 @@ export class ChatMediaComponent implements OnInit {
               @if (totalNaoLidas()) { · <span class="text-emerald-600 font-medium">{{ totalNaoLidas() }} não lidas</span> }
             </p>
           </div>
-          <button type="button" (click)="abrirNovoChat()"
-            class="p-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition"
-            title="Nova conversa ou grupo">
-            <lucide-angular [img]="Plus" size="18" />
-          </button>
         </div>
 
         <div class="px-3 py-2 border-b border-border bg-card">
@@ -141,9 +135,8 @@ export class ChatMediaComponent implements OnInit {
         <div class="flex-1 overflow-y-auto">
           @if (conversasFiltradas().length === 0) {
             <div class="text-center py-10 px-4">
-              <p class="text-sm text-muted-foreground mb-2">Nenhuma conversa.</p>
-              <button type="button" (click)="abrirNovoChat()"
-                class="text-sm text-emerald-600 hover:underline">Iniciar uma conversa</button>
+              <p class="text-sm text-muted-foreground">Nenhuma conversa.</p>
+              <p class="text-xs text-muted-foreground mt-1">As conversas são criadas automaticamente ao abrir uma demanda.</p>
             </div>
           }
           @for (c of conversasFiltradas(); track c.id) {
@@ -344,11 +337,7 @@ export class ChatMediaComponent implements OnInit {
               <lucide-angular [img]="MessageCircle" size="40" class="text-emerald-600 dark:text-emerald-400" />
             </div>
             <h3 class="text-lg font-medium text-foreground">Selecione uma conversa</h3>
-            <p class="text-sm mt-1 max-w-xs">Escolha uma conversa ao lado ou inicie uma nova.</p>
-            <button type="button" (click)="abrirNovoChat()"
-              class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:opacity-90">
-              + Nova conversa
-            </button>
+            <p class="text-sm mt-1 max-w-xs">Escolha uma conversa ao lado para continuar.</p>
             <p class="text-[11px] mt-6 max-w-sm flex items-start gap-1.5">
               <lucide-angular [img]="ShieldCheck" size="12" class="shrink-0 mt-0.5 text-emerald-600" />
               <span>Mensagens, imagens e vídeos são <b>registrados imutavelmente como prova legal</b> (hash SHA-256, IP, horário, usuário). Mensagens apagadas continuam preservadas no banco.</span>
@@ -357,90 +346,6 @@ export class ChatMediaComponent implements OnInit {
         }
       </section>
     </div>
-
-    <!-- ═══════════ DIALOG: nova conversa / grupo ═══════════ -->
-    @if (dialogNovoAberto()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        (click)="dialogNovoAberto.set(false)">
-        <div class="bg-card border border-border rounded-lg shadow-xl max-w-md w-full max-h-[90vh] flex flex-col"
-          (click)="$event.stopPropagation()">
-          <header class="px-4 py-3 border-b border-border flex items-center justify-between">
-            <h3 class="font-semibold text-foreground">Nova conversa</h3>
-            <button type="button" (click)="dialogNovoAberto.set(false)"
-              class="text-muted-foreground hover:text-foreground">
-              <lucide-angular [img]="X" size="18" />
-            </button>
-          </header>
-
-          <div class="px-4 pt-3">
-            <div class="flex gap-2 p-1 bg-muted/40 rounded-md">
-              <button type="button" (click)="novoTipo.set('direto')"
-                [class]="'flex-1 py-1.5 text-sm rounded ' + (novoTipo() === 'direto' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground')">
-                Direta (1 pessoa)
-              </button>
-              <button type="button" (click)="novoTipo.set('grupo')"
-                [class]="'flex-1 py-1.5 text-sm rounded ' + (novoTipo() === 'grupo' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground')">
-                Grupo
-              </button>
-            </div>
-          </div>
-
-          @if (novoTipo() === 'grupo') {
-            <div class="px-4 pt-3">
-              <label class="text-xs text-muted-foreground">Nome do grupo *</label>
-              <input type="text" [(ngModel)]="novoTitulo" placeholder="Ex.: Sala TI"
-                class="mt-1 w-full px-3 py-2 text-sm rounded-md border border-border bg-muted/30 text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-          }
-
-          <div class="px-4 pt-3">
-            <label class="text-xs text-muted-foreground">
-              {{ novoTipo() === 'direto' ? 'Escolha 1 pessoa' : 'Adicionar pessoas (' + novoSelecionados().length + ' selecionadas)' }}
-            </label>
-            <div class="relative mt-1">
-              <lucide-angular [img]="Search" size="14" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" [(ngModel)]="novoBuscaUser" placeholder="Pesquisar…"
-                class="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-border bg-muted/30 text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-          </div>
-
-          <div class="flex-1 overflow-y-auto px-4 py-2 space-y-1 max-h-64">
-            @for (u of usuariosDisponiveisFiltrados(); track u.id) {
-              <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/40 rounded cursor-pointer">
-                <input
-                  [type]="novoTipo() === 'direto' ? 'radio' : 'checkbox'"
-                  name="user-pick"
-                  [checked]="novoSelecionados().includes(u.id)"
-                  (change)="toggleSelecionado(u.id)"
-                  class="text-emerald-600" />
-                <div [class]="'h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-semibold ' + avatarColor(u.id)">
-                  {{ inicial(u.nome) }}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm text-foreground truncate">{{ u.nome }}</p>
-                  <p class="text-[11px] text-muted-foreground truncate">{{ u.setor }}</p>
-                </div>
-              </label>
-            }
-            @if (usuariosDisponiveisFiltrados().length === 0) {
-              <p class="text-center text-xs text-muted-foreground py-4">Nenhum usuário.</p>
-            }
-          </div>
-
-          <footer class="px-4 py-3 border-t border-border flex justify-end gap-2">
-            <button type="button" (click)="dialogNovoAberto.set(false)"
-              class="px-3 py-1.5 text-sm border border-border rounded-md text-foreground hover:bg-muted">
-              Cancelar
-            </button>
-            <button type="button" (click)="confirmarNovaConversa()"
-              [disabled]="!podeCriarConversa() || criandoConversa()"
-              class="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50">
-              {{ criandoConversa() ? 'Criando…' : (novoTipo() === 'grupo' ? 'Criar grupo' : 'Iniciar conversa') }}
-            </button>
-          </footer>
-        </div>
-      </div>
-    }
 
     <!-- ═══════════ DIALOG: gerenciar grupo ═══════════ -->
     @if (dialogGrupoAberto() && grupoAtivo(); as g) {
@@ -517,7 +422,6 @@ export class ConversasPageComponent implements OnInit, OnDestroy {
   readonly ImageIcon = ImageIcon;
   readonly VideoIcon = VideoIcon;
   readonly Users = Users;
-  readonly Plus = Plus;
   readonly MessageCircle = MessageCircle;
   readonly ArrowLeft = ArrowLeft;
   readonly X = X;
@@ -530,13 +434,7 @@ export class ConversasPageComponent implements OnInit, OnDestroy {
   textoMensagem = '';
   readonly anexosSelecionados = signal<File[]>([]);
 
-  readonly dialogNovoAberto = signal(false);
-  readonly novoTipo = signal<'direto' | 'grupo'>('direto');
-  novoTitulo = '';
-  novoBuscaUser = '';
-  readonly novoSelecionados = signal<string[]>([]);
   readonly usuariosDisponiveis = signal<UsuarioDisponivel[]>([]);
-  readonly criandoConversa = signal(false);
 
   readonly dialogGrupoAberto = signal(false);
   readonly grupoAtivo = signal<ConversaListItem | null>(null);
@@ -557,15 +455,6 @@ export class ConversasPageComponent implements OnInit, OnDestroy {
     return list.filter((c) =>
       this.tituloConversa(c).toLowerCase().includes(q) ||
       c.participantes.some((p) => p.usuarioNome.toLowerCase().includes(q)),
-    );
-  });
-
-  readonly usuariosDisponiveisFiltrados = computed(() => {
-    const q = this.novoBuscaUser.trim().toLowerCase();
-    const list = this.usuariosDisponiveis();
-    if (!q) return list;
-    return list.filter((u) =>
-      u.nome.toLowerCase().includes(q) || (u.setor ?? '').toLowerCase().includes(q),
     );
   });
 
@@ -702,53 +591,6 @@ export class ConversasPageComponent implements OnInit, OnDestroy {
   private scrollToBottom() {
     const el = this.scroller?.nativeElement;
     if (el) el.scrollTop = el.scrollHeight;
-  }
-
-  async abrirNovoChat() {
-    this.dialogNovoAberto.set(true);
-    this.novoTipo.set('direto');
-    this.novoTitulo = '';
-    this.novoBuscaUser = '';
-    this.novoSelecionados.set([]);
-    if (this.usuariosDisponiveis().length === 0) {
-      try { this.usuariosDisponiveis.set(await this.chats.listarUsuarios()); }
-      catch { /* ignore */ }
-    }
-  }
-
-  toggleSelecionado(id: string) {
-    if (this.novoTipo() === 'direto') {
-      this.novoSelecionados.set([id]);
-    } else {
-      this.novoSelecionados.update((arr) =>
-        arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id],
-      );
-    }
-  }
-
-  podeCriarConversa(): boolean {
-    if (this.novoSelecionados().length === 0) return false;
-    if (this.novoTipo() === 'grupo' && !this.novoTitulo.trim()) return false;
-    if (this.novoTipo() === 'direto' && this.novoSelecionados().length !== 1) return false;
-    return true;
-  }
-
-  async confirmarNovaConversa() {
-    if (!this.podeCriarConversa()) return;
-    this.criandoConversa.set(true);
-    try {
-      const nova = await this.chats.criarConversa({
-        tipo: this.novoTipo(),
-        titulo: this.novoTipo() === 'grupo' ? this.novoTitulo.trim() : undefined,
-        participantes: this.novoSelecionados(),
-      });
-      this.dialogNovoAberto.set(false);
-      await this.selecionar(nova.id);
-    } catch (e: any) {
-      alert('Erro: ' + (e?.error?.message ?? e?.message));
-    } finally {
-      this.criandoConversa.set(false);
-    }
   }
 
   async abrirGerenciarGrupo(c: ConversaListItem) {
