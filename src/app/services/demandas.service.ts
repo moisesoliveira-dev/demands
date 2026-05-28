@@ -127,6 +127,18 @@ export class DemandasService {
         return firstValueFrom(this.http.get<HistoricoAuditoria[]>(`${this.base}/${id}/historico`));
     }
 
+    async loadRecorrentes(): Promise<{ titulo: string; descricao: string; total: number }[]> {
+        try {
+            return await firstValueFrom(
+                this.http.get<{ titulo: string; descricao: string; total: number }[]>(
+                    `${environment.aiUrl}/triagem/recorrentes`,
+                ),
+            );
+        } catch {
+            return [];
+        }
+    }
+
     /** Lookup sincrono no cache local. Para fetch remoto use fetchById. */
     byId(id: string): Demanda | undefined {
         return this._demandas().find((d) => d.id === id);

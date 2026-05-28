@@ -9,6 +9,7 @@ import { Demanda, Prioridade } from '../../types';
 import { toast } from '../../lib/toast';
 import { PRIORIDADE_CONFIG } from './demand-card.component';
 import { TriagemSessionService, Step, DraftDemanda, StoredMessage } from '../../services/triagem-session.service';
+import { DemandasService } from '../../services/demandas.service';
 
 interface ChatMessage {
   id: string;
@@ -19,12 +20,7 @@ interface ChatMessage {
   summary?: Partial<Demanda>;
 }
 
-const STARTER_SUGGESTIONS = [
-  { label: 'Manutenção corretiva urgente', prompt: 'A linha 3 parou. O torno CNC apresentou falha elétrica e precisa de manutenção corretiva urgente.' },
-  { label: 'Problema de qualidade', prompt: 'Identificamos peças fora do gabarito na usinagem. Preciso abrir chamado de controle de qualidade.' },
-  { label: 'Manutenção preventiva', prompt: 'Agendar manutenção preventiva nos equipamentos da cabine de pintura antes do próximo ciclo de produção.' },
-  { label: 'Inspeção de expedição', prompt: 'Preciso de inspeção no setor de expedição antes do embarque previsto para essa semana.' },
-];
+const STARTER_SUGGESTIONS: { label: string; prompt: string }[] = [];
 
 @Component({
   selector: 'triagem-chat',
@@ -61,8 +57,9 @@ const STARTER_SUGGESTIONS = [
                 Descreva sua demanda industrial e vou conduzir a triagem automaticamente.
               </p>
             </div>
+            @if (starterSuggestions().length) {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
-              @for (s of starterSuggestions; track s.label) {
+              @for (s of starterSuggestions(); track s.label) {
                 <button type="button" (click)="useSuggestion(s.prompt)"
                   class="text-left p-4 border border-border rounded-xl hover:bg-muted/40 hover:border-input hover:shadow-sm transition-all">
                   <p class="text-sm font-semibold text-foreground">{{ s.label }}</p>
@@ -70,6 +67,7 @@ const STARTER_SUGGESTIONS = [
                 </button>
               }
             </div>
+            }
           </div>
 
         } @else {
@@ -255,10 +253,11 @@ export class TriagemChatComponent implements AfterViewChecked {
   readonly Square = Square; readonly ArrowDown = ArrowDown;
 
   sessionId = input<string | null>(null);
-  readonly starterSuggestions = STARTER_SUGGESTIONS;
+  starterSuggestions = signal<{ label: string; prompt: string }[]>([]);
 
   readonly auth = inject(AuthService);
   private sessionService = inject(TriagemSessionService);
+  private demandasService = inject(DemandasService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
 
@@ -286,6 +285,10 @@ export class TriagemChatComponent implements AfterViewChecked {
     effect(() => {
       const id = this.sessionId();
       untracked(() => this._loadSession(id));
+    });
+
+    this.demandasService.loadRecorrentes().then((list) => {
+      this.starterSuggestions.set(list.map((r) => ({ label: r.titulo, prompt: r.descricao })));
     });
 
     // When the user returns to this browser tab after the AI has already responded,
