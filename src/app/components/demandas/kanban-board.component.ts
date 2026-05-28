@@ -10,6 +10,7 @@ import { GsapFadeInDirective } from '../../lib/gsap.directives';
 import { MotionPopDirective } from '../../lib/motion.directives';
 import { toast } from '../../lib/toast';
 import { UiButton } from '../ui/button.component';
+import { startOfWeek } from 'date-fns';
 
 interface ColumnConfig { status: DemandStatus; label: string; color: string; bg: string; }
 
@@ -100,14 +101,21 @@ export class KanbanBoardComponent {
   finalizando = signal(false);
   private pendingFinalizar?: { id: string; demandaId: string };
 
-  columnData = computed(() =>
-    COLUMNS.map(col => ({
+  columnData = computed(() => {
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    return COLUMNS.map(col => ({
       ...col,
       items: this.demandasService.demandasFiltradas()
-        .filter(d => d.status === col.status)
+        .filter(d => {
+          if (d.status !== col.status) return false;
+          if (col.status === DemandStatus.CONCLUIDO) {
+            return new Date(d.atualizadoEm) >= weekStart;
+          }
+          return true;
+        })
         .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-    }))
-  );
+    }));
+  });
 
   constructor() {
     // Quando o highlightId muda e os dados estão prontos, rola até o item.
