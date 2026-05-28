@@ -16,6 +16,7 @@ import { UiButton } from '../components/ui/button.component';
 import { exportarDemandasCSV } from '../lib/export';
 import { toast } from '../lib/toast';
 import { environment } from '../../environments/environment';
+import { SettingsTreeNavComponent, SettingsTreeGroup } from '../components/ui/settings-tree-nav.component';
 
 const STORAGE_KEY = 'demands_relatorios_historico';
 
@@ -35,38 +36,139 @@ interface RelatorioGerado {
 @Component({
   selector: 'app-relatorios',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, UiCard, UiButton],
+  imports: [CommonModule, FormsModule, LucideAngularModule, UiCard, UiButton, SettingsTreeNavComponent],
   template: `
-<div class="space-y-6">
+<div class="flex gap-6 min-h-130">
 
-  <!-- ── Cabeçalho ─────────────────────────────────────────────────────────── -->
-  <div class="flex flex-wrap items-start justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold text-foreground">Relatórios</h1>
-      <p class="text-sm text-muted-foreground mt-0.5">Histórico de análises geradas por IA</p>
-    </div>
-    <div class="flex gap-2">
-      <ui-button variant="outline" size="sm" (click)="exportarCSV()">
-        <lucide-angular [img]="Download" size="15" class="mr-1.5" /> Exportar CSV
-      </ui-button>
-      @if (iaHabilitada) {
-        <ui-button variant="outline" size="sm" [disabled]="ia.carregando()" (click)="gerarComIA()">
-          @if (ia.carregando()) {
-            <lucide-angular [img]="Loader2" size="15" class="mr-1.5 animate-spin" />
-          } @else {
-            <lucide-angular [img]="Bot" size="15" class="mr-1.5" />
+  <!-- ── Tree nav ───────────────────────────────────────────────────────────── -->
+  <aside class="w-52 shrink-0 border-r border-border pr-2 pt-1">
+    <app-settings-tree-nav
+      [groups]="treeGroups()"
+      [active]="active()"
+      (activeChange)="active.set($event)" />
+  </aside>
+
+  <!-- ── Content panel ──────────────────────────────────────────────────────── -->
+  <div class="flex-1 min-w-0">
+
+  <!-- ── Relatórios Gerados ────────────────────────────────────────────────── -->
+  @if (active() === 'relatorios') {
+    <div class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <h2 class="text-base font-semibold text-foreground">Relatórios Gerados</h2>
+        <div class="flex gap-2">
+          <ui-button variant="outline" size="sm" (click)="exportarCSV()">
+            <lucide-angular [img]="Download" size="15" class="mr-1.5" /> Exportar CSV
+          </ui-button>
+          @if (iaHabilitada) {
+            <ui-button variant="outline" size="sm" [disabled]="ia.carregando()" (click)="gerarComIA()">
+              @if (ia.carregando()) {
+                <lucide-angular [img]="Loader2" size="15" class="mr-1.5 animate-spin" />
+              } @else {
+                <lucide-angular [img]="Bot" size="15" class="mr-1.5" />
+              }
+              Gerar com IA
+            </ui-button>
           }
-          Gerar com IA
-        </ui-button>
-      }
-      <ui-button size="sm" (click)="gerar()">
-        <lucide-angular [img]="Plus" size="15" class="mr-1.5" /> Gerar Relatório
-      </ui-button>
-    </div>
-  </div>
+          <ui-button size="sm" (click)="gerar()">
+            <lucide-angular [img]="Plus" size="15" class="mr-1.5" /> Gerar Relatório
+          </ui-button>
+        </div>
+      </div>
 
-  <!-- ── Pergunte à IA ──────────────────────────────────────────────── -->
-  @if (iaHabilitada) {
+      @if (historico().length === 0) {
+        <div class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border
+                    bg-muted/30 py-20 text-center">
+          <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+            <lucide-angular [img]="FilePlus" size="26" class="text-primary" />
+          </div>
+          <div>
+            <p class="font-semibold text-foreground">Nenhum relatório gerado ainda</p>
+            <p class="text-sm text-muted-foreground mt-1">
+              Clique em "Gerar Relatório" para criar uma análise automática com base nos dados atuais.
+            </p>
+          </div>
+          <ui-button (click)="gerar()">
+            <lucide-angular [img]="Sparkles" size="15" class="mr-1.5" /> Gerar primeiro relatório
+          </ui-button>
+        </div>
+      }
+
+      @for (r of historico(); track r.id) {
+        <ui-card>
+          <button class="w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors rounded-t-xl"
+            [class.rounded-b-xl]="expandedId() !== r.id"
+            (click)="toggle(r.id)">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <lucide-angular [img]="History" size="18" class="text-primary" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-foreground text-sm">Relatório · {{ formatDate(r.dataISO) }}</p>
+              <div class="flex flex-wrap gap-2 mt-1">
+                <span class="text-xs text-muted-foreground">{{ r.totalDemandas }} demanda(s)</span>
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
+                             bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {{ r.taxa }}% concluído
+                </span>
+                @if (r.andamento > 0) {
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
+                               bg-blue-50 text-blue-700 border border-blue-200">
+                    {{ r.andamento }} em andamento
+                  </span>
+                }
+                @if (r.bloqueadas > 0) {
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
+                               bg-red-50 text-red-700 border border-red-200">
+                    {{ r.bloqueadas }} bloqueada(s)
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-red-600
+                       hover:bg-red-50 transition-colors"
+                (click)="excluir($event, r.id)"
+                title="Excluir relatório">
+                <lucide-angular [img]="Trash2" size="15" />
+              </button>
+              <span class="flex h-8 w-8 items-center justify-center text-muted-foreground">
+                <lucide-angular [img]="expandedId() === r.id ? ChevronUp : ChevronDown" size="16" />
+              </span>
+            </div>
+          </button>
+          @if (expandedId() === r.id) {
+            <div class="px-5 pb-5 pt-4 border-t border-border space-y-4">
+              <div class="flex items-center gap-2 mb-2">
+                <lucide-angular [img]="Sparkles" size="14" class="text-primary" />
+                <span class="text-xs font-semibold uppercase tracking-wide text-primary">Análise por IA</span>
+              </div>
+              <ul class="space-y-2">
+                @for (insight of r.insights; track insight) {
+                  <li class="flex items-start gap-2 text-sm text-foreground leading-relaxed">
+                    <span class="text-primary shrink-0 mt-0.5">›</span>
+                    <span [innerHTML]="insight"></span>
+                  </li>
+                }
+              </ul>
+              @if (r.recomendacao) {
+                <div class="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-3">
+                  <lucide-angular [img]="AlertTriangle" size="15" class="text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-0.5">Recomendação</p>
+                    <p class="text-sm text-amber-900">{{ r.recomendacao }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </ui-card>
+      }
+    </div>
+  }
+
+  <!-- ── Perguntar à IA ─────────────────────────────────────────────────────── -->
+  @if (active() === 'ia') {
     <ui-card>
       <div class="px-5 py-4 space-y-3">
         <div class="flex items-center gap-2">
@@ -100,159 +202,53 @@ interface RelatorioGerado {
     </ui-card>
   }
 
-  <!-- ── Histórico de Demandas Concluídas ───────────────────────────────────── -->
-  <ui-card>
-    <button class="w-full text-left flex items-center gap-3 px-5 py-4 hover:bg-muted/30 transition-colors rounded-xl"
-      [class.rounded-b-none]="historicoConcluidasAberto()"
-      (click)="historicoConcluidasAberto.set(!historicoConcluidasAberto())">
-      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green-500/10">
-        <lucide-angular [img]="CheckCircle2" size="17" class="text-green-600" />
+  <!-- ── Demandas Concluídas ────────────────────────────────────────────────── -->
+  @if (active() === 'concluidas') {
+    @if (demandasConcluidas().length === 0) {
+      <div class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border
+                  bg-muted/30 py-20 text-center">
+        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
+          <lucide-angular [img]="CheckCircle2" size="26" class="text-green-600" />
+        </div>
+        <div>
+          <p class="font-semibold text-foreground">Nenhuma demanda concluída ainda</p>
+          <p class="text-sm text-muted-foreground mt-1">As demandas finalizadas aparecerão aqui agrupadas por setor.</p>
+        </div>
       </div>
-      <div class="flex-1">
-        <span class="font-semibold text-sm text-foreground">Histórico de Demandas Concluídas</span>
-        <span class="ml-2 text-xs text-muted-foreground">({{ demandasConcluidas().length }})</span>
-      </div>
-      <lucide-angular [img]="historicoConcluidasAberto() ? ChevronUp : ChevronDown" size="16" class="text-muted-foreground" />
-    </button>
-    @if (historicoConcluidasAberto()) {
-      <div class="border-t border-border">
-        @if (demandasConcluidas().length === 0) {
-          <p class="text-sm text-muted-foreground text-center py-6">Nenhuma demanda concluída ainda.</p>
-        } @else {
-          @for (setor of setoresConcluidos(); track setor.nome) {
-            <div class="border-b border-border last:border-0">
-              <button class="flex items-center gap-2 w-full text-left px-5 py-3 hover:bg-muted/20 transition-colors"
-                (click)="toggleSetor(setor.nome)">
-                <lucide-angular [img]="setorAberto(setor.nome) ? ChevronDown : ChevronRight" size="13" class="text-muted-foreground shrink-0" />
-                <span class="text-sm font-semibold text-foreground">{{ setor.nome }}</span>
-                <span class="text-xs text-muted-foreground font-normal ml-1">({{ setor.demandas.length }})</span>
-              </button>
-              @if (setorAberto(setor.nome)) {
-                <div class="pb-3 pl-10 pr-5 space-y-1.5">
-                  @for (d of setor.demandas; track d.id) {
-                    <div class="flex items-start gap-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 px-3 py-2">
-                      <lucide-angular [img]="CheckCircle2" size="13" class="text-green-600 shrink-0 mt-0.5" />
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-foreground truncate">{{ d.titulo }}</p>
-                        <div class="flex flex-wrap gap-x-2 mt-0.5">
-                          <span class="text-xs text-muted-foreground">{{ d.responsavel }}</span>
-                          <span class="text-xs text-muted-foreground">· Prioridade {{ d.prioridade }}</span>
-                          <span class="text-xs text-muted-foreground">· {{ formatDate(d.atualizadoEm) }}</span>
-                        </div>
+    } @else {
+      <div class="space-y-2">
+        @for (setor of setoresConcluidos(); track setor.nome) {
+          <div class="rounded-lg border border-border overflow-hidden">
+            <button class="flex items-center gap-2 w-full text-left px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+              (click)="toggleSetor(setor.nome)">
+              <lucide-angular [img]="setorAberto(setor.nome) ? ChevronDown : ChevronRight" size="13" class="text-muted-foreground shrink-0" />
+              <span class="text-sm font-semibold text-foreground">{{ setor.nome }}</span>
+              <span class="text-xs text-muted-foreground font-normal ml-1">({{ setor.demandas.length }})</span>
+            </button>
+            @if (setorAberto(setor.nome)) {
+              <div class="divide-y divide-border">
+                @for (d of setor.demandas; track d.id) {
+                  <div class="flex items-start gap-3 px-4 py-3 bg-background hover:bg-muted/20 transition-colors">
+                    <lucide-angular [img]="CheckCircle2" size="13" class="text-green-600 shrink-0 mt-0.5" />
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-foreground truncate">{{ d.titulo }}</p>
+                      <div class="flex flex-wrap gap-x-2 mt-0.5">
+                        <span class="text-xs text-muted-foreground">{{ d.responsavel }}</span>
+                        <span class="text-xs text-muted-foreground">· Prioridade {{ d.prioridade }}</span>
+                        <span class="text-xs text-muted-foreground">· {{ formatDate(d.atualizadoEm) }}</span>
                       </div>
                     </div>
-                  }
-                </div>
-              }
-            </div>
-          }
+                  </div>
+                }
+              </div>
+            }
+          </div>
         }
       </div>
     }
-  </ui-card>
-
-  <!-- ── Empty state ────────────────────────────────────────────────────────── -->
-  @if (historico().length === 0) {
-    <div class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border
-                bg-muted/30 py-20 text-center">
-      <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-        <lucide-angular [img]="FilePlus" size="26" class="text-primary" />
-      </div>
-      <div>
-        <p class="font-semibold text-foreground">Nenhum relatório gerado ainda</p>
-        <p class="text-sm text-muted-foreground mt-1">
-          Clique em "Gerar Relatório" para criar uma análise automática com IA
-          com base nos dados atuais.
-        </p>
-      </div>
-      <ui-button (click)="gerar()">
-        <lucide-angular [img]="Sparkles" size="15" class="mr-1.5" /> Gerar primeiro relatório
-      </ui-button>
-    </div>
   }
 
-  <!-- ── Histórico ──────────────────────────────────────────────────────────── -->
-  @for (r of historico(); track r.id) {
-    <ui-card>
-      <!-- Linha resumo (sempre visível) -->
-      <button class="w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors rounded-t-xl"
-        [class.rounded-b-xl]="expandedId() !== r.id"
-        (click)="toggle(r.id)">
-
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-          <lucide-angular [img]="History" size="18" class="text-primary" />
-        </div>
-
-        <div class="flex-1 min-w-0">
-          <p class="font-semibold text-foreground text-sm">Relatório · {{ formatDate(r.dataISO) }}</p>
-          <div class="flex flex-wrap gap-2 mt-1">
-            <span class="text-xs text-muted-foreground">{{ r.totalDemandas }} demanda(s)</span>
-            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
-                         bg-emerald-50 text-emerald-700 border border-emerald-200">
-              {{ r.taxa }}% concluído
-            </span>
-            @if (r.andamento > 0) {
-              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
-                           bg-blue-50 text-blue-700 border border-blue-200">
-                {{ r.andamento }} em andamento
-              </span>
-            }
-            @if (r.bloqueadas > 0) {
-              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold
-                           bg-red-50 text-red-700 border border-red-200">
-                {{ r.bloqueadas }} bloqueada(s)
-              </span>
-            }
-          </div>
-        </div>
-
-        <div class="flex items-center gap-1 shrink-0">
-          <button
-            class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-red-600
-                   hover:bg-red-50 transition-colors"
-            (click)="excluir($event, r.id)"
-            title="Excluir relatório">
-            <lucide-angular [img]="Trash2" size="15" />
-          </button>
-          <span class="flex h-8 w-8 items-center justify-center text-muted-foreground">
-            <lucide-angular [img]="expandedId() === r.id ? ChevronUp : ChevronDown" size="16" />
-          </span>
-        </div>
-      </button>
-
-      <!-- Conteúdo expandido -->
-      @if (expandedId() === r.id) {
-        <div class="px-5 pb-5 pt-4 border-t border-border space-y-4">
-
-          <!-- Insights IA -->
-          <div class="flex items-center gap-2 mb-2">
-            <lucide-angular [img]="Sparkles" size="14" class="text-primary" />
-            <span class="text-xs font-semibold uppercase tracking-wide text-primary">Análise por IA</span>
-          </div>
-
-          <ul class="space-y-2">
-            @for (insight of r.insights; track insight) {
-              <li class="flex items-start gap-2 text-sm text-foreground leading-relaxed">
-                <span class="text-primary shrink-0 mt-0.5">›</span>
-                <span [innerHTML]="insight"></span>
-              </li>
-            }
-          </ul>
-
-          @if (r.recomendacao) {
-            <div class="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-3">
-              <lucide-angular [img]="AlertTriangle" size="15" class="text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-0.5">Recomendação</p>
-                <p class="text-sm text-amber-900">{{ r.recomendacao }}</p>
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </ui-card>
-  }
-
+  </div>
 </div>
   `,
 })
@@ -262,6 +258,8 @@ export class RelatoriosPageComponent implements OnInit {
   readonly AlertTriangle = AlertTriangle; readonly Trash2 = Trash2;
   readonly FilePlus = FilePlus; readonly History = History; readonly CheckCircle2 = CheckCircle2;
   readonly Send = Send; readonly Bot = Bot; readonly Loader2 = Loader2;
+
+  active = signal<string>('relatorios');
 
   private demandasService = inject(DemandasService);
   readonly ia = inject(IaService);
@@ -285,7 +283,22 @@ export class RelatoriosPageComponent implements OnInit {
       .sort((a, b) => a.nome.localeCompare(b.nome));
   });
 
-  readonly historicoConcluidasAberto = signal(true);
+  readonly treeGroups = computed<SettingsTreeGroup[]>(() => [
+    {
+      label: 'Análises',
+      items: [
+        { id: 'relatorios', label: 'Relatórios', icon: History, badge: this.historico().length || undefined },
+        ...(this.iaHabilitada ? [{ id: 'ia', label: 'Perguntar à IA', icon: Sparkles }] : []),
+      ],
+    },
+    {
+      label: 'Histórico',
+      items: [
+        { id: 'concluidas', label: 'Concluídas', icon: CheckCircle2, badge: this.demandasConcluidas().length },
+      ],
+    },
+  ]);
+
   private readonly _setoresAbertos = signal<Set<string>>(new Set());
 
   setorAberto(nome: string): boolean {

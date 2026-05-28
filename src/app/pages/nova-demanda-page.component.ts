@@ -6,6 +6,8 @@ import { LucideAngularModule, Plus, MessageSquare, CheckCircle2, Trash2, PanelLe
 import { isToday, isYesterday } from 'date-fns';
 import { TriagemChatComponent } from '../components/demandas/triagem-chat.component';
 import { TriagemSessionService, ChatSession, DraftDemanda } from '../services/triagem-session.service';
+import { DemandasService } from '../services/demandas.service';
+import { DemandStatus } from '../types';
 import { SetoresService } from '../services/setores.service';
 import { PRIORIDADE_CONFIG } from '../components/demandas/demand-card.component';
 import { Prioridade } from '../types';
@@ -60,7 +62,7 @@ interface SessionGroup {
                     (click)="selectSession(session.id)">
                     <lucide-angular [img]="session.status === 'criada' ? CheckCircle2 : MessageSquare" size="14" class="shrink-0 opacity-60" />
                     <span class="flex-1 text-xs truncate">{{ session.titulo }}</span>
-                    @if (session.status === 'criada') {
+                    @if (canDeleteSession(session)) {
                       <button type="button" (click)="askDeleteSession($event, session)"
                         class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all">
                         <lucide-angular [img]="Trash2" size="13" />
@@ -370,6 +372,7 @@ export class NovaDemandaPageComponent {
 
   router = inject(Router);
   sessionService = inject(TriagemSessionService);
+  private demandasService = inject(DemandasService);
   private setoresService = inject(SetoresService);
 
   readonly Plus = Plus; readonly MessageSquare = MessageSquare;
@@ -576,7 +579,15 @@ export class NovaDemandaPageComponent {
     if (fn) await fn();
   }
 
+  canDeleteSession(session: ChatSession): boolean {
+    if (session.status !== 'criada') return false;
+    if (!session.demandaId) return true;
+    const demanda = this.demandasService.demandas().find((d) => d.id === session.demandaId);
+    return !demanda || demanda.status === DemandStatus.CONCLUIDO;
+  }
+
   askDeleteSession(event: MouseEvent, session: ChatSession) {
+    if (!this.canDeleteSession(session)) return;
     event.stopPropagation();
     this.deleteTargetId.set(session.id);
     this.deleteTargetTitle.set(session.titulo || 'Nova triagem');
