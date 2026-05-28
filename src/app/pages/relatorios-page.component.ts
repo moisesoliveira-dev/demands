@@ -5,13 +5,13 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 import {
   LucideAngularModule,
-  Sparkles, Download, Plus, ChevronDown, ChevronUp,
-  AlertTriangle, Trash2, FilePlus, History, Send, Bot, Loader2,
+  Sparkles, Download, Plus, ChevronDown, ChevronUp, ChevronRight,
+  AlertTriangle, Trash2, FilePlus, History, Send, Bot, Loader2, CheckCircle2,
 } from 'lucide-angular';
 import { DemandasService } from '../services/demandas.service';
 import { IaService } from '../services/ia.service';
-import { DemandStatus } from '../types';
-import { UiCard, UiCardContent } from '../components/ui/card.component';
+import { DemandStatus, Demanda } from '../types';
+import { UiCard } from '../components/ui/card.component';
 import { UiButton } from '../components/ui/button.component';
 import { exportarDemandasCSV } from '../lib/export';
 import { toast } from '../lib/toast';
@@ -35,7 +35,7 @@ interface RelatorioGerado {
 @Component({
   selector: 'app-relatorios',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, UiCard, UiCardContent, UiButton],
+  imports: [CommonModule, FormsModule, LucideAngularModule, UiCard, UiButton],
   template: `
 <div class="space-y-6">
 
@@ -99,6 +99,57 @@ interface RelatorioGerado {
       </div>
     </ui-card>
   }
+
+  <!-- ── Histórico de Demandas Concluídas ───────────────────────────────────── -->
+  <ui-card>
+    <button class="w-full text-left flex items-center gap-3 px-5 py-4 hover:bg-muted/30 transition-colors rounded-xl"
+      [class.rounded-b-none]="historicoConcluidasAberto()"
+      (click)="historicoConcluidasAberto.set(!historicoConcluidasAberto())">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green-500/10">
+        <lucide-angular [img]="CheckCircle2" size="17" class="text-green-600" />
+      </div>
+      <div class="flex-1">
+        <span class="font-semibold text-sm text-foreground">Histórico de Demandas Concluídas</span>
+        <span class="ml-2 text-xs text-muted-foreground">({{ demandasConcluidas().length }})</span>
+      </div>
+      <lucide-angular [img]="historicoConcluidasAberto() ? ChevronUp : ChevronDown" size="16" class="text-muted-foreground" />
+    </button>
+    @if (historicoConcluidasAberto()) {
+      <div class="border-t border-border">
+        @if (demandasConcluidas().length === 0) {
+          <p class="text-sm text-muted-foreground text-center py-6">Nenhuma demanda concluída ainda.</p>
+        } @else {
+          @for (setor of setoresConcluidos(); track setor.nome) {
+            <div class="border-b border-border last:border-0">
+              <button class="flex items-center gap-2 w-full text-left px-5 py-3 hover:bg-muted/20 transition-colors"
+                (click)="toggleSetor(setor.nome)">
+                <lucide-angular [img]="setorAberto(setor.nome) ? ChevronDown : ChevronRight" size="13" class="text-muted-foreground shrink-0" />
+                <span class="text-sm font-semibold text-foreground">{{ setor.nome }}</span>
+                <span class="text-xs text-muted-foreground font-normal ml-1">({{ setor.demandas.length }})</span>
+              </button>
+              @if (setorAberto(setor.nome)) {
+                <div class="pb-3 pl-10 pr-5 space-y-1.5">
+                  @for (d of setor.demandas; track d.id) {
+                    <div class="flex items-start gap-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 px-3 py-2">
+                      <lucide-angular [img]="CheckCircle2" size="13" class="text-green-600 shrink-0 mt-0.5" />
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-foreground truncate">{{ d.titulo }}</p>
+                        <div class="flex flex-wrap gap-x-2 mt-0.5">
+                          <span class="text-xs text-muted-foreground">{{ d.responsavel }}</span>
+                          <span class="text-xs text-muted-foreground">· Prioridade {{ d.prioridade }}</span>
+                          <span class="text-xs text-muted-foreground">· {{ formatDate(d.atualizadoEm) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  </ui-card>
 
   <!-- ── Empty state ────────────────────────────────────────────────────────── -->
   @if (historico().length === 0) {
@@ -207,15 +258,47 @@ interface RelatorioGerado {
 })
 export class RelatoriosPageComponent implements OnInit {
   readonly Sparkles = Sparkles; readonly Download = Download; readonly Plus = Plus;
-  readonly ChevronDown = ChevronDown; readonly ChevronUp = ChevronUp;
+  readonly ChevronDown = ChevronDown; readonly ChevronUp = ChevronUp; readonly ChevronRight = ChevronRight;
   readonly AlertTriangle = AlertTriangle; readonly Trash2 = Trash2;
-  readonly FilePlus = FilePlus; readonly History = History;
+  readonly FilePlus = FilePlus; readonly History = History; readonly CheckCircle2 = CheckCircle2;
   readonly Send = Send; readonly Bot = Bot; readonly Loader2 = Loader2;
 
   private demandasService = inject(DemandasService);
   readonly ia = inject(IaService);
   private sanitizer = inject(DomSanitizer);
   private all = computed(() => this.demandasService.demandas());
+
+  // ── Histórico de demandas concluídas ────────────────────────────────────
+  readonly demandasConcluidas = computed(() =>
+    this.demandasService.demandas().filter((d) => d.status === DemandStatus.CONCLUIDO)
+  );
+
+  readonly setoresConcluidos = computed(() => {
+    const groups = new Map<string, Demanda[]>();
+    for (const d of this.demandasConcluidas()) {
+      const setor = d.setor || 'Sem setor';
+      if (!groups.has(setor)) groups.set(setor, []);
+      groups.get(setor)!.push(d);
+    }
+    return Array.from(groups.entries())
+      .map(([nome, demandas]) => ({ nome, demandas }))
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+  });
+
+  readonly historicoConcluidasAberto = signal(true);
+  private readonly _setoresAbertos = signal<Set<string>>(new Set());
+
+  setorAberto(nome: string): boolean {
+    return this._setoresAbertos().has(nome);
+  }
+
+  toggleSetor(nome: string) {
+    this._setoresAbertos.update((s) => {
+      const next = new Set(s);
+      if (next.has(nome)) next.delete(nome); else next.add(nome);
+      return next;
+    });
+  }
 
   readonly iaHabilitada = environment.aiEnabled === true;
   readonly perguntaIA = signal('');

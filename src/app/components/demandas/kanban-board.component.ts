@@ -1,13 +1,15 @@
-import { Component, computed, inject, input, viewChild, effect, ElementRef } from '@angular/core';
+import { Component, computed, inject, input, viewChild, effect, ElementRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Demanda, DemandStatus } from '../../types';
 import { DemandasService } from '../../services/demandas.service';
+import { TriagemSessionService } from '../../services/triagem-session.service';
 import { DemandCardComponent } from './demand-card.component';
 import { BlockReasonDialogComponent } from './block-reason-dialog.component';
 import { GsapFadeInDirective } from '../../lib/gsap.directives';
 import { MotionPopDirective } from '../../lib/motion.directives';
 import { toast } from '../../lib/toast';
+import { UiButton } from '../ui/button.component';
 
 interface ColumnConfig { status: DemandStatus; label: string; color: string; bg: string; }
 
@@ -21,7 +23,7 @@ const COLUMNS: ColumnConfig[] = [
 @Component({
   selector: 'kanban-board',
   standalone: true,
-  imports: [CommonModule, CdkDropList, CdkDropListGroup, CdkDrag, CdkDragPlaceholder, DemandCardComponent, BlockReasonDialogComponent, GsapFadeInDirective, MotionPopDirective],
+  imports: [CommonModule, CdkDropList, CdkDropListGroup, CdkDrag, CdkDragPlaceholder, DemandCardComponent, BlockReasonDialogComponent, GsapFadeInDirective, MotionPopDirective, UiButton],
   template: `
     <div cdkDropListGroup class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       @for (col of columnData(); track col.status; let colIdx = $index) {
@@ -51,6 +53,34 @@ const COLUMNS: ColumnConfig[] = [
       }
     </div>
     <block-reason-dialog #blockDialog (confirmed)="onBlockConfirmed($event)" />
+
+    <!-- ── Diálogo de finalização ───────────────────────────────────────────── -->
+    @if (finalizarDialogOpen()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" (click)="cancelarFinalizar()">
+        <div class="relative bg-card rounded-xl border border-border shadow-xl w-full max-w-md mx-4 p-6 space-y-4" (click)="$event.stopPropagation()">
+          <div class="flex flex-col items-center gap-3 text-center">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-green-600">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
+              </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-foreground">Finalizar demanda?</h2>
+            <p class="text-sm text-muted-foreground">
+              A conversa associada e a triagem serão removidas permanentemente.<br>
+              Esta ação não pode ser desfeita.
+            </p>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <ui-button variant="outline" class="flex-1" (click)="cancelarFinalizar()">Cancelar</ui-button>
+            <ui-button class="flex-1 bg-green-600 hover:bg-green-700 text-white" [disabled]="finalizando()" (click)="confirmarFinalizar()">
+              @if (finalizando()) { Finalizando… } @else { Sim, finalizar }
+            </ui-button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class KanbanBoardComponent {
@@ -59,10 +89,16 @@ export class KanbanBoardComponent {
   highlightId = input<string | null>(null);
 
   private demandasService = inject(DemandasService);
+  private triagemSessionService = inject(TriagemSessionService);
   private host: ElementRef<HTMLElement> = inject(ElementRef);
   blockDialog = viewChild<BlockReasonDialogComponent>('blockDialog');
 
-  private pendingMove?: { id: string; status: DemandStatus };
+  private pendingMove?: { id: string; status: DemandStatus; demandaId?: string };
+
+  // ── Finalizar dialog ────────────────────────────────────────────────────
+  finalizarDialogOpen = signal(false);
+  finalizando = signal(false);
+  private pendingFinalizar?: { id: string; demandaId: string };
 
   columnData = computed(() =>
     COLUMNS.map(col => ({
@@ -103,6 +139,11 @@ export class KanbanBoardComponent {
       this.blockDialog()?.show();
       return;
     }
+    if (targetStatus === DemandStatus.CONCLUIDO && item.status !== DemandStatus.CONCLUIDO) {
+      this.pendingFinalizar = { id: item.id, demandaId: item.id };
+      this.finalizarDialogOpen.set(true);
+      return;
+    }
     this.demandasService.atualizarStatus(item.id, targetStatus);
     toast.success('Status atualizado');
   }
@@ -112,5 +153,28 @@ export class KanbanBoardComponent {
     this.demandasService.atualizarStatus(this.pendingMove.id, this.pendingMove.status, motivo);
     this.pendingMove = undefined;
     toast.success('Demanda bloqueada');
+  }
+
+  cancelarFinalizar() {
+    this.finalizarDialogOpen.set(false);
+    this.pendingFinalizar = undefined;
+  }
+
+  async confirmarFinalizar() {
+    if (!this.pendingFinalizar || this.finalizando()) return;
+    const { id, demandaId } = this.pendingFinalizar;
+    this.finalizando.set(true);
+    try {
+      await this.demandasService.atualizarStatus(id, DemandStatus.CONCLUIDO);
+      // Best-effort: remove triagem session linked to this demanda
+      await this.triagemSessionService.removeByDemandaId(demandaId);
+      toast.success('Demanda finalizada', 'A conversa e a triagem foram encerradas.');
+    } catch (e: any) {
+      toast.error('Erro ao finalizar', e?.message);
+    } finally {
+      this.finalizando.set(false);
+      this.finalizarDialogOpen.set(false);
+      this.pendingFinalizar = undefined;
+    }
   }
 }

@@ -33,6 +33,7 @@ export interface ChatSession {
     criadaEm: string;
     atualizadaEm: string;
     status: 'andamento' | 'criada';
+    demandaId?: string;
 }
 
 export interface MessageReply {
@@ -63,6 +64,7 @@ interface ServerSession {
     status: 'andamento' | 'criada';
     step: Step;
     draft: DraftDemanda;
+    demanda_id?: string | null;
     criada_em: string;
     atualizada_em: string;
     messages?: ServerMessage[];
@@ -101,6 +103,7 @@ function mapSession(s: ServerSession): ChatSession {
         criadaEm: s.criada_em,
         atualizadaEm: s.atualizada_em,
         messages: (s.messages ?? []).map(mapMessage),
+        demandaId: s.demanda_id ?? undefined,
     };
 }
 
@@ -160,6 +163,18 @@ export class TriagemSessionService {
             if (e?.status !== 404) throw e;
         }
         this.sessions.update((list) => list.filter((s) => s.id !== id));
+    }
+
+    /** Remove a sessão de triagem associada a uma demanda (ao finalizar). Best-effort. */
+    async removeByDemandaId(demandaId: string): Promise<void> {
+        try {
+            await firstValueFrom(
+                this.http.delete<void>(`${environment.aiUrl}/triagem/sessions/by-demanda/${demandaId}`)
+            );
+        } catch {
+            // best-effort: session may not exist
+        }
+        this.sessions.update((list) => list.filter((s) => s.demandaId !== demandaId));
     }
 
     /** Envia uma mensagem do usuário e retorna a resposta do agente. */

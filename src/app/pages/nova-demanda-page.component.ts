@@ -60,10 +60,12 @@ interface SessionGroup {
                     (click)="selectSession(session.id)">
                     <lucide-angular [img]="session.status === 'criada' ? CheckCircle2 : MessageSquare" size="14" class="shrink-0 opacity-60" />
                     <span class="flex-1 text-xs truncate">{{ session.titulo }}</span>
-                    <button type="button" (click)="askDeleteSession($event, session)"
-                      class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all">
-                      <lucide-angular [img]="Trash2" size="13" />
-                    </button>
+                    @if (session.status === 'criada') {
+                      <button type="button" (click)="askDeleteSession($event, session)"
+                        class="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all">
+                        <lucide-angular [img]="Trash2" size="13" />
+                      </button>
+                    }
                   </div>
                 }
               </div>
