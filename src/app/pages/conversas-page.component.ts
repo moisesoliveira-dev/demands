@@ -1,51 +1,51 @@
 import {
-    Component,
-    ElementRef,
-    Input,
-    OnDestroy,
-    OnInit,
-    ViewChild,
-    computed,
-    inject,
-    signal,
+  Component,
+  ElementRef,
+  Input,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import {
-    LucideAngularModule,
-    Search,
-    Send,
-    Paperclip,
-    Image as ImageIcon,
-    Video as VideoIcon,
-    Users,
-    Plus,
-    MessageCircle,
-    ArrowLeft,
-    X,
-    Trash2,
-    ShieldCheck,
-    ExternalLink,
-    Sparkles,
+  LucideAngularModule,
+  Search,
+  Send,
+  Paperclip,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  Users,
+  Plus,
+  MessageCircle,
+  ArrowLeft,
+  X,
+  Trash2,
+  ShieldCheck,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-angular';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import {
-    ChatsService,
-    ConversaListItem,
-    MensagemChat,
-    UsuarioDisponivel,
+  ChatsService,
+  ConversaListItem,
+  MensagemChat,
+  UsuarioDisponivel,
 } from '../services/chats.service';
 import { AuthService } from '../services/auth.service';
 
 /* ─── Diretiva: carrega imagem/vídeo via HttpClient (passa JWT) ─────────── */
 @Component({
-    selector: 'chat-media',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
+  selector: 'chat-media',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
     @if (loading()) {
       <div class="flex items-center justify-center bg-muted/40 rounded-md p-4">
         <span class="text-xs text-muted-foreground">Carregando…</span>
@@ -63,50 +63,50 @@ import { AuthService } from '../services/auth.service';
   `,
 })
 export class ChatMediaComponent implements OnInit {
-    private http = inject(HttpClient);
-    readonly loading = signal(true);
-    readonly objectUrl = signal<string | null>(null);
+  private http = inject(HttpClient);
+  readonly loading = signal(true);
+  readonly objectUrl = signal<string | null>(null);
 
-    @Input() url = '';
-    @Input() kind: 'imagem' | 'video' = 'imagem';
-    @Input() alt = '';
+  @Input() url = '';
+  @Input() kind: 'imagem' | 'video' = 'imagem';
+  @Input() alt = '';
 
-    static cache = new Map<string, string>();
+  static cache = new Map<string, string>();
 
-    async ngOnInit() {
-        if (!this.url) { this.loading.set(false); return; }
-        if (ChatMediaComponent.cache.has(this.url)) {
-            this.objectUrl.set(ChatMediaComponent.cache.get(this.url)!);
-            this.loading.set(false);
-            return;
-        }
-        try {
-            const blob = await firstValueFrom(
-                this.http.get(this.url, { responseType: 'blob' }),
-            );
-            const u = URL.createObjectURL(blob);
-            ChatMediaComponent.cache.set(this.url, u);
-            this.objectUrl.set(u);
-        } catch {
-            /* silencioso */
-        } finally {
-            this.loading.set(false);
-        }
+  async ngOnInit() {
+    if (!this.url) { this.loading.set(false); return; }
+    if (ChatMediaComponent.cache.has(this.url)) {
+      this.objectUrl.set(ChatMediaComponent.cache.get(this.url)!);
+      this.loading.set(false);
+      return;
     }
-
-    abrirOriginal() {
-        const u = this.objectUrl();
-        if (u) window.open(u, '_blank');
+    try {
+      const blob = await firstValueFrom(
+        this.http.get(this.url, { responseType: 'blob' }),
+      );
+      const u = URL.createObjectURL(blob);
+      ChatMediaComponent.cache.set(this.url, u);
+      this.objectUrl.set(u);
+    } catch {
+      /* silencioso */
+    } finally {
+      this.loading.set(false);
     }
+  }
+
+  abrirOriginal() {
+    const u = this.objectUrl();
+    if (u) window.open(u, '_blank');
+  }
 }
 
 /* ─── Página principal ─────────────────────────────────────────────────── */
 
 @Component({
-    selector: 'app-conversas-page',
-    standalone: true,
-    imports: [CommonModule, FormsModule, DatePipe, LucideAngularModule, ChatMediaComponent],
-    template: `
+  selector: 'app-conversas-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, DatePipe, LucideAngularModule, ChatMediaComponent],
+  template: `
     <div class="grid grid-cols-1 md:grid-cols-[340px_1fr] border border-border rounded-lg overflow-hidden bg-card"
          style="height: calc(100vh - 180px); min-height: 500px;">
 
@@ -506,294 +506,306 @@ export class ChatMediaComponent implements OnInit {
   `,
 })
 export class ConversasPageComponent implements OnInit, OnDestroy {
-    private auth = inject(AuthService);
-    private router = inject(Router);
-    chats = inject(ChatsService);
+  private auth = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  chats = inject(ChatsService);
 
-    readonly Search = Search;
-    readonly Send = Send;
-    readonly Paperclip = Paperclip;
-    readonly ImageIcon = ImageIcon;
-    readonly VideoIcon = VideoIcon;
-    readonly Users = Users;
-    readonly Plus = Plus;
-    readonly MessageCircle = MessageCircle;
-    readonly ArrowLeft = ArrowLeft;
-    readonly X = X;
-    readonly Trash2 = Trash2;
-    readonly ShieldCheck = ShieldCheck;
-    readonly ExternalLink = ExternalLink;
-    readonly Sparkles = Sparkles;
+  readonly Search = Search;
+  readonly Send = Send;
+  readonly Paperclip = Paperclip;
+  readonly ImageIcon = ImageIcon;
+  readonly VideoIcon = VideoIcon;
+  readonly Users = Users;
+  readonly Plus = Plus;
+  readonly MessageCircle = MessageCircle;
+  readonly ArrowLeft = ArrowLeft;
+  readonly X = X;
+  readonly Trash2 = Trash2;
+  readonly ShieldCheck = ShieldCheck;
+  readonly ExternalLink = ExternalLink;
+  readonly Sparkles = Sparkles;
 
-    busca = '';
-    textoMensagem = '';
-    readonly anexosSelecionados = signal<File[]>([]);
+  busca = '';
+  textoMensagem = '';
+  readonly anexosSelecionados = signal<File[]>([]);
 
-    readonly dialogNovoAberto = signal(false);
-    readonly novoTipo = signal<'direto' | 'grupo'>('direto');
-    novoTitulo = '';
-    novoBuscaUser = '';
-    readonly novoSelecionados = signal<string[]>([]);
-    readonly usuariosDisponiveis = signal<UsuarioDisponivel[]>([]);
-    readonly criandoConversa = signal(false);
+  readonly dialogNovoAberto = signal(false);
+  readonly novoTipo = signal<'direto' | 'grupo'>('direto');
+  novoTitulo = '';
+  novoBuscaUser = '';
+  readonly novoSelecionados = signal<string[]>([]);
+  readonly usuariosDisponiveis = signal<UsuarioDisponivel[]>([]);
+  readonly criandoConversa = signal(false);
 
-    readonly dialogGrupoAberto = signal(false);
-    readonly grupoAtivo = signal<ConversaListItem | null>(null);
-    novoMembroId = '';
+  readonly dialogGrupoAberto = signal(false);
+  readonly grupoAtivo = signal<ConversaListItem | null>(null);
+  novoMembroId = '';
 
-    @ViewChild('scroller') scroller?: ElementRef<HTMLDivElement>;
+  @ViewChild('scroller') scroller?: ElementRef<HTMLDivElement>;
 
-    readonly conversas = computed(() => this.chats.conversas());
-    readonly mensagens = computed(() => this.chats.mensagens());
-    readonly conversaAtiva = computed(() => this.chats.conversaAtiva());
-    readonly conversaAtivaId = computed(() => this.chats.conversaAtivaId());
-    readonly totalNaoLidas = computed(() => this.chats.totalNaoLidas());
+  readonly conversas = computed(() => this.chats.conversas());
+  readonly mensagens = computed(() => this.chats.mensagens());
+  readonly conversaAtiva = computed(() => this.chats.conversaAtiva());
+  readonly conversaAtivaId = computed(() => this.chats.conversaAtivaId());
+  readonly totalNaoLidas = computed(() => this.chats.totalNaoLidas());
 
-    readonly conversasFiltradas = computed(() => {
-        const q = this.busca.trim().toLowerCase();
-        const list = this.chats.conversas();
-        if (!q) return list;
-        return list.filter((c) =>
-            this.tituloConversa(c).toLowerCase().includes(q) ||
-            c.participantes.some((p) => p.usuarioNome.toLowerCase().includes(q)),
-        );
-    });
+  readonly conversasFiltradas = computed(() => {
+    const q = this.busca.trim().toLowerCase();
+    const list = this.chats.conversas();
+    if (!q) return list;
+    return list.filter((c) =>
+      this.tituloConversa(c).toLowerCase().includes(q) ||
+      c.participantes.some((p) => p.usuarioNome.toLowerCase().includes(q)),
+    );
+  });
 
-    readonly usuariosDisponiveisFiltrados = computed(() => {
-        const q = this.novoBuscaUser.trim().toLowerCase();
-        const list = this.usuariosDisponiveis();
-        if (!q) return list;
-        return list.filter((u) =>
-            u.nome.toLowerCase().includes(q) || (u.setor ?? '').toLowerCase().includes(q),
-        );
-    });
+  readonly usuariosDisponiveisFiltrados = computed(() => {
+    const q = this.novoBuscaUser.trim().toLowerCase();
+    const list = this.usuariosDisponiveis();
+    if (!q) return list;
+    return list.filter((u) =>
+      u.nome.toLowerCase().includes(q) || (u.setor ?? '').toLowerCase().includes(q),
+    );
+  });
 
-    currentUserId = computed(() => this.auth.user()?.id ?? '');
+  currentUserId = computed(() => this.auth.user()?.id ?? '');
 
-    async ngOnInit() {
-        await this.chats.carregar();
-        this.chats.iniciarPolling(3000);
+  async ngOnInit() {
+    await this.chats.carregar();
+    this.chats.iniciarPolling(3000);
+
+    // Se vier ?demandaId=xxx (do card ou da página de detalhe), abre a conversa daquela demanda
+    const demandaId = this.route.snapshot.queryParamMap.get('demandaId');
+    if (demandaId) {
+      const conversa = this.chats.conversas().find((c) => c.demandaId === demandaId);
+      if (conversa) {
+        await this.selecionar(conversa.id);
+      }
+      // Limpa o queryParam da URL sem renavegar
+      this.router.navigate([], { replaceUrl: true, queryParams: {} });
     }
+  }
 
-    ngOnDestroy() {
-        this.chats.pararPolling();
-    }
+  ngOnDestroy() {
+    this.chats.pararPolling();
+  }
 
-    async selecionar(conversaId: string) {
-        await this.chats.selecionar(conversaId);
-        setTimeout(() => this.scrollToBottom(), 50);
-    }
+  async selecionar(conversaId: string) {
+    await this.chats.selecionar(conversaId);
+    setTimeout(() => this.scrollToBottom(), 50);
+  }
 
-    voltarLista() {
-        (this.chats as any)._conversaAtivaId?.set(null);
-    }
+  voltarLista() {
+    (this.chats as any)._conversaAtivaId?.set(null);
+  }
 
-    tituloConversa(c: ConversaListItem): string {
-        if (c.titulo) return c.titulo;
-        if (c.tipo === 'direto') {
-            const outro = c.participantes.find((p) => p.usuarioId !== this.currentUserId());
-            return outro?.usuarioNome ?? 'Conversa';
-        }
-        return 'Conversa';
+  tituloConversa(c: ConversaListItem): string {
+    if (c.titulo) return c.titulo;
+    if (c.tipo === 'direto') {
+      const outro = c.participantes.find((p) => p.usuarioId !== this.currentUserId());
+      return outro?.usuarioNome ?? 'Conversa';
     }
+    return 'Conversa';
+  }
 
-    nomesPreview(c: ConversaListItem): string {
-        return c.participantes
-            .filter((p) => p.usuarioId !== this.currentUserId())
-            .slice(0, 3)
-            .map((p) => p.usuarioNome.split(' ')[0])
-            .join(', ');
-    }
+  nomesPreview(c: ConversaListItem): string {
+    return c.participantes
+      .filter((p) => p.usuarioId !== this.currentUserId())
+      .slice(0, 3)
+      .map((p) => p.usuarioNome.split(' ')[0])
+      .join(', ');
+  }
 
-    inicial(nome: string): string {
-        return (nome || '?').trim()[0]?.toUpperCase() ?? '?';
-    }
+  inicial(nome: string): string {
+    return (nome || '?').trim()[0]?.toUpperCase() ?? '?';
+  }
 
-    avatarColor(seed: string): string {
-        const colors = [
-            'bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-pink-500',
-            'bg-orange-500', 'bg-teal-500', 'bg-indigo-500', 'bg-rose-500',
-        ];
-        let hash = 0;
-        for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-        return colors[Math.abs(hash) % colors.length];
-    }
+  avatarColor(seed: string): string {
+    const colors = [
+      'bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-pink-500',
+      'bg-orange-500', 'bg-teal-500', 'bg-indigo-500', 'bg-rose-500',
+    ];
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    return colors[Math.abs(hash) % colors.length];
+  }
 
-    formatarBytes(b: number): string {
-        if (b < 1024) return `${b} B`;
-        if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-        return `${(b / 1024 / 1024).toFixed(1)} MB`;
-    }
+  formatarBytes(b: number): string {
+    if (b < 1024) return `${b} B`;
+    if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+    return `${(b / 1024 / 1024).toFixed(1)} MB`;
+  }
 
-    podeEnviar(): boolean {
-        return (
-            (this.textoMensagem.trim().length > 0 || this.anexosSelecionados().length > 0) &&
-            !!this.conversaAtivaId() &&
-            !this.chats.enviando()
-        );
-    }
+  podeEnviar(): boolean {
+    return (
+      (this.textoMensagem.trim().length > 0 || this.anexosSelecionados().length > 0) &&
+      !!this.conversaAtivaId() &&
+      !this.chats.enviando()
+    );
+  }
 
-    onEnter(ev: Event) {
-        const ke = ev as KeyboardEvent;
-        if (!ke.shiftKey) {
-            ke.preventDefault();
-            this.enviar();
-        }
+  onEnter(ev: Event) {
+    const ke = ev as KeyboardEvent;
+    if (!ke.shiftKey) {
+      ke.preventDefault();
+      this.enviar();
     }
+  }
 
-    onArquivosSelecionados(ev: Event) {
-        const input = ev.target as HTMLInputElement;
-        const files = Array.from(input.files ?? []);
-        const validos: File[] = [];
-        for (const f of files) {
-            const isImg = f.type.startsWith('image/');
-            const isVid = f.type.startsWith('video/');
-            if (!isImg && !isVid) { alert(`Tipo não permitido: ${f.name}`); continue; }
-            if (isImg && f.size > 10 * 1024 * 1024) { alert(`Imagem ${f.name} excede 10 MB`); continue; }
-            if (isVid && f.size > 100 * 1024 * 1024) { alert(`Vídeo ${f.name} excede 100 MB`); continue; }
-            validos.push(f);
-        }
-        this.anexosSelecionados.update((arr) => [...arr, ...validos]);
-        input.value = '';
+  onArquivosSelecionados(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    const validos: File[] = [];
+    for (const f of files) {
+      const isImg = f.type.startsWith('image/');
+      const isVid = f.type.startsWith('video/');
+      if (!isImg && !isVid) { alert(`Tipo não permitido: ${f.name}`); continue; }
+      if (isImg && f.size > 10 * 1024 * 1024) { alert(`Imagem ${f.name} excede 10 MB`); continue; }
+      if (isVid && f.size > 100 * 1024 * 1024) { alert(`Vídeo ${f.name} excede 100 MB`); continue; }
+      validos.push(f);
     }
+    this.anexosSelecionados.update((arr) => [...arr, ...validos]);
+    input.value = '';
+  }
 
-    removerAnexo(i: number) {
-        this.anexosSelecionados.update((arr) => arr.filter((_, idx) => idx !== i));
-    }
+  removerAnexo(i: number) {
+    this.anexosSelecionados.update((arr) => arr.filter((_, idx) => idx !== i));
+  }
 
-    async enviar() {
-        const id = this.conversaAtivaId();
-        if (!id || !this.podeEnviar()) return;
-        const texto = this.textoMensagem.trim();
-        const arquivos = this.anexosSelecionados();
-        this.textoMensagem = '';
-        this.anexosSelecionados.set([]);
-        try {
-            if (arquivos.length > 0) {
-                await firstValueFrom(this.chats.enviarComArquivos(id, texto, arquivos));
-            } else {
-                await this.chats.enviarTexto(id, texto);
-            }
-            setTimeout(() => this.scrollToBottom(), 100);
-        } catch (e: any) {
-            alert('Erro ao enviar: ' + (e?.error?.message ?? e?.message ?? 'falha'));
-            this.textoMensagem = texto;
-            this.anexosSelecionados.set(arquivos);
-        }
+  async enviar() {
+    const id = this.conversaAtivaId();
+    if (!id || !this.podeEnviar()) return;
+    const texto = this.textoMensagem.trim();
+    const arquivos = this.anexosSelecionados();
+    this.textoMensagem = '';
+    this.anexosSelecionados.set([]);
+    try {
+      if (arquivos.length > 0) {
+        await firstValueFrom(this.chats.enviarComArquivos(id, texto, arquivos));
+      } else {
+        await this.chats.enviarTexto(id, texto);
+      }
+      setTimeout(() => this.scrollToBottom(), 100);
+    } catch (e: any) {
+      alert('Erro ao enviar: ' + (e?.error?.message ?? e?.message ?? 'falha'));
+      this.textoMensagem = texto;
+      this.anexosSelecionados.set(arquivos);
     }
+  }
 
-    async apagar(m: MensagemChat) {
-        if (!confirm('Apagar mensagem? Ela continuará registrada no banco como prova legal.')) return;
-        await this.chats.apagarMensagem(m.id);
-    }
+  async apagar(m: MensagemChat) {
+    if (!confirm('Apagar mensagem? Ela continuará registrada no banco como prova legal.')) return;
+    await this.chats.apagarMensagem(m.id);
+  }
 
-    private scrollToBottom() {
-        const el = this.scroller?.nativeElement;
-        if (el) el.scrollTop = el.scrollHeight;
-    }
+  private scrollToBottom() {
+    const el = this.scroller?.nativeElement;
+    if (el) el.scrollTop = el.scrollHeight;
+  }
 
-    async abrirNovoChat() {
-        this.dialogNovoAberto.set(true);
-        this.novoTipo.set('direto');
-        this.novoTitulo = '';
-        this.novoBuscaUser = '';
-        this.novoSelecionados.set([]);
-        if (this.usuariosDisponiveis().length === 0) {
-            try { this.usuariosDisponiveis.set(await this.chats.listarUsuarios()); }
-            catch { /* ignore */ }
-        }
+  async abrirNovoChat() {
+    this.dialogNovoAberto.set(true);
+    this.novoTipo.set('direto');
+    this.novoTitulo = '';
+    this.novoBuscaUser = '';
+    this.novoSelecionados.set([]);
+    if (this.usuariosDisponiveis().length === 0) {
+      try { this.usuariosDisponiveis.set(await this.chats.listarUsuarios()); }
+      catch { /* ignore */ }
     }
+  }
 
-    toggleSelecionado(id: string) {
-        if (this.novoTipo() === 'direto') {
-            this.novoSelecionados.set([id]);
-        } else {
-            this.novoSelecionados.update((arr) =>
-                arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id],
-            );
-        }
+  toggleSelecionado(id: string) {
+    if (this.novoTipo() === 'direto') {
+      this.novoSelecionados.set([id]);
+    } else {
+      this.novoSelecionados.update((arr) =>
+        arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id],
+      );
     }
+  }
 
-    podeCriarConversa(): boolean {
-        if (this.novoSelecionados().length === 0) return false;
-        if (this.novoTipo() === 'grupo' && !this.novoTitulo.trim()) return false;
-        if (this.novoTipo() === 'direto' && this.novoSelecionados().length !== 1) return false;
-        return true;
-    }
+  podeCriarConversa(): boolean {
+    if (this.novoSelecionados().length === 0) return false;
+    if (this.novoTipo() === 'grupo' && !this.novoTitulo.trim()) return false;
+    if (this.novoTipo() === 'direto' && this.novoSelecionados().length !== 1) return false;
+    return true;
+  }
 
-    async confirmarNovaConversa() {
-        if (!this.podeCriarConversa()) return;
-        this.criandoConversa.set(true);
-        try {
-            const nova = await this.chats.criarConversa({
-                tipo: this.novoTipo(),
-                titulo: this.novoTipo() === 'grupo' ? this.novoTitulo.trim() : undefined,
-                participantes: this.novoSelecionados(),
-            });
-            this.dialogNovoAberto.set(false);
-            await this.selecionar(nova.id);
-        } catch (e: any) {
-            alert('Erro: ' + (e?.error?.message ?? e?.message));
-        } finally {
-            this.criandoConversa.set(false);
-        }
+  async confirmarNovaConversa() {
+    if (!this.podeCriarConversa()) return;
+    this.criandoConversa.set(true);
+    try {
+      const nova = await this.chats.criarConversa({
+        tipo: this.novoTipo(),
+        titulo: this.novoTipo() === 'grupo' ? this.novoTitulo.trim() : undefined,
+        participantes: this.novoSelecionados(),
+      });
+      this.dialogNovoAberto.set(false);
+      await this.selecionar(nova.id);
+    } catch (e: any) {
+      alert('Erro: ' + (e?.error?.message ?? e?.message));
+    } finally {
+      this.criandoConversa.set(false);
     }
+  }
 
-    async abrirGerenciarGrupo(c: ConversaListItem) {
-        this.grupoAtivo.set(c);
-        this.dialogGrupoAberto.set(true);
-        this.novoMembroId = '';
-        if (this.usuariosDisponiveis().length === 0) {
-            try { this.usuariosDisponiveis.set(await this.chats.listarUsuarios()); }
-            catch { /* ignore */ }
-        }
+  async abrirGerenciarGrupo(c: ConversaListItem) {
+    this.grupoAtivo.set(c);
+    this.dialogGrupoAberto.set(true);
+    this.novoMembroId = '';
+    if (this.usuariosDisponiveis().length === 0) {
+      try { this.usuariosDisponiveis.set(await this.chats.listarUsuarios()); }
+      catch { /* ignore */ }
     }
+  }
 
-    souAdminDoGrupo(c: ConversaListItem): boolean {
-        return c.papel === 'dono' || c.papel === 'admin';
-    }
+  souAdminDoGrupo(c: ConversaListItem): boolean {
+    return c.papel === 'dono' || c.papel === 'admin';
+  }
 
-    usuariosNaoNoGrupo(c: ConversaListItem): UsuarioDisponivel[] {
-        const ids = new Set(c.participantes.map((p) => p.usuarioId));
-        return this.usuariosDisponiveis().filter((u) => !ids.has(u.id));
-    }
+  usuariosNaoNoGrupo(c: ConversaListItem): UsuarioDisponivel[] {
+    const ids = new Set(c.participantes.map((p) => p.usuarioId));
+    return this.usuariosDisponiveis().filter((u) => !ids.has(u.id));
+  }
 
-    async adicionarAoGrupo(conversaId: string) {
-        if (!this.novoMembroId) return;
-        try {
-            await this.chats.adicionarParticipante(conversaId, this.novoMembroId);
-            const atualizada = this.chats.conversas().find((c) => c.id === conversaId);
-            if (atualizada) this.grupoAtivo.set(atualizada);
-            this.novoMembroId = '';
-        } catch (e: any) {
-            alert('Erro: ' + (e?.error?.message ?? e?.message));
-        }
+  async adicionarAoGrupo(conversaId: string) {
+    if (!this.novoMembroId) return;
+    try {
+      await this.chats.adicionarParticipante(conversaId, this.novoMembroId);
+      const atualizada = this.chats.conversas().find((c) => c.id === conversaId);
+      if (atualizada) this.grupoAtivo.set(atualizada);
+      this.novoMembroId = '';
+    } catch (e: any) {
+      alert('Erro: ' + (e?.error?.message ?? e?.message));
     }
+  }
 
-    async removerDoGrupo(conversaId: string, usuarioId: string) {
-        if (!confirm('Remover esta pessoa do grupo?')) return;
-        try {
-            await this.chats.removerParticipante(conversaId, usuarioId);
-            const atualizada = this.chats.conversas().find((c) => c.id === conversaId);
-            if (atualizada) this.grupoAtivo.set(atualizada);
-        } catch (e: any) {
-            alert('Erro: ' + (e?.error?.message ?? e?.message));
-        }
+  async removerDoGrupo(conversaId: string, usuarioId: string) {
+    if (!confirm('Remover esta pessoa do grupo?')) return;
+    try {
+      await this.chats.removerParticipante(conversaId, usuarioId);
+      const atualizada = this.chats.conversas().find((c) => c.id === conversaId);
+      if (atualizada) this.grupoAtivo.set(atualizada);
+    } catch (e: any) {
+      alert('Erro: ' + (e?.error?.message ?? e?.message));
     }
+  }
 
-    async sairDoGrupo(conversaId: string) {
-        if (!confirm('Sair deste grupo?')) return;
-        try {
-            await this.chats.removerParticipante(conversaId, this.currentUserId());
-            this.dialogGrupoAberto.set(false);
-            (this.chats as any)._conversaAtivaId?.set(null);
-            await this.chats.carregar();
-        } catch (e: any) {
-            alert('Erro: ' + (e?.error?.message ?? e?.message));
-        }
+  async sairDoGrupo(conversaId: string) {
+    if (!confirm('Sair deste grupo?')) return;
+    try {
+      await this.chats.removerParticipante(conversaId, this.currentUserId());
+      this.dialogGrupoAberto.set(false);
+      (this.chats as any)._conversaAtivaId?.set(null);
+      await this.chats.carregar();
+    } catch (e: any) {
+      alert('Erro: ' + (e?.error?.message ?? e?.message));
     }
+  }
 
-    abrirDemanda(demandaId: string) {
-        this.router.navigate(['/demandas', demandaId]);
-    }
+  abrirDemanda(demandaId: string) {
+    this.router.navigate(['/demandas', demandaId]);
+  }
 }
